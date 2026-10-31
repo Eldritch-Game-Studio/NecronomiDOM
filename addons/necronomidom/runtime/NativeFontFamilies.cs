@@ -63,8 +63,11 @@ public sealed partial class NativeFontFamilies : INativeFontFamilies, IDisposabl
             foreach (var pair in paths)
             {
                 if (!byPath.TryGetValue(pair.Value, out var shaper))
-                    byPath.Add(pair.Value, shaper = new AdvancedTextShaper(GD.Load<FontFile>(pair.Value)
-                        ?? throw new InvalidOperationException("Missing font: " + pair.Value), FallbacksFor(pair.Value)));
+                {
+                    // The shaper duplicates the imported asset; release this wrapper so no binding outlives the resource cache.
+                    using var font = GD.Load<FontFile>(pair.Value) ?? throw new InvalidOperationException("Missing font: " + pair.Value);
+                    byPath.Add(pair.Value, shaper = new AdvancedTextShaper(font, FallbacksFor(pair.Value)));
+                }
                 next.Add(pair.Key, shaper);
             }
         }
