@@ -212,6 +212,13 @@ approximate.
 - Not supported: scripts, network URLs, `float`, grid, tables, `position: fixed/sticky`, `z-index`, column-wrapped
   flex, 3D transforms, vertical margins in normal flow (use padding or flex), pseudo-elements.
 
+Because block margins do not collapse, the browser default margin on `<p>` is rejected too. Start every stylesheet
+with a reset:
+
+```css
+html, body, main, section, div, p, button, input, textarea { margin: 0; box-sizing: border-box; }
+```
+
 Resource URLs resolve inside `res://` (and `user://ui/`); anything else is rejected.
 
 ## Engine extensions
