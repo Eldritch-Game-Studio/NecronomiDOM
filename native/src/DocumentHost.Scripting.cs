@@ -131,6 +131,13 @@ public partial class DocumentHost
         if (Find(selector) is HTMLElement html) html.Focus();
     }
 
+    /// <summary>Activates the element as the DOM <c>click()</c> method does (emits <c>clicked</c> like a real click).</summary>
+    [BindMethod(Name = "click")]
+    public void ClickElement(string selector)
+    {
+        if (Find(selector) is HTMLElement html) html.Click();
+    }
+
     /// <summary>Ids of every element matching <paramref name="selector"/> (elements without an id are skipped).</summary>
     [BindMethod(Name = "query_ids")]
     public PackedStringArray QueryIds(string selector)

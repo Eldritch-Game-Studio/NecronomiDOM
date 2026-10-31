@@ -10,3 +10,5 @@ TestResults/
 /addons/necronomidom/bin/
 /addons/necronomidom/necronomidom.gdextension
 /addons/necronomidom/necronomidom.gdextension.uid
+.act/
+dist/

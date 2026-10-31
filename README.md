@@ -257,7 +257,7 @@ edition, needs the native library) and `demo/demo.tscn` (C#, .NET edition).
 
 ```sh
 native/build.sh                                      # native library for this machine
-godot --path . res://demo/gdscript/demo.tscn        # GDScript demo
+godot --path . res://demo/gdscript/demo.tscn        # GDScript demo (add `-- --smoke` for a check run)
 dotnet build NecronomiDOM.Demo.csproj
 godot --path .                                       # C# demo (.NET edition)
 godot --headless --path . -- --smoke                 # C# smoke run: exit 0 on success
@@ -271,13 +271,43 @@ dotnet test tests/NecronomiDom.Tests                 # core library tests (no en
 `addons/necronomidom/necronomidom.gdextension`. It needs the .NET 10 SDK and the C toolchain NativeAOT uses (clang on
 Linux, Xcode on macOS, Visual Studio build tools on Windows), and fetches and builds the pinned
 [Godot GDExtension .NET bindings](https://github.com/godotengine/godot-dotnet), which are not on NuGet yet. NativeAOT
-only compiles for the OS it runs on; the GitHub workflow builds every platform and assembles the release ZIP.
+only compiles for the OS it runs on; the CI/CD workflow builds every platform and assembles the release ZIP.
+
+## Releasing
+
+`.github/workflows/ci.yml` runs on every push and pull request: core tests, native libraries for every platform,
+smoke runs of both demos (GDScript in standard Godot, C# in .NET Godot) and the addon ZIP as a build artifact.
+Pushing a tag publishes a release:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0     # → GitHub release with NecronomiDOM-v0.1.0.zip
+```
+
+Two repository variables (Settings → Secrets and variables → Actions → Variables) choose where jobs run:
+
+| Variable | Effect |
+|---|---|
+| `LINUX_RUNNER=self-hosted` | Linux x64 jobs (tests, Linux build, smoke runs, packaging) run on a self-hosted runner labelled `necronomidom` instead of GitHub-hosted Ubuntu. |
+| `HOSTED_PLATFORMS=false` | Skip the GitHub-hosted Windows, macOS and Linux ARM builds; the ZIP is then named `*-partial.zip`. |
+
+On a self-hosted runner, intermediate native binaries pass between jobs through the runner's local cache. The finished
+ZIP is still uploaded to the workflow run's **Artifacts** section and retained in
+`~/.cache/necronomidom-ci/dist/`. Version-tag runs also attach it to a GitHub release.
+
+To run the same workflow without GitHub (Docker and [act](https://nektosact.com) required):
+
+```sh
+scripts/ci-local.sh        # tests, Linux x64 build, both smoke runs → dist/NecronomiDOM-<branch>-partial.zip
+```
+
+Local runs cover the Linux x64 jobs only (act has no Windows, macOS or ARM runners), so that ZIP holds only the
+Linux x64 library.
+
+Upload the release ZIP as a new version on the Godot Asset Store. The store has no upload API yet (its CLI for CI uploads is
+on the [roadmap](https://store.godotengine.org/roadmap/)), so this last step is manual.
 
 The runtime sources are shared: `native/` compiles `addons/necronomidom/runtime/` against the bindings with
 `NECRONOMIDOM_GDEXTENSION` defined, and adds the GDScript API (`native/src/`).
-
-Known issue: on quit, a GDExtension build may print a few "RIDs … were leaked" warnings for paint meshes still awaiting
-.NET finalization. Memory does not grow while running (measured over 1000 re-layouts).
 
 ## Layout of this repository
 

@@ -10,7 +10,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ADDON="$HERE/../addons/necronomidom"
-WORK="$HERE/.work"
+WORK="${NECRONOMIDOM_WORK:-$HERE/.work}"   # bindings checkout and package feed
 # GDExtension .NET bindings (github.com/godotengine/godot-dotnet), pinned. They target the Godot 4.7 extension API.
 GODOT_DOTNET_COMMIT=965a09db8b42f79d7987270063eb19abb985ceb6
 
@@ -39,7 +39,8 @@ for rid in "$@"; do
     linux-*) lib="libnecronomidom.so" ;; osx-*) lib="libnecronomidom.dylib" ;; win-*) lib="necronomidom.dll" ;;
     *) echo "Unsupported RID $rid" >&2; exit 2 ;;
   esac
-  dotnet publish "$HERE/NecronomiDom.Native.csproj" -c Release -r "$rid" -nologo -v q
+  dotnet publish "$HERE/NecronomiDom.Native.csproj" -c Release -r "$rid" -nologo -v q \
+    --source "$WORK/feed" --source https://api.nuget.org/v3/index.json
   built="$(find "$HERE/bin/Release/net10.0/$rid/publish" -maxdepth 1 -name 'NecronomiDom.Native.*' \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) | head -1)"
   mkdir -p "$ADDON/bin/$rid"
   cp "$built" "$ADDON/bin/$rid/$lib"
