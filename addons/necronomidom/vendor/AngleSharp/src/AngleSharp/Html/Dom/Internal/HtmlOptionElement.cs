@@ -1,0 +1,117 @@
+namespace AngleSharp.Html.Dom
+{
+    using AngleSharp.Dom;
+    using AngleSharp.Text;
+    using System;
+    using System.Diagnostics.CodeAnalysis;
+
+    /// <summary>
+    /// Represents the HTML option element.
+    /// </summary>
+    sealed class HtmlOptionElement : HtmlElement, IHtmlOptionElement
+    {
+        #region Fields
+
+        private Boolean? _selected;
+
+        #endregion
+
+        #region ctor
+
+        public HtmlOptionElement(Document owner, String? prefix = null)
+            : base(owner, TagNames.Option, prefix, NodeFlags.ImplicitlyClosed | NodeFlags.ImpliedEnd | NodeFlags.HtmlSelectScoped)
+        {
+        }
+
+        #endregion           
+        
+        #region Properties
+
+        public Boolean IsDisabled
+        {
+            get => this.GetBoolAttribute(AttributeNames.Disabled);
+            set => this.SetBoolAttribute(AttributeNames.Disabled, value);
+        }
+
+        public IHtmlFormElement? Form => GetAssignedForm();
+
+        [AllowNull]
+        public String Label
+        {
+            get => this.GetOwnAttribute(AttributeNames.Label) ?? Text;
+            set => this.SetOwnAttribute(AttributeNames.Label, value);
+        }
+
+        public String Value
+        {
+            get => this.GetOwnAttribute(AttributeNames.Value) ?? Text;
+            set => this.SetOwnAttribute(AttributeNames.Value, value);
+        }
+
+        public Int32 Index
+        {
+            get
+            {
+
+                var select = this.GetAncestor<HtmlSelectElement>();
+
+                if (select is not null)
+                {
+                    var i = 0;
+
+                    foreach (var option in select.Options)
+                    {
+                        if (Object.ReferenceEquals(option, this))
+                        {
+                            return i;
+                        }
+
+                        i++;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        public String Text
+        {
+            get => TextContent.CollapseAndStrip();
+            set => TextContent = value;
+        }
+
+        public Boolean IsDefaultSelected
+        {
+            get => this.GetBoolAttribute(AttributeNames.Selected);
+            set => this.SetBoolAttribute(AttributeNames.Selected, value);
+        }
+
+        public Boolean IsSelected
+        {
+            get => _selected ?? IsDefaultSelected;
+            set
+            {
+                _selected = value;
+                var select = Parent as HtmlSelectElement;
+
+                if (select is null && Parent is HtmlOptionsGroupElement group)
+                {
+                    select = group.Parent as HtmlSelectElement;
+                }
+
+                if (value && select is not null && !select.IsMultiple)
+                {
+                    foreach (var option in select.Options)
+                    {
+                        if (option is HtmlOptionElement other && !ReferenceEquals(this, other) && other.IsSelected)
+                        {
+                            other._selected = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+    }
+}

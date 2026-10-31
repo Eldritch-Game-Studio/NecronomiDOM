@@ -1,0 +1,1040 @@
+# 1.8.4
+
+Released on Wednesday, October 7 2026
+
+- Improved selection when parsing `<select>` (#1364) @PrzemyslawKlys
+- Updated constraint validation eligibility of `fieldset` and `output` elements (breaking behavior change) (#1373) @PrzemyslawKlys
+- Fixed change of `<select>` value (`IsSelected`) (#1365) @PrzemyslawKlys
+- Fixed indeterminate input state when cloning (#1367) @PrzemyslawKlys
+- Fixed `<select>` form submission including unselected options and options in disabled groups (#1366) @PrzemyslawKlys
+- Fixed option indexes inside option groups (#1368) @PrzemyslawKlys
+- Fixed selecting an option leaving other single-select options selected (#1372) @PrzemyslawKlys
+- Fixed validity checks for controls excluded from validation (#1370) @PrzemyslawKlys
+- Fixed template content document when adopting a subtree (#1374) @PrzemyslawKlys
+- Fixed checking a radio leaving other group members checked (#1371) @PrzemyslawKlys
+- Fixed parsed radio checkedness depending on attribute order @PrzemyslawKlys
+- Fixed SVG `annotation-xml` elements being treated as HTML integration points @NotAFlightRisk
+- Fixed required radio validation across group members (#1369) @PrzemyslawKlys
+
+# 1.8.3
+
+Released on Wednesday, September 30 2026
+
+- Improved cancellation of queued timer callbacks (#1357) @PrzemyslawKlys
+- Improved configuration / setup performance (#1360) @PrzemyslawKlys
+- Fixed form submission ignoring sandbox restrictions (#1358) @PrzemyslawKlys
+- Fixed `<base>` elements not following frozen document base URL and tree-order mutation rules (#1355, #1362)
+- Fixed native `Unloading` handlers subscribing to `unloading` instead of `beforeunload` (#1354) @PrzemyslawKlys
+- Added `OnReset` event to inform script hosts of native listener removals (#1356) @PrzemyslawKlys
+- Added pull-based HTML serialization stream (#1361) @PrzemyslawKlys
+
+# 1.8.2
+
+Released on Friday, September 18 2026
+
+- Improved attribute selector serialization to write only the case-sensitivity modifier that was specified (#1351)
+- Improved id/name lookup on collections (`document.forms["x"]`, `form.elements["x"]`, ...) to enumerate the underlying sequence once instead of twice
+- Improved performance of `form.elements` / `fieldset.elements` by walking the tree directly (#1350)
+- Improved `GetElementsByTagName` / `GetElementsByClassName` traversal to stop double-scanning each element's children
+- Improved selector specificity (`Selectors.Specificity`, `ComplexSelector.Specificity`) to be computed once instead of recomputed on every read
+- Improved `ListSelector.GetMatchingSelector` to sort its selectors once instead of on every call
+- Improved performance of HTML tree construction by keeping mutation logic out of it (#1347)
+- Improved performance of DOM mutations by building a mutation record only when an observer will consume it (#1347)
+- Improved performance of parser attribute duplication check
+- Fixed `Document.Forms` allocating a new collection instance per read, contradicting its own `[DomSameObject]` contract
+- Fixed `classList` and the other reflected token lists writing their content attribute without running the attribute change steps or queueing a mutation record
+- Fixed clearing a reflected boolean attribute such as `disabled` removing it without running the attribute change steps or queueing a mutation record
+- Fixed vulnerability via SVG style serialization (GHSA-cgp3-27rh-pcp2)
+- Fixed a `StackOverflowException` when parsing a document with deeply nested unclosed `<template>` elements
+- Added `Document.MutationVersion`, a synchronous counter of DOM mutations that a parse leaves unchanged (#1344, #1347)
+
+# 1.8.1
+
+Released on Thursday, September 10 2026
+
+- Updated `DoFocus` and `DoBlur` to apply to form elements
+- Improved explicit form ownership to take precedence over ancestor forms for connected controls (#1323) @sebastienros
+- Fixed HTML hyperlink pseudo-classes omitting empty `href` and matching `link` elements (#1337) @sebastienros
+- Fixed HTML-namespace element creation losing local-name case (#1327) @sebastienros
+- Fixed `:enabled` incorrectly matching HTML links with nonempty `href` (#1324) @sebastienros
+- Fixed changing focus of elements
+
+# 1.8.0
+
+Released on Saturday, September 5 2026
+
+- Improved AngleSharp's test website
+- Fixed script data escaped state potentially not bouncing back correctly
+- Added the `DomSameObject` annotation for the respective IDL members (#1314) @lahma
+- Added the `DomReturnType` annotation for methods returning a different IDL type (#1318)
+
+# 1.7.3
+
+Released on Thursday, September 3 2026
+
+- Improved tracking of parse exceptions in the `HtmlParser` (#1315) @lahma
+- Fixed tokenizer buffer overrun on encoding change (#1290) @jafin
+- Fixed selector text dropping the nth-child of clause (#1292) @jafin
+- Fixed selector text dropping the case-insensitive (#1291) @jafin
+- Fixed selector specificity carrying between fields instead of saturating (#1300) @meziantou
+- Fixed condition check for disposed state in ReturnToPool (#1296) @meziantou
+- Fixed ArgumentOutOfRangeException CSS escapes (#1299) @meziantou
+- Fixed whitespace around An+B CSS selector notations (#1297)
+- Fixed unsupported pseudo-classes matching everything (#1295)
+- Fixed DomException for invalid foreign attribute names such as `xml:lang[` (#1294)
+- Fixed script data escaped state leaving escaped mode too early (#1298)
+- Fixed `CurrentScript` not indicating the currently executing script (#1308) @lahma
+- Fixed returned missing attribute-properties to use empty string instead of null (#1313) @lahma
+- Fixed removal of `data-*` attributes (#1310) @lahma
+- Added missing DomName/DomAccessor annotations (#1301) @meziantou
+- Added missing `DomLiterals` attribute to `AdjacentPosition` (#1311) @lahma
+
+# 1.7.2
+
+Released on Sunday, August 23 2026
+
+- Fixed matching of `annotation-xml` encoding to be case-insensitive (#1284) @arpitjain099
+- Fixed `<xmp>` usage in `<select>` elements
+- Added ability to parse immutable byte buffers without a stream (#1286) @dv00d00
+
+# 1.7.1
+
+Released on Wednesday, August 5 2026
+
+- Improved WHATWG Url specification (#802) @jafin
+- Improved tokenizer read performance (#1274) @dv00d00
+- Fixed auxiliary browsing context lifetime (#1278) @jafin
+- Fixed duplicated `DomName` attributes on DOM geometry
+- Fixed `document.open()` destroying the DOM tree in case of encoding problems (#1276)
+- Fixed source references having wrong line (#1280)
+
+# 1.7.0
+
+Released on Friday, July 31 2026
+
+- Improved CSS selector performance (#1270, #929) @lahma
+- Added support for the `:host` pseudo selector (#1271)
+- Added support for the DomGeometry spec (#1193)
+
+# 1.6.0
+
+Released on Sunday, July 26 2026
+
+- Improved performance for text tokenization (#1262) @dv00d00
+- Improved CSS selector performance
+- Improved observer dispatch during HTML parsing (#1266) @dv00d00
+- Improved declaration of unsupported pseudo elements
+- Fixed inconsistent behavior and segfaults on Android Release build (#1252) @DevGitPit
+- Fixed CSS attribute selector modifier handling for `i` / `I` (case-insensitive) and `s` / `S` (case-sensitive)
+- Added API enhancements to expose asynchronous HTML token source (#1265) @dv00d00
+- Added bounded stream parsing mode (#1263) @dv00d00
+- Added canonicalization of decimal, octal, or hexadecimal IPv4 literals in `Url`
+- Added parsing of / checks for IPv6 literals in `Url`
+- Added support for the CSS column combinator (`||`) selector syntax
+- Added correct identification of `CurrentSource` in `CssMediaElement`
+
+# 1.5.2
+
+Released on Sunday, July 5 2026
+
+- Fixed `NodeIterator` pre-removing steps to use the first following node (#1260) @ivandrofly
+- Fixed `Range.IsCollapsed` to also compare offsets (#1259) @ivandrofly
+- Fixed swapped comparison in `Range.CompareBoundaryTo` (#1258) @ivandrofly
+- Fixed `Range.CopyContent` to follow the DOM Standard (#1257) @ivandrofly
+- Fixed `Range.ExtractContent` to follow the DOM Standard (#1256) @ivandrofly
+- Added missing media attribute change detection on SVG style elements (#1261) @ivandrofly
+
+# 1.5.1
+
+Released on Saturday, June 13 2026
+
+- Fixed tokenization of large plain-text contents (#1251) @SimonCropp
+
+# 1.5.0
+
+Released on Saturday, June 6 2026
+
+- Fixed vulnerability via annotation-xml elements (GHSA-pgww-w46g-26qg)
+- Updated benchmarks (#1246) @jafin
+- Added ability to pass in cookie container to `MemoryCookieProvider` (#1249) @riina
+- Added HTML parser selector optimizations (#1245) @jafin
+
+# 1.4.1
+
+Released on Saturday, November 15 2025.
+
+- Fixed NuGet target framework for .NET 10
+
+# 1.4.0
+
+Released on Wednesday, November 12 2025.
+
+- Fixed handling of carriage return in text sources
+- Added support for `of` syntax in `:nth-child` functions within CSS selectors
+- Added `selectedcontent` to known elements (#1230)
+- Added `:open`, `::checkmark`, `::picker-icon`, and `::picker(ident)` to selector syntax (#1230)
+- Added parsing for customizable `<select>` (#1230)
+- Added .NET 10 as an explicit target
+
+# 1.3.1
+
+Released on Saturday, November 8 2025.
+
+- Added `IReadOnlyList<T>` interface to `IHtmlCollection`, `IStringList`, `ITokenList`, `IHtmlFormControlsCollection` (#1226, #1227) @weitzhandler
+
+# 1.3.0
+
+Released on Friday, April 18 2025.
+
+- Fixed DOM exposed type of `HasChildNodes` (#1219) @arekdygas
+- Fixed `NodeIterator` behavior when nodes are removed (#1222)
+- Improved form documentation (#1220) @RedZone908
+- Updated to NUKE 9 and removed obsolete .NET 6 and 9 targets (#1216) @lahma
+- Added `GetAttributeNode` methods to `IElement` (#1223) @arekdygas
+- Added support for finding targets in browsing contexts (#1218) @TheJayMann
+- Added support for targetting iframes (#1205) @TheJayMann
+
+# 1.2.0
+
+Released on Tuesday, December 31 2024.
+
+- Fixed loading of link element source (#1184) @tomvanenckevort
+- Fixed usage of outdated dependency (#1186)
+- Fixed cookie `Expires` recognized as local time (#1212) @noobow34
+- Fixed validation for problematic decimal step values (#1210) @rhuebner76
+- Removed unnecessary references for .NET 6 and higher (#1187) @lahma
+- Removed support for .NET 4.6.1 (least version is 4.6.2)
+- Updated to NUKE 8 (#1188) @lahma
+- Added new `OnToken` event for the tokenizer (#1153) @schaakverslaafd
+- Added new setting for disabling `StringBuilder` pooling (#1203) @micahbresette
+- Added context to extension methods (#1194) @memiamp
+- Added `property` attribute to meta tags (#1195) @hflexgrig
+
+# 1.1.2
+
+Released on Friday, March 8 2024.
+
+- Fixed exception when providing wrong response (#1181)
+- Fixed handling of various inputs leading to timeouts (#1180)
+
+# 1.1.1
+
+Released on Friday, March 1 2024.
+
+- Fixed `ISourceReference` not using `HtmlToken` underneath
+- Fixed handling of replacement characters in escaped script blocks (#1174)
+- Fixed handling of empty template element in SVG foreign mode (#1176)
+- Fixed handling of `<template>` in foreign elements (#1179)
+- Improved pre-release version to follow semver (#1171) @georg-jung
+- Improved NuGet package with link to repository (#1168) @thompson-tomo
+- Added `PostAsMultipart` helper for multipart/form-data to `DocumentRequest` (#1173)
+
+# 1.1.0
+
+Released on Thursday, January 18 2024.
+
+- Fixed priority calculations for selector lists (#1161)
+- Fixed `:where` and `:is` selectors using forgiving lists
+- Added option for read only DOM (#1154) @dv00d00
+- Added more optimizations to reduce allocation rate (#1159) @dv00d00
+- Added support for nested selectors (`&`)
+
+# 1.0.7
+
+Released on Friday, November 17 2023.
+
+- Fixed implementation of `IRange` using offsets (#1147) @zukarusan
+- Improved performance in `Node.set_Owner` (#1149) @campersau
+- Added `net8.0` as direct target framework
+
+# 1.0.6
+
+Released on Saturday, November 11 2023.
+
+- Fixed case-sensitiveness in virtual responses
+- Fixed warning for outdated actions in CI/CD workflow (#1145) @martincostello
+- Fixed AoT warning when trimming (#1144) @martincostello
+- Fixed decoding of entities in `InnerHtml` of `<noscript>` (#1139)
+- Updated `PrettyMarkupFormatter` to keep new lines on demand (#1131) @dramlian
+
+# 1.0.5
+
+Released on Tuesday, October 3 2023.
+
+- Improved codebase (#1128, #1126, #1133) @matkoch @ivandrofly
+- Improved documentation (#1127)
+- Improved child selector performance (#1135) @lahma
+- Improved query selector all performance (#584, #1134) @lahma
+- Fixed issue with foreign content using end tags
+- Fixed typo `descendants` (#1136) @SimonCropp
+- Added a way to resolve symbols by their name to `HtmlEntityProvider` (#396)
+
+# 1.0.4
+
+Released on Saturday, June 24 2023.
+
+- Fixed issue with gzip encoding under certain conditions (#1122)
+- Fixed issue with `li` scope leading to stack overflow (#1123)
+- Added more pseudo selectors from Selector L4 spec (#1121)
+
+# 1.0.3
+
+Released on Thursday, June 8 2023.
+
+- Fixed wrong escaping of CSS selector pseudo class functions (#1069)
+
+# 1.0.2
+
+Released on Tuesday, June 4 2023.
+
+- Improved codebase (#1091, #1090, #1089, #1088, #1087, #1086) @SimonCropp
+- Fixed potential stack overflow in `GetStyleSheets` (#1084) @bjornri
+- Fixed serialization of `DocumentReadyState` by providing `DomName` attributes (#1109)
+- Fixed start and end of `Range` to handle specific offset in a `TextNode` (#1118)
+- Fixed `Range` inclusion algorithm (#1119)
+- Added public class `HtmlTokenizer` (#1113)
+
+# 1.0.1
+
+Released on Monday, January 16 2023.
+
+- Fixed entities in `noscript` being double encoded (#1070)
+- Added previous `Event` constructor overload for ABI compatibility
+- Added README to NuGet package
+
+# 1.0.0
+
+Released on Tuesday, January 10 2023.
+
+- Updated build system to use NUKE instead of CAKE (#1075) @driekus77
+- Fixed `TagClosedWrong` error with nested formatting elements (#1052)
+- Fixed performance issue within deeply nested structures (#1066) @heinrich-ulbricht
+- Fixed decoding of entities in `noscript` elements without scripting (#1070)
+- Fixed setting templte content using `InnerHtml` (#1072)
+- Fixed `TreeWalker` throwing `NullReferenceException` (#1073)
+- Improved `GetItemByIndex` performance (#1050) @egil
+- Improved nullability (#1057) @jodydonetti
+- Improved CSS selectors by counting the specificity properly (#1080) @patrikwlund
+- Added `GetComposedPath` and `IsComposed` to the `Event` class (#1053)
+
+# 0.17.1
+
+Released on Thursday, June 2 2022.
+
+- Fixed wrong reference to `System.Text.Encoding.CodePages` (#1046) @linkdotnet
+
+# 0.17.0
+
+Released on Tuesday, May 31 2022.
+
+- Dropped .NET Framework 4.6 (#960)
+- Updated GitHub actions logger (#1044) @Tyrrrz
+- Updated editorconfig to include code conventions (#1025) @kzrnm
+- Updated to use RFC1123Pattern format (#1018) @kzrnm
+- Fixed some typos (#1043) @mavaddat
+- Fixed inheritence of query parameters for fragment-only URLs (#1037)
+- Fixed `Query` dependence on `SearchParams` (#1024) @kzrnm
+- Fixed `Hash` and `Search` in `Url` (#1021) @kzrnm
+- Fixed behavior of `Url` with empty query (#1016) @kzrnm
+- Added option to parse custom elements in `head` (#1035)
+- Added option to prevent self-closing in `XhtmlMarkupFormatter` (#1031) @Aizeren
+- Added option to keep original attribute names / casing (#897)
+
+# 0.16.1
+
+Released on Wednesday, October 6 2021.
+
+- Fixed `namespaceUri` parameters to allow nullable values when possible (#975)
+- Fixed mutation observer not connecting to document (#1001)
+- Add missing `IHtmlPictureElement` to picture element (#978)
+
+# 0.16.0
+
+Released on Tuesday, June 8 2021.
+
+- Moved `Url` from `AngleSharp` to `AngleSharp.Dom`
+- Remove usage of CWT and introduce context info bag (#918)
+- Fixed recursion depth of `FindDescendant` with configurable limit (#936)
+- Fixed `IAttr` to actually inherit from `INode`
+- Added ability to parse only the head from a stream (#966)
+- Added new `UrlSearchParams` class (#970)
+- Exposed `Url` class to `URL` DOM API (#970)
+
+# 0.15.0
+
+Released on Thursday, April 22 2021.
+
+- Added `ToHtmlAsync()` extension method (#863)
+- Added `ParseFragment` overload using `Stream` (#896)
+- Added `euc-kr` encoding (#928)
+- Fixed CSS attribute value comparison w.r.t. case sensitivity (#864)
+- Fixed issue in the Heisenberg algorithm of the HTML5 parser (#893)
+- Fixed issue with the strictness of broken char references in attribute values (#902)
+- Fixed possible NRE in the markup formatters / attribute serialization (#903)
+- Fixed `GetSelector` returning invalid ID selector (#909)
+- Fixed `GetSelector` returning duplicate element ids (#910)
+- Fixed possible NRE in media and `embed` elements without `src` (#914)
+- Updated CI/CD system to GitHub Actions (#942)
+- Dropped support for the .NET Standard 1.3 target (#944)
+
+# 0.14.0
+
+Released on Tuesday, March 31 2020.
+
+- Included context event `error` for error tracking (#698)
+- Extended the `IMarkupFormatter` for literal text (#821)
+- Extended the `IElementFactory` definition
+- Fixed an issue regarding n-th child for the `GetSelector` utility (#835)
+- Added explicit support for .NET 4.6.1 (#842)
+- Added public constructor to `BrowsingContext` (#844)
+- Force `IBrowsingContext` to be `IDisposable` for cleanup purposes
+- Fixed missing `Media` property of stylesheets (#846)
+- Improved API of `IMarkupFormatter` (#858)
+- Enhanced existing `IMarkupFormatter` instances to allow inheritance
+- Added default accepts header for standard document requests (#859)
+
+# 0.13.0
+
+Released on Friday, September 6 2019.
+
+- Removed the `TaskEventLoop` (#782)
+- Renamed `WithCookies` to `WithDefaultCookies`
+- Fixed bubbling of `DOMContentLoaded` event (#789)
+- Fixed maximum recursion depth at query selector (#763)
+- Added `MinifyMarkupFormatter` (#745)
+- Added `Prettify` and `Minify` extension methods
+- Moved `hashchange` to be emitted on `IWindow`
+- Added option to avoid consuming character references (#494)
+- Added more pseudo elements for GCPM
+- Fixed character position starting at normalized CRLF (#786)
+- Improved setting `Href` in `Url`
+- Fixed crash for invalid attribute names during SVG parsing (#795)
+- Added more punycode replacement characters on .NET Standard 1.3 (#797)
+- Added use of correct hostname IDN on .NET Standard 2.0 and .NET Framework 4.6 (#797)
+- Added ability to delay load in `Document` (#815)
+
+# 0.12.1
+
+Released on Wednesday, May 15 2019.
+
+- Binary version fix
+- Updated documentation regarding AngleSharp.Js
+
+# 0.12.0
+
+Released on Thursday, May 2 2019.
+
+- Added `GetExtension` helper to `MimeTypeNames`
+- Improved extension capability for document fragment parsing
+- Added `Index` and more documentation to `TextPosition` (#787)
+- Added ability to create a selector for an element (#784)
+- Enhanced documentation (#776, #774, #771)
+- Fixed DOM name attribute in `AdjacentPosition` (#775)
+- Fixed bug regarding `set-cookie` header (#768)
+- Added attribute start position in token (#766)
+- Added support for XML processing instruction (#761)
+- Fixed serialization of xmlns attributes (#760)
+- Added `ISourceReference` for source position retrieval (#754)
+
+# 0.11.0
+
+Released on Monday, February 11 2019.
+
+- Moved everything from `AngleSharp.Xml` to its own library (#139)
+- Added more examples regarding forms (#242)
+- Moved `ISvgDocument` and `AutoSelectedMarkupFormatter` to AngleSharp.Xml
+- Improved fragment parsing (#594)
+- Fixed inconsistent behavior in fragment parsing (#741)
+- Improved migration documentation (#743)
+- Fixed internal bug in `link` resolution (#753)
+- Removed `SetDefault` function from `Configuration`
+
+# 0.10.1
+
+Released on Monday, January 7 2019.
+
+- Added .NET Standard 1.3 target (#738)
+- Fixed missing reference to `System.Encoding.CodePages` (#740)
+- Fixed invalid context of `OuterHtml` parsing (#741)
+
+# 0.10.0
+
+Released on Friday, January 4 2019.
+
+- Removed CSS parser from AngleSharp.Core (#139)
+- Improvements to CSS selector evaluation (#352, #550)
+- Fixed bug in `location.assign` (#496)
+- Introduced the concept of scope to selectors (#440)
+- Improved the `IEntityProvider` (#442)
+- Fixed parsing the Cookie header (#431)
+- Some fixes regarding attributes (#434)
+- Pseudo-class `:has()` improvements (#439)
+- Allow underscores in URLs (#445)
+- Improved XML namespace handling (#448)
+- Fixed the insert method (#449)
+- Restructured services and configuration (#454)
+- Fixed trailing comments bug (#459)
+- Make AngleSharp build on Linux (#460)
+- Corrected "specifity" (#463)
+- Optimized node iteration allocations (#476)
+- Improved cookie handling for path-dependent cookies (#477)
+- Optimized tag name allocations (#479)
+- Micro-Optimized `CharacterData.Append()` (#481)
+- Fixed culture-specific number parsing (#482)
+- Fast resource dictionary lookup (#485)
+- Introduced the `ISelectorVisitor` to get selector information (#487)
+- Fixed multi-threading element initialization bug (#489)
+- Extended the attribute changed callback with `IAttributeObserver` (#491)
+- Fixed computation of `href` (#501)
+- General cookie handling improvements (#519, #548, #607, #702)
+- Solved potential encoding issues in .NET Core (#534)
+- Improved parsing of invalid HTML tags (#543)
+- Improved the default requester (#572)
+- Updated parts to adhere to HTML 5.2 (#618)
+- Added support for parsing `noframes` (#631)
+- Fixed build on Visual Studio 2017 (#679)
+- Updated to new csproj format (#713)
+- Fixed parser mode selection w.r.t. templates (#735)
+- Placed extensions close to their instances
+- Exposed the `ILinkRelationFactory` interface and default implementation
+- Exposed the `IInputTypeFactory` interface and default implementation
+- Reordered events for requesters and parsers
+
+# 0.9.11.0
+
+Released on Friday, November 23 2018.
+
+- Prevent entity overflow (#716)
+- Fixed bug in URL parser (#711)
+- Include setup to configure default `HttpWebRequest` (#700)
+
+# 0.9.10.0
+
+Released on Sunday, July 15 2018.
+
+- `ColSpan` default should be 1 (#689)
+- `RowSpan` default should be 1 (#688)
+- Expose image source set via `SourceSet.Parse` (#682)
+- Implemented case insensitive attribute selector (#666)
+- Fixed invalid date in `MemoryCookieProvider` (#663)
+
+# 0.9.9.2
+
+Released on Tuesday, March 13 2018.
+
+- Provided `Tokenize` extension method for `TextSource` (#636)
+- Replaced Conditional Weak Table for performance gains (#637)
+- Fixed a bug for non-Unicode characters to stop parsing (#590)
+- Fixed weird `iframe` behavior to self-load (#581)
+
+# 0.9.9.1
+
+Released on Wednesday, January 3 2017.
+
+- Fixed build (#566)
+- Several bugfixes (#587, see: #491, #406, #512, and #544)
+- Memory improvement (#588)
+- Corrected casing (#589)
+- Fixed wrong default for `Url` ports (#624)
+- Fixed behavior on empty string selectors (#601)
+- Fixed multiple slashes stack overflow (#613)
+- Fixed parsing with initial comment (#610)
+- Fixed cookie time format handling (#599, #598)
+- Fixed stack overflow when parsing (#570)
+- Initialize default `Request` content (#567)
+
+# 0.9.9.0
+
+Released on Friday, October 7 2016.
+
+- Attribute API refinements (#422)
+- Cookies are now sent for all requests (#420)
+- Fixed DOM attribute name culture bug (#419)
+- Added CSS `word-wrap` (`overflow-wrap`) and `word-breakword` properties (#417)
+- Added CSS `text-align-last`, `text-anchor`, and `text-justify` properties (#413)
+- Added CSS `stroke-*` properties (#407, #409, #411)
+- Handle compression in HTTP responses (#416)
+- Included `StatusCode` property in `IDocument` (#408)
+- Improved default event loop (#404)
+- Fixed invalid entity errors in XML (#401)
+- Added HTML `mark` element (#399)
+
+# 0.9.8.1
+
+Released on Saturday, September 10 2016.
+
+- Added parsing callback (e.g., to retrieve line number) (#374)
+- Exposed the original `Source` in documents (#396)
+- Fixed a crash during redirects for requesters (#394)
+
+# 0.9.8.0
+
+Released on Saturday, September 3 2016.
+
+- Improved the `HttpRequester` (#387)
+- Extended the `CookieContainer` (#385)
+- Bug fixes for `ToCss()` (#382)
+- Added custom mime-type handling (#381)
+- Transport cookie on page redirect (#368)
+- Submit from Button (#354)
+- Implemented document unloading (#339)
+- Possibility to use strict mode (#336)
+- Included sub-resource integrity (#308)
+- `IHtmlCollection` helpers and API improvement (#293)
+- General performance improvements (#390)
+
+# 0.9.7.0
+
+Released on Sunday, July 17 2016.
+
+- Fixed some bugs (#343, #325, #341, #347, #355, #358)
+- Improved cookie handling (#280, #274, #365)
+- Added a document factory (#331)
+- `EventNames`, `AttributeNames` and others are available (#330)
+- Allow setting the active document (#281)
+- Improved Xamarin.iOS build (#85)
+- Changed service API slightly (#157)
+- Enhanced CoreCLR support (#270, #362)
+
+# 0.9.6.0
+
+Released on Thursday, May 5 2016.
+
+- Fixed some bugs (#304, #295, #286)
+- Provide XHTML markup formatter (#128, #313)
+- Dropped the `IEventAggregator` (#156)
+- Allow custom selector factories (#182, #233)
+- Open `TagNames` (#252)
+- Internal cosmetics and improvements (#279, #300)
+- Execute dynamically added scripts (#287)
+- Property declarations of CSS rules can be modified (#297)
+- Allow saving HTML DOM to a stream using `ToHtml` (#249)
+- React to attributes containing event handlers (#190)
+
+# 0.9.5.0
+
+Released on Wednesday, March 16 2016.
+
+- Fixed some bugs (#282, #273, #266, #260, #256, #250, #243, #234, #230, #229, #223, #208)
+- Added missing `bottom` CSS property (#253)
+- Invalid indices throw now exceptions (#232)
+- Provide new `dotnet` target (#271)
+- Changed behavior of `OpenAsync` to wait for resources (#158)
+- Added a set of extension methods for index-related selectors (#183)
+- Redesigned the request pipeline (#189)
+- Added extension method for submitting forms (#218)
+- `Style` is now available at `IElement` level (#193)
+- Enhanced to distinguish between the stylesheet types (#191)
+- Included extension methods to improve CSSOM modifications (#205)
+
+# 0.9.4.0
+
+Released on Wednesday, December 30 2015.
+
+- Added the link relation factory (#174)
+- Fixed a bug related to `document.write` (#173)
+- Delay document loading for resources (#178)
+- Improved HTTP requester performance (#194)
+- Added HTML imports (#179)
+- Include CSS color enhancements (#176)
+- Enhanced encoding with multibyte characters (#210, #212)
+- Use common `CssNode` as root (#145)
+- Added `Attr` extension method (#199)
+
+# 0.9.3.0
+
+Released on Thursday, October 8 2015.
+
+- Important bugfixes (#160, #161, #162, #165, #170)
+- XML parser enhancements
+- Ability to provide custom entities
+- Fixed `CompareDocumentPosition` (#168)
+
+# 0.9.2.0
+
+Released on Thursday, September 24 2015.
+
+- Some bugfixes (#150)
+- XML parser enhancement (#144)
+- JSON form submission (#126)
+- Changed license to MIT
+- Provide flex hex parsing (`Color`)
+
+# 0.9.1.0
+
+Released on Wednesday, September 9 2015.
+
+- Content of `iframe` can be set
+- Default `IEventLoop` provided
+- Improved the `HttpRequester`
+- Fixed obtaining ext. stylesheets without CSS
+- Added option to filter requests
+- Parse CSS Unicode escapes
+
+# 0.9.0.0
+
+Released on Wednesday, August 27 2015.
+
+- Implemented `srcset` attribute
+- Implemented `picture` element
+- Made Shadow DOM API spec. draft available
+- Custom `MimeType` datatype
+- Supports CSS round-tripping
+- Assembly is now strongly signed
+- Provide standard `IEventAggregator` implementation
+
+# 0.8.9.0
+
+Released on Wednesday, July 29 2015.
+
+- Improved resource fetching
+- Fixed waiting mechanism
+- Fixed form submission (avoid initial empty line)
+- HTML Parser perf. improved
+- Expose `INamedNodeMap` interface
+- Fixed problems with `@import`
+- Added the `@viewport` CSS rule
+
+# 0.8.8.0
+
+Released on Wednesday, July 22 2015.
+
+- Fixed a bug in the `HtmlDomBuilder`
+- Adjusted CSSOM for tolerating unknown rules
+- Parser enhancements
+
+# 0.8.7.0
+
+Released on Wednesday, July 15 2015.
+
+- CSS parser more flexible
+- Allow inline styles to be customized
+
+# 0.8.6.0
+
+Released on Wednesday, July 8 2015.
+
+- Owner's are now weakly referenced
+- The CSS parser supports unknown parsing
+- Fixed several bugs in the CSS parser
+- Fixed some smaller issues
+- The `AngleSharp.Linq` namespace is now `AngleSharp.Extensions`
+- Improved decoding algorithms
+- `PrettyStyleFormatter` for readable CSS output
+- `IStyleFormatter` with default `CssStyleFormatter` implementation
+- `DocumentRequest` static helpers (for `GET` and `POST`)
+- Default `ICookieService` implementation offered
+
+# 0.8.5.0
+
+Released on Wednesday, June 17 2015.
+
+- Fixed CSS property parsing
+- Implemented new CSS value converters
+- Fixed some cookie issues
+- Made `Configuration.Default` available
+- Changed some namespace assignments (e.g., `ScriptOptions`)
+- Fixed `HtmlLinkElement` issue
+- Fixed CSS twisted comment issue
+
+# 0.8.4.0
+
+Released on Wednesday, June 3 2015.
+
+- Added ability to wait for outstanding requests
+- Fixed missing dashes in hostnames
+- Changed CSS parser / tokenizer interaction
+- Reworked CSS value model
+- Extended `IMarkupFormatter` to serialize attributes
+- Included encoding service
+- Fixed `BrowsingContext` content from string loading
+- Improved HTML parser performance
+- Allow unknown properties in the CSSOM
+
+# 0.8.3.0
+
+Released on Wednesday, April 22 2015.
+
+- `PrettyMarkupFormatter` for readable output
+- Add some missing `ConfigureAwait(false)` calls
+- Included virtual response callback for the context
+- Add `IHtmlDocument` for completeness
+- Reintegrated `XmlParser` (only non-validating)
+- Changed `Configuration` to be immutable
+- All `IConfiguration` extensions return new object
+- Fixed smaller issues
+
+# 0.8.2.0
+
+Released on Wednesday, April 15 2015.
+
+- `DocumentBuilder` declared obsolete
+- Fixed bugs in DOM methods
+- Added `ToHtml()` overloads with custom formatters
+- Changed CSS value model
+- Fixed BOM in form submits
+- Changed case of tags to mimic browsers
+- Improved URL encoded form submission
+- Improved CSS shorthand properties
+- Fixed `Origin` of `Url`
+- Improved loading customization
+- Included `IEventAggregator` for events
+- Fixed several smaller bugs
+
+# 0.8.1.0
+
+Released on Tuesday, February 10 2015.
+
+- `IsInvalid` of `Url` corrected
+- Included .NET 4 version in the NuGet package
+- Included Silverlight version in the NuGet package
+- Fixed a few smaller bugs
+
+# 0.8.0.0
+
+Released on Monday, February 02 2015.
+
+- Major encoding improvements
+- DOM ranges are (weakly) connected and updated
+- Mutation callbacks are now included
+- Implemented parsing keyframe selectors
+- CSS document (rule) functions are checked
+- CSS value model finished
+- `HTMLObjectElement` can be serviced
+- All CSS4 selectors included (excluding `||`)
+- Small pseudo element integration
+- More services e.g. spellcheck available
+- Media features and CSS properties extended
+- HTML5 constraint form validation finished
+- All HTML5 input types are supported
+- Changed `DOM` namespace to `Dom` to fix naming
+- Finished `Url` implementation according to spec.
+
+# 0.7.0.0
+
+Released on Saturday, November 08 2014.
+
+- Native (callback based) asynchronous parsing
+- Interfaces for resource loading defined
+- Browsing context available / creation possible
+- Extension methods to `IConfiguration` available
+- More attributes added
+- Namespace changes for the attributes
+- CSS property architecture finalized
+
+# 0.6.1.0
+
+Released on Thursday, August 21 2014.
+
+- Minor bug fixes
+- DOM Events
+- Configuration improved
+- Performance improvements
+- `Url` origin
+- Core algorithms changed [WHATWG]
+- Scripting and styling interfaces
+
+# 0.6.0.0
+
+Released on Sunday, July 27 2014.
+
+- Refactored DOM model
+- Window implementation
+- Compute style information
+- More documentation
+- Tree traversal included
+- Refactored DOM attributes
+- Script engine interface
+- Style engine interface
+- Removed IOC container
+- New source code reader
+- Unified `Url` class
+
+# 0.5.1.0
+
+Released on Tuesday, May 27 2014.
+
+- Finished CSS properties
+- CSS parser update
+- Media rules implemented
+- Rewritten URL parsing
+- More documentation
+- Extended DocumentBuilder
+
+# 0.5.0.0
+
+Released on Monday, April 21 2014.
+
+- Support for Legacy version of AngleSharp
+- Updated styling
+- Removed XML parser
+- API renewal
+- Dependency Injection update
+- New CSS value model
+- More DOM properties
+- CSS properties added
+- Finished form submission
+
+# 0.4.0.0
+
+Released on Thursday, November 21 2013.
+
+- DTD parsing improved
+- Rewritten CSS parser
+- More methods and DOM completeness
+- XML validation
+
+# 0.3.7.0
+
+Released on Wednesday, September 11 2013.
+
+- Namespaces fully included
+- Doctype improved
+- DTD parsing finished
+- Cleanup
+- CSS rules extended
+- CSS functions added
+
+# 0.3.6.0
+
+Released on Tuesday, September 03 2013.
+
+- Performance improvements
+- Fixed CSS selector
+- More documentation
+- Live collection
+- Started form submission
+- Fixed double-escaped script tags
+- Improved parsing of inline styling
+
+# 0.3.5.0
+
+Released on Thursday, August 29 2013.
+
+- Finished template implementation
+- MathML and SVG elements
+- More annotations
+- `RelList` established
+- Improved TextNode
+
+# 0.3.4.0
+
+Released on Monday, August 26 2013.
+
+- More DOM properties
+- Hyper reference normalization
+- Introduced template element
+- Polish API
+
+# 0.3.3.0
+
+Released on Wednesday, August 21 2013.
+
+- Fixed double escaped script content
+- DOM extensions
+- Configuration object
+- Default HTTP requester
+
+# 0.3.2.0
+
+Released on Sunday, August 18 2013.
+
+- Fixed parser bugs
+- Improved entity retrieval
+- Extended CDATA parsing
+- Improved fragment parsing
+
+# 0.3.1.0
+
+Released on Wednesday, August 14 2013.
+
+- Improved character parsing
+- Cleanup
+- Line skipping for `textarea`, `pre`
+- Extended Location
+
+# 0.3.0.0
+
+Released on Thursday, July 18 2013.
+
+- Included XmlParser
+- DTD parsing
+- Added IOC container
+- Finished element type declaration
+
+# 0.2.9.0
+
+Released on Wednesday, July 10 2013.
+
+- Fixed GetElementsByName
+- Improved GetElementsByTagName
+- Converted to PCL project
+- Updated Children property
+
+# 0.2.8.0
+
+Released on Wednesday, July 03 2013.
+
+- Binding capabilities
+- CSS parser update
+- More decorations
+- Integrated table, frame
+- Added pooling
+
+# 0.2.7.0
+
+Released on Wednesday, June 26 2013.
+
+- Updated CSS serialization
+- Intermediate objects
+- More DOM attributes
+
+# 0.2.6.0
+
+Released on Wednesday, June 19 2013.
+
+- Improved API
+- QuerySelector implementation
+- Fixed DocumentUri bug
+
+# 0.2.5.0
+
+Released on Tuesday, June 18 2013.
+
+- HTML element re-ordering
+- Extended documentation
+- HtmlColor structure
+
+# 0.2.4.0
+
+Released on Sunday, June 16 2013.
+
+- Faster CSS parser
+- Initial CSS parser release
+
+# 0.2.3.0
+
+Released on Wednesday, June 12 2013.
+
+- StyleSheet integration
+- Ignore unknown CSS rules
+
+# 0.2.2.0
+
+Released on Sunday, June 09 2013.
+
+- Updated documentation
+- Fixed parsing bug
+
+# 0.2.1.0
+
+Released on Sunday, June 09 2013.
+
+- XML documentation
+- Merged DocumentBuilder and NodeBuilder
+
+# 0.2.0.0
+
+Released on Wednesday, June 05 2013.
+
+- Initial release

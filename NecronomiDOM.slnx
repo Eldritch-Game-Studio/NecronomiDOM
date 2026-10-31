@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="NecronomiDOM.Demo.csproj" />
+  <Project Path="addons/necronomidom/core/NecronomiDom.csproj" />
+  <Project Path="addons/necronomidom/vendor/AngleSharp/src/AngleSharp/AngleSharp.Core.csproj" />
+  <Project Path="tests/NecronomiDom.Tests/NecronomiDom.Tests.csproj" />
+</Solution>

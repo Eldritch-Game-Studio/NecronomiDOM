@@ -1,0 +1,14 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+config/name="NecronomiDOM Demo"
+run/main_scene="res://demo/demo.tscn"
+config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+
+[dotnet]
+project/assembly_name="NecronomiDOM.Demo"
+
+[gui]
+; Document layout positions boxes and glyphs at fractional CSS pixels.
+common/snap_controls_to_pixels=false

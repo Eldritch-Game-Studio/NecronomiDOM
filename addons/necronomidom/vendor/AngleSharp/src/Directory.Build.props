@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup Label="Identity">
+    <Product>AngleSharp</Product>
+    <Description>AngleSharp is the ultimate angle brackets parser library. It parses HTML5, CSS3, and XML to construct a DOM based on the official W3C specification.</Description>
+    <Authors>AngleSharp</Authors>
+    <Copyright>Copyright 2013-2026, AngleSharp.</Copyright>
+  </PropertyGroup>
+
+  <!-- Fallback for builds that bypass the Fallout script. A release takes its version from the top
+       entry of CHANGELOG.md, which build/Build.cs passes in as -p:Version, so this value only
+       affects a plain `dotnet build` and no longer needs bumping for a release. -->
+  <PropertyGroup Label="Versioning">
+    <Version>1.8.4</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Compilation">
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+</Project>

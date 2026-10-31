@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Engine-independent HTML/CSS/DOM core: URL policy, DOM, HTML import, CSS syntax/CSSOM, value grammars,
+       selectors, cascade, computed values, layout and display lists. Must not reference Godot. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>NecronomiDom</RootNamespace>
+    <AssemblyName>NecronomiDom</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- AngleSharp 1.8.4 source with the fragment-context patch in vendor/AngleSharp/patches. -->
+    <ProjectReference Include="../vendor/AngleSharp/src/AngleSharp/AngleSharp.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Css/Data/**/*.json;Css/Data/**/*.css" LogicalName="NecronomiDom.%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="NecronomiDom.Tests" />
+  </ItemGroup>
+</Project>

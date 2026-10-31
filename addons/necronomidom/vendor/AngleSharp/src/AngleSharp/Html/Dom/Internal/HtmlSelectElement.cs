@@ -1,0 +1,266 @@
+namespace AngleSharp.Html.Dom
+{
+    using AngleSharp.Dom;
+    using AngleSharp.Html;
+    using AngleSharp.Text;
+    using System;
+    using System.Linq;
+
+    /// <summary>
+    /// Represents the select element.
+    /// </summary>
+    sealed class HtmlSelectElement : HtmlFormControlElementWithState, IHtmlSelectElement
+    {
+        #region Fields
+
+        private OptionsCollection? _options;
+        private HtmlCollection<IHtmlOptionElement>? _selected;
+
+        #endregion
+
+        #region ctor
+        
+        public HtmlSelectElement(Document owner, String? prefix = null)
+            : base(owner, TagNames.Select, prefix)
+        {
+        }
+
+        #endregion
+
+        #region Index
+
+        public IHtmlOptionElement this[Int32 index]
+        {
+            get => Options.GetOptionAt(index);
+            set => Options.SetOptionAt(index, value);
+        }
+
+        #endregion
+
+        #region Properties
+
+        public Int32 Size
+        {
+            get => this.GetOwnAttribute(AttributeNames.Size).ToInteger(0);
+            set => this.SetOwnAttribute(AttributeNames.Size, value.ToString());
+        }
+
+        public Boolean IsRequired
+        {
+            get => this.GetBoolAttribute(AttributeNames.Required);
+            set => this.SetBoolAttribute(AttributeNames.Required, value);
+        }
+
+        public IHtmlCollection<IHtmlOptionElement> SelectedOptions => _selected ??= new HtmlCollection<IHtmlOptionElement>(Options.Where(m => m.IsSelected));
+
+        public Int32 SelectedIndex => Options.SelectedIndex;
+
+        public String? Value
+        {
+            get
+            {
+                var options = Options;
+
+                foreach (var option in options)
+                {
+                    if (option.IsSelected)
+                    {
+                        return option.Value;
+                    }
+                }
+
+                return null;
+            }
+            set => UpdateValue(value!);
+        }
+
+        public Int32 Length => Options.Length;
+
+        public Boolean IsMultiple
+        {
+            get => this.GetBoolAttribute(AttributeNames.Multiple);
+            set => this.SetBoolAttribute(AttributeNames.Multiple, value);
+        }
+
+        public IHtmlOptionsCollection Options => _options ??= new OptionsCollection(this);
+
+        public String Type => IsMultiple ? InputTypeNames.SelectMultiple : InputTypeNames.SelectOne;
+
+        #endregion
+
+        #region Methods
+
+        public void AddOption(IHtmlOptionElement element, IHtmlElement? before = null)
+        {
+            Options.Add(element, before);
+        }
+
+        public void AddOption(IHtmlOptionsGroupElement element, IHtmlElement? before = null)
+        {
+            Options.Add(element, before);
+        }
+
+        public void RemoveOptionAt(Int32 index)
+        {
+            Options.Remove(index);
+        }
+
+        /// <inheritdoc />
+        public override void DoFocus()
+        {
+            if (!IsDisabled)
+            {
+                IsFocused = true;
+            }
+        }
+
+        /// <inheritdoc />
+        public override void DoBlur()
+        {
+            if (IsFocused)
+            {
+                IsFocused = false;
+            }
+        }
+
+        #endregion
+
+        #region Internal Methods
+
+        internal override FormControlState SaveControlState()
+        {
+            return new FormControlState(Name!, Type, Value);
+        }
+
+        internal override void RestoreFormControlState(FormControlState state)
+        {
+            if (state.Type.Is(Type) && state.Name.Is(Name))
+            {
+                Value = state.Value;
+            }
+        }
+
+        internal override void ConstructDataSet(FormDataSet dataSet, IHtmlElement submitter)
+        {
+            foreach (var option in Options)
+            {
+                if (option.IsSelected && !option.IsDisabled &&
+                    !(option.ParentElement is IHtmlOptionsGroupElement group && group.IsDisabled))
+                {
+                    dataSet.Append(Name!, option.Value, Type);
+                }
+            }
+        }
+
+        private IHtmlOptionElement? GetDefaultOptionOrNull()
+        {
+            var options = Options;
+
+            for (var i = 0; i < options.Length; i++)
+            {
+                var option = options.GetOptionAt(i);
+
+                if (!option.IsDisabled && !(option.ParentElement is IHtmlOptionsGroupElement group && group.IsDisabled))
+                {
+                    return option;
+                }
+            }
+
+            return null;
+        }
+
+        internal override void SetupElement()
+        {
+            base.SetupElement();
+
+            if (!IsMultiple)
+            {
+                IHtmlOptionElement? selected = null;
+
+                foreach (var option in Options)
+                {
+                    if (option.IsSelected)
+                    {
+                        if (selected is not null)
+                        {
+                            selected.IsSelected = false;
+                        }
+
+                        selected = option;
+                    }
+                }
+
+                if (selected is null && Size <= 1 && GetDefaultOptionOrNull() is { } defaultOption)
+                {
+                    defaultOption.IsSelected = true;
+                }
+            }
+
+            var value = this.GetOwnAttribute(AttributeNames.Value);
+
+            if (value != null)
+            {
+                UpdateValue(value);
+            }
+        }
+
+        internal override void Reset()
+        {
+            var options = Options;
+            var selected = 0;
+            var maxSelected = 0;
+
+            for (var i = 0; i < options.Length; i++)
+            {
+                var option = options.GetOptionAt(i);
+                option.IsSelected = option.IsDefaultSelected;
+
+                if (option.IsSelected)
+                {
+                    maxSelected = i;
+                    selected++;
+                }
+            }
+
+            if (selected != 1 && !IsMultiple && options.Length > 0)
+            {
+                foreach (var option in options)
+                {
+                    option.IsSelected = false;
+                }
+
+                options[maxSelected].IsSelected = true;
+            }
+        }
+
+        internal void UpdateValue(String value)
+        {
+            var options = Options;
+            var hasMatch = false;
+
+            foreach (var option in options)
+            {
+                var selected = !hasMatch && option.Value.Is(value);
+                option.IsSelected = selected;
+                hasMatch |= selected;
+            }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        protected override Boolean CanBeValidated()
+        {
+            return !this.HasDataListAncestor();
+        }
+
+        protected override void Check(ValidityState state)
+        {
+            base.Check(state);
+            state.IsValueMissing = IsRequired && String.IsNullOrEmpty(Value);
+        }
+
+        #endregion
+    }
+}

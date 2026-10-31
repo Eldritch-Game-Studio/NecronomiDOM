@@ -1,0 +1,232 @@
+using System;
+using System.Collections.Generic;
+using NecronomiDom.Css.Cascade;
+using NecronomiDom.Css.Om;
+using NecronomiDom.Css.Values.Colors;
+using NecronomiDom.Dom;
+using NecronomiDom.Paint;
+
+namespace NecronomiDom.Layout;
+
+/// <summary>Immutable document opt-in; ordinary CSS retains CSS easing and premultiplied sRGB.</summary>
+public enum ForegroundColorTransitionProfile { Css, Simplified }
+
+public interface IAnimatedForegroundColorSource
+{
+    /// <summary>Only a running transition overrides inherited or authored foreground paint.</summary>
+    bool TryGetForegroundColor(Element element, out Rgba color);
+}
+
+/// <summary>
+/// Foreground state follows the existing color/opacity before-change, reversal, cancellation and
+/// deferred trusted-event conventions. Settled state never masks a live inherited parent color.
+/// </summary>
+public sealed class ForegroundColorTransitionController : IAnimatedForegroundColorSource
+{
+    private sealed class State
+    {
+        internal Rgba Target, Current, From, ReversingStart;
+        internal double StartTime, Duration, InitialElapsed, Shortening = 1;
+        internal CssCubicEasing Easing;
+        internal string? TimingKeyword;
+        internal bool Running, Started;
+    }
+    private readonly Dictionary<Element, State> _states = new();
+    private readonly List<(Element Target, TransitionEvent Event)> _events = new();
+    private double _now = double.NegativeInfinity;
+    private readonly Dictionary<Element, ForegroundColorDependencies> _before = new();
+    private readonly Dictionary<Element, Rgba> _beforePaint = new();
+    private readonly HashSet<Element> _seen = new();
+    private readonly List<Element> _removed = new();
+    private bool _dispatching;
+    public int Count => _states.Count;
+    public bool HasRunningTransitions { get; private set; }
+    public ForegroundColorTransitionProfile Profile { get; }
+    public ForegroundColorTransitionController(ForegroundColorTransitionProfile profile = ForegroundColorTransitionProfile.Css)
+    { Profile = profile; }
+    public bool Contains(Element element) => _states.ContainsKey(element);
+
+    public bool TryGetForegroundColor(Element element, out Rgba color)
+    {
+        if (_states.TryGetValue(element, out State? state) && state.Running)
+        { color = state.Current; return true; }
+        color = default; return false;
+    }
+
+    /// <summary>Reconciles the real visible tree using cached old cascade provenance, before changing any state.</summary>
+    public void ReconcileStyles(Document document, StyleEngine styles, double now)
+    {
+        Sample(now);
+        _beforePaint.Clear();
+        foreach (Element element in _before.Keys) BeforePaint(element);
+        _seen.Clear();
+        Observe(document, styles, now);
+        foreach (Element element in _before.Keys)
+            if (!_seen.Contains(element)) _removed.Add(element);
+        foreach (Element element in _removed) { Remove(element, now); _before.Remove(element); }
+        _removed.Clear();
+        _beforePaint.Clear();
+    }
+    private Rgba BeforePaint(Element element)
+    {
+        if (_beforePaint.TryGetValue(element, out Rgba current)) return current;
+        if (!TryGetForegroundColor(element, out current) && _before.TryGetValue(element, out var dependencies))
+        {
+            Rgba parent = dependencies.Parent == null ? default : BeforePaint(dependencies.Parent);
+            current = ForegroundColorTransitionStyle.PaintColor(in dependencies, parent);
+        }
+        _beforePaint[element] = current;
+        return current;
+    }
+    private void Observe(Node node, StyleEngine styles, double now)
+    {
+        if (node is Element element)
+        {
+            var values = styles.GetComputedValues(element);
+            if (values.GetPropertyValue("display") == "none") return;
+            var transition = ForegroundColorTransitionStyle.Resolve(values);
+            _seen.Add(element);
+            if (Contains(element) || transition.Enabled && (transition.Duration > 0 || transition.Delay > 0))
+            {
+                Rgba? before = _beforePaint.TryGetValue(element, out Rgba color) ? color : null;
+                UpdateStyle(element, values, now, before);
+            }
+            _before[element] = styles.GetForegroundColorDependencies(element);
+        }
+        for (Node? child = node.FirstChild; child != null; child = child.NextSibling) Observe(child, styles, now);
+    }
+
+    public void UpdateStyle(Element element, CSSStyleDeclaration computed, double now, Rgba? beforeChangeColor = null)
+    {
+        Clock(now);
+        var style = ForegroundColorTransitionStyle.Resolve(computed);
+        if (!_states.TryGetValue(element, out State? state))
+        {
+            Rgba initial = beforeChangeColor ?? style.Color;
+            state = new State { Current = initial, Target = initial };
+            _states.Add(element, state);
+            if (!beforeChangeColor.HasValue) return;
+        }
+        Advance(element, state, now);
+        if (!state.Running && beforeChangeColor.HasValue) state.Current = beforeChangeColor.Value;
+        if (state.Target == style.Color && style.Enabled) return;
+        Rgba from = state.Current;
+        bool reverse = state.Running && state.ReversingStart == style.Color;
+        double shortening = reverse ? Math.Clamp(Math.Abs(Progress(state, now) * state.Shortening + (1 - state.Shortening)), 0, 1) : 1;
+        Rgba reversingStart = reverse ? state.Target : from;
+        Cancel(element, state, now);
+        state.Target = style.Color;
+        double duration = style.Duration * shortening;
+        double delay = style.Delay < 0 ? style.Delay * shortening : style.Delay;
+        if (!style.Enabled || Math.Max(duration, 0) + delay <= 0 || from == state.Target)
+        {
+            state.Current = state.Target;
+            RefreshRunning();
+            return;
+        }
+        state.From = from; state.Duration = duration; state.StartTime = now + delay;
+        state.InitialElapsed = Math.Min(Math.Max(-delay, 0), duration);
+        state.Easing = style.Easing; state.Shortening = shortening; state.ReversingStart = reversingStart;
+        state.TimingKeyword = style.TimingKeyword;
+        state.Running = true; state.Started = false; HasRunningTransitions = true;
+        Queue(element, "transitionrun", state.InitialElapsed);
+        Advance(element, state, now);
+    }
+
+    /// <returns>True only when paint changes; event-free running samples allocate nothing.</returns>
+    public bool Sample(double now)
+    {
+        Clock(now);
+        bool changed = false, running = false;
+        foreach (var pair in _states)
+        {
+            Rgba previous = pair.Value.Current;
+            bool wasRunning = pair.Value.Running;
+            Advance(pair.Key, pair.Value, now);
+            // Retiring an override must reveal any independently moving inherited parent.
+            changed |= previous != pair.Value.Current || wasRunning != pair.Value.Running;
+            running |= pair.Value.Running;
+        }
+        HasRunningTransitions = running;
+        return changed;
+    }
+    public void Remove(Element element, double now)
+    {
+        Clock(now);
+        _before.Remove(element); _beforePaint.Remove(element);
+        if (!_states.Remove(element, out State? state)) return;
+        Advance(element, state, now); Cancel(element, state, now); RefreshRunning();
+    }
+    public void Clear(double now)
+    {
+        Clock(now);
+        foreach (var pair in _states) { Advance(pair.Key, pair.Value, now); Cancel(pair.Key, pair.Value, now); }
+        _states.Clear(); HasRunningTransitions = false;
+        _before.Clear(); _beforePaint.Clear(); _seen.Clear(); _removed.Clear();
+    }
+    public void DispatchEvents()
+    {
+        if (_dispatching) return;
+        _dispatching = true;
+        try
+        {
+            for (int i = 0; i < _events.Count; i++)
+            {
+                var pending = _events[i];
+                pending.Target.DispatchUserEvent(pending.Event);
+            }
+        }
+        finally { _events.Clear(); _dispatching = false; }
+    }
+    private void Advance(Element element, State state, double now)
+    {
+        if (!state.Running) return;
+        if (now < state.StartTime) { state.Current = state.From; return; }
+        if (!state.Started) { state.Started = true; Queue(element, "transitionstart", state.InitialElapsed); }
+        if (now < state.StartTime + state.Duration) state.Current = Interpolate(state.From, state.Target, Progress(state, now));
+        else
+        {
+            state.Current = state.Target; state.Running = false;
+            Queue(element, "transitionend", state.Duration);
+        }
+    }
+    private Rgba Interpolate(Rgba a, Rgba b, double progress)
+    {
+        if (Profile == ForegroundColorTransitionProfile.Simplified)
+        {
+            // Simplified: unclamped straight (non-premultiplied) float32 RGBA lerp.
+            float t = (float)progress;
+            return new(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t,
+                a.B + (b.B - a.B) * t, a.A + (b.A - a.A) * t);
+        }
+        var color = CssColorInterpolation.Interpolate(new("srgb", a.R, a.G, a.B, a.A),
+            new("srgb", b.R, b.G, b.B, b.A), "srgb", "shorter", progress);
+        return new((float)color.C1, (float)color.C2, (float)color.C3, (float)color.Alpha);
+    }
+    private double Progress(State state, double now)
+    {
+        if (state.Duration <= 0) return 1;
+        double progress = Math.Clamp((now - state.StartTime) / state.Duration, 0, 1);
+        if (Profile != ForegroundColorTransitionProfile.Simplified) return state.Easing.Sample(progress);
+        return PolynomialKeywordEasing.Sample(state.TimingKeyword, state.Easing, progress);
+    }
+    private void Cancel(Element element, State state, double now)
+    {
+        if (!state.Running) return;
+        state.Running = false;
+        Queue(element, "transitioncancel", Math.Clamp(now - state.StartTime, 0, state.Duration));
+    }
+    private void Queue(Element element, string type, double elapsed) => _events.Add((element,
+        new TransitionEvent(type, new TransitionEventInit { Bubbles = true, Cancelable = true,
+            PropertyName = "color", ElapsedTime = elapsed })));
+    private void Clock(double now)
+    {
+        if (!double.IsFinite(now) || now < _now) throw new ArgumentOutOfRangeException(nameof(now), "Transition clock must be finite monotonic seconds.");
+        _now = now;
+    }
+    private void RefreshRunning()
+    {
+        HasRunningTransitions = false;
+        foreach (State state in _states.Values) HasRunningTransitions |= state.Running;
+    }
+}

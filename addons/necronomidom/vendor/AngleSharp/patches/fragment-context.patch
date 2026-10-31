@@ -1,0 +1,855 @@
+--- a/src/AngleSharp/Html/Parser/HtmlParser.cs
++++ b/src/AngleSharp/Html/Parser/HtmlParser.cs
+@@ -416,7 +416,18 @@
+ 
+             if (contextElement is Element element)
+             {
+-                element = document.CreateElementFrom(element.LocalName, element.Prefix);
++                var original = element;
++                document.QuirksMode = original.Owner.QuirksMode;
++                element = (Element)original.Clone(document, false);
++                if (element is not IHtmlFormElement)
++                {
++                    for (var ancestor = original.ParentElement; ancestor is not null; ancestor = ancestor.ParentElement)
++                    {
++                        if (ancestor is not IHtmlFormElement) continue;
++                        ((Element)((Element)ancestor).Clone(document, false)).AppendChild(element);
++                        break;
++                    }
++                }
+                 var fragment = parser.ParseFragment(_options, element).DocumentElement;
+                 element.AppendNodes(fragment.ChildNodes.ToArray());
+                 return element.ChildNodes;
+--- a/src/AngleSharp/Html/Parser/HtmlDomBuilder.cs
++++ b/src/AngleSharp/Html/Parser/HtmlDomBuilder.cs
+@@ -268,10 +268,25 @@
+                 }
+ 
+                 var mode = element.SelectMode(last, _templateModes);
++                if (mode == HtmlTreeMode.BeforeHead && _document.Head is not null) mode = HtmlTreeMode.AfterHead;
+ 
+                 if (mode.HasValue)
+                 {
+                     _currentMode = mode.Value;
++                    if (_currentMode == HtmlTreeMode.InSelect && !last)
++                    {
++                        for (var ancestor = i - 1; ancestor >= 0; ancestor--)
++                        {
++                            var parent = _openElements[ancestor];
++                            if (!parent.Flags.HasFlag(NodeFlags.HtmlMember)) continue;
++                            if (parent.LocalName.Is(TagNames.Template)) break;
++                            if (parent.LocalName.Is(TagNames.Table))
++                            {
++                                _currentMode = HtmlTreeMode.InSelectInTable;
++                                break;
++                            }
++                        }
++                    }
+                     break;
+                 }
+             }
+@@ -293,7 +308,11 @@
+ 
+             var tagName = context.LocalName;
+ 
+-            if (tagName.IsOneOf(TagNames.Title, TagNames.Textarea))
++            if (!context.Flags.HasFlag(NodeFlags.HtmlMember))
++            {
++                _tokenizer.State = HtmlParseMode.PCData;
++            }
++            else if (tagName.IsOneOf(TagNames.Title, TagNames.Textarea))
+             {
+                 _tokenizer.State = HtmlParseMode.RCData;
+             }
+@@ -897,7 +916,7 @@
+                     {
+                         InBody(ref token);
+                     }
+-                    else if (tagName.IsOneOf(TagNames.Head, TagNames.NoScript))
++                    else if (tagName.Is(TagNames.NoScript))
+                     {
+                         RaiseErrorOccurred(HtmlParseError.TagInappropriate, ref token);
+                     }
+@@ -987,7 +1006,7 @@
+                         AddElement(frameSetElement, ref token);
+                         _currentMode = HtmlTreeMode.InFrameset;
+                     }
+-                    else if (TagNames.AllHeadNoTemplate.Contains(tagName))
++                    else if (TagNames.AllHeadNoTemplate.Contains(tagName) || tagName.Is(TagNames.Template))
+                     {
+                         RaiseErrorOccurred(HtmlParseError.TagMustBeInHead, ref token);
+                         var head = _document.Head;
+@@ -1408,59 +1427,6 @@
+                     _openElements[1].SetUniqueAttributes(ref tag);
+                 }
+             }
+-            else if (tagName.Is(TagNames.IsIndex))
+-            {
+-                RaiseErrorOccurred(HtmlParseError.TagInappropriate, ref tag);
+-
+-                if (_currentFormElement is null)
+-                {
+-                    var temp = StructHtmlToken.Open(TagNames.Form);
+-                    InBody(ref temp);
+-
+-                    if (tag.GetAttribute(AttributeNames.Action).Length > 0)
+-                    {
+-                        _currentFormElement!.SetAttribute(
+-                            null,
+-                            AttributeNames.Action,
+-                            tag.GetAttribute(AttributeNames.Action));
+-                    }
+-
+-                    temp = StructHtmlToken.Open(TagNames.Hr);
+-                    InBody(ref temp);
+-                    temp = StructHtmlToken.Open(TagNames.Label);
+-                    InBody(ref temp);
+-
+-                    if (tag.GetAttribute(AttributeNames.Prompt).Length > 0)
+-                    {
+-                        AddCharacters(tag.GetAttribute(AttributeNames.Prompt));
+-                    }
+-                    else
+-                    {
+-                        AddCharacters("This is a searchable index. Enter search keywords: ");
+-                    }
+-
+-                    var input = StructHtmlToken.Open(TagNames.Input);
+-                    input.AddAttribute(AttributeNames.Name, TagNames.IsIndex);
+-
+-                    for (var i = 0; i < tag.Attributes.Count; i++)
+-                    {
+-                        var attr = tag.Attributes[i];
+-
+-                        if (!attr.Name.IsOneOf(AttributeNames.Name, AttributeNames.Action, AttributeNames.Prompt))
+-                        {
+-                            input.AddAttribute(attr.Name, attr.Value);
+-                        }
+-                    }
+-
+-                    InBody(ref input);
+-                    temp = StructHtmlToken.Close(TagNames.Label);
+-                    InBody(ref temp);
+-                    temp = StructHtmlToken.Open(TagNames.Hr);
+-                    InBody(ref temp);
+-                    temp = StructHtmlToken.Close(TagNames.Form);
+-                    InBody(ref temp);
+-                }
+-            }
+             else if (TagNames.AllNested.Contains(tagName))
+             {
+                 RaiseErrorOccurred(HtmlParseError.TagCannotStartHere, ref tag);
+@@ -1631,6 +1597,8 @@
+             {
+                 case HtmlTokenType.Character:
+                 {
++                    token.RemoveNullCharacters();
++                    if (token.IsEmpty) return;
+                     ReconstructFormatting();
+                     AddCharacters(token.Data);
+                     _frameset = !token.HasContent && _frameset;
+@@ -2271,6 +2239,9 @@
+             {
+                 case HtmlTokenType.Character:
+                 {
++                    token.RemoveNullCharacters();
++                    if (token.IsEmpty) return;
++                    ReconstructFormatting();
+                     AddCharacters(token.Data);
+                     return;
+                 }
+@@ -2294,38 +2265,46 @@
+                     }
+                     else if (tagName.Is(TagNames.Option))
+                     {
+-                        if (CurrentNode.LocalName.Is(TagNames.Option))
++                        if (IsInSelectScope(TagNames.Option))
+                         {
+                             InSelectEndTagOption(ref token);
+                         }
+ 
++                        ReconstructFormatting();
+                         var option = _elementFactory.Create(_document, TagNames.Option);
+                         AddElement(option, ref token);
+                     }
+                     else if (tagName.Is(TagNames.Optgroup))
+                     {
+-                        if (CurrentNode.LocalName.Is(TagNames.Option))
++                        if (IsInSelectScope(TagNames.Option))
+                         {
+                             InSelectEndTagOption(ref token);
+                         }
+ 
+-                        if (CurrentNode.LocalName.Is(TagNames.Optgroup))
++                        if (IsInSelectScope(TagNames.Optgroup))
+                         {
+                             InSelectEndTagOptgroup(ref token);
+                         }
+ 
++                        ReconstructFormatting();
+                         var optgroup = _elementFactory.Create(_document, TagNames.Optgroup);
+                         AddElement(optgroup, ref token);
+                     }
+-                    else if (tagName.Is(TagNames.Button))
+-                    {
+-                        var button = _elementFactory.Create(_document, TagNames.Button);
+-                        AddElement(button, ref token);
++                    else if (tagName.IsOneOf(TagNames.Hr, TagNames.Keygen))
++                    {
++                        if (tagName.Is(TagNames.Hr))
++                        {
++                            if (IsInSelectScope(TagNames.Option)) InSelectEndTagOption(ref token);
++                            if (IsInSelectScope(TagNames.Optgroup)) InSelectEndTagOptgroup(ref token);
++                        }
++                        var element = _elementFactory.Create(_document, tagName);
++                        AddElement(element, ref token, acknowledgeSelfClosing: true);
++                        CloseCurrentNode();
+                     }
+                     else if (tagName.Is(TagNames.Select))
+                     {
+                         RaiseErrorOccurred(HtmlParseError.SelectNesting, ref token);
+-                        InSelectEndTagSelect();
++                        if (IsInSelectScope(TagNames.Select)) InSelectEndTagSelect();
+                     }
+                     else if (TagNames.AllInput.Contains(tagName))
+                     {
+@@ -2336,65 +2315,49 @@
+                             InSelectEndTagSelect();
+                             Home(ref token);
+                         }
++                        else if (IsFragmentCase)
++                        {
++                            InBody(ref token);
++                        }
+                     }
+                     else if (tagName.IsOneOf(TagNames.Template, TagNames.Script) || IsCustomElementEverywhere(tagName))
+                     {
+                         InHead(ref token);
+                     }
+-                    else if (tagName.Is(TagNames.Xmp))
++                    else
+                     {
+                         InBody(ref token);
+                     }
+-                    else if (!CurrentNode.LocalName.Is(TagNames.Select))
+-                    {
+-                        var element = _elementFactory.CreateUnknown(_document, tagName);
+-                        AddElement(element, ref token);
++
++                    return;
++                }
++                case HtmlTokenType.EndTag:
++                {
++                    var tagName = token.Name;
++
++                    if (tagName.Is(TagNames.Template) || IsCustomElementEverywhere(tagName))
++                    {
++                        InHead(ref token);
++                    }
++                    else if (tagName.Is(TagNames.Optgroup))
++                    {
++                        InSelectEndTagOptgroup(ref token);
++                    }
++                    else if (tagName.Is(TagNames.Option))
++                    {
++                        InSelectEndTagOption(ref token);
++                    }
++                    else if (tagName.Is(TagNames.Select) && IsInSelectScope(TagNames.Select))
++                    {
++                        InSelectEndTagSelect();
++                    }
++                    else if (tagName.Is(TagNames.Select))
++                    {
++                        RaiseErrorOccurred(HtmlParseError.SelectNotInScope, ref token);
+                     }
+                     else
+                     {
+-                        RaiseErrorOccurred(HtmlParseError.IllegalElementInSelectDetected, ref token);
+-                    }
+-
+-                    return;
+-                }
+-                case HtmlTokenType.EndTag:
+-                {
+-                    var tagName = token.Name;
+-
+-                    if (tagName.Is(TagNames.Template) || IsCustomElementEverywhere(tagName))
+-                    {
+-                        InHead(ref token);
+-                    }
+-                    else if (tagName.Is(TagNames.Optgroup))
+-                    {
+-                        InSelectEndTagOptgroup(ref token);
+-                    }
+-                    else if (tagName.Is(TagNames.Option))
+-                    {
+-                        InSelectEndTagOption(ref token);
+-                    }
+-                    else if (tagName.Is(TagNames.Select) && IsInSelectScope(TagNames.Select))
+-                    {
+-                        InSelectEndTagSelect();
+-                    }
+-                    else if (tagName.Is(TagNames.Select))
+-                    {
+-                        RaiseErrorOccurred(HtmlParseError.SelectNotInScope, ref token);
+-                    }
+-                    else if (!CurrentNode.LocalName.Is(TagNames.Select))
+-                    {
+-                        if (CurrentNode.LocalName.Is(tagName))
+-                        {
+-                            CloseCurrentNode();
+-                        }
+-                        else
+-                        {
+-                            RaiseErrorOccurred(HtmlParseError.TagDoesNotMatchCurrentNode, ref token);
+-                        }
+-                    }
+-                    else
+-                    {
+-                        RaiseErrorOccurred(HtmlParseError.TagCannotEndHere, ref token);
++                        InBody(ref token);
+                     }
+ 
+                     return;
+@@ -2685,14 +2648,7 @@
+             {
+                 case HtmlTokenType.Character:
+                 {
+-                    var str = token.TrimStart();
+-                    AddCharacters(str);
+-
+-                    if (!token.IsEmpty)
+-                    {
+-                        break;
+-                    }
+-
++                    AddFramesetCharacters(ref token);
+                     return;
+                 }
+                 case HtmlTokenType.Comment:
+@@ -2792,15 +2748,8 @@
+             {
+                 case HtmlTokenType.Character:
+                 {
+-                    var str = token.TrimStart();
+-                    AddCharacters(str);
+-
+-                    if (token.IsEmpty)
+-                    {
+-                        return;
+-                    }
+-
+-                    break;
++                    AddFramesetCharacters(ref token);
++                    return;
+                 }
+                 case HtmlTokenType.Comment:
+                 {
+@@ -2919,41 +2868,33 @@
+                 }
+                 case HtmlTokenType.Character:
+                 {
+-                    var str = token.TrimStart();
+                     ReconstructFormatting();
+-                    AddCharacters(str);
+-
+-                    if (!token.IsEmpty)
++                    AddFramesetCharacters(ref token);
++                    return;
++                }
++                case HtmlTokenType.Doctype:
++                {
++                    InBody(ref token);
++                    return;
++                }
++                case HtmlTokenType.StartTag:
++                {
++                    var tagName = token.Name;
++
++                    if (tagName.Is(TagNames.Html))
++                    {
++                        InBody(ref token);
++                    }
++                    else if (tagName.Is(TagNames.NoFrames))
++                    {
++                        InHead(ref token);
++                    }
++                    else
+                     {
+                         break;
+                     }
+ 
+                     return;
+-
+-                }
+-                case HtmlTokenType.Doctype:
+-                {
+-                    InBody(ref token);
+-                    return;
+-                }
+-                case HtmlTokenType.StartTag:
+-                {
+-                    var tagName = token.Name;
+-
+-                    if (tagName.Is(TagNames.Html))
+-                    {
+-                        InBody(ref token);
+-                    }
+-                    else if (tagName.Is(TagNames.NoFrames))
+-                    {
+-                        InHead(ref token);
+-                    }
+-                    else
+-                    {
+-                        break;
+-                    }
+-
+-                    return;
+                 }
+                 case HtmlTokenType.EndOfFile:
+                 {
+@@ -2963,6 +2904,23 @@
+             }
+ 
+             RaiseErrorOccurred(HtmlParseError.TokenNotPossible, ref token);
++        }
++
++        private void AddFramesetCharacters(ref StructHtmlToken token)
++        {
++            var text = token.Data;
++            var unexpected = false;
++            for (var i = 0; i < text.Length;)
++            {
++                if (text[i].IsSpaceCharacter())
++                {
++                    var start = i++;
++                    while (i < text.Length && text[i].IsSpaceCharacter()) i++;
++                    AddCharacters(new StringOrMemory(text.Memory.Slice(start, i - start)));
++                }
++                else { unexpected = true; i++; }
++            }
++            if (unexpected) RaiseErrorOccurred(HtmlParseError.TokenNotPossible, ref token);
+         }
+ 
+         #endregion
+@@ -3043,8 +3001,9 @@
+         /// <param name="token">The actual tag token.</param>
+         private void InSelectEndTagOption(ref StructHtmlToken token)
+         {
+-            if (CurrentNode.LocalName.Is(TagNames.Option))
+-            {
++            if (IsInSelectScope(TagNames.Option))
++            {
++                ClearStackBackTo(TagNames.Option);
+                 CloseCurrentNode();
+             }
+             else
+@@ -3059,15 +3018,9 @@
+         /// <param name="token">The actual tag token.</param>
+         private void InSelectEndTagOptgroup(ref StructHtmlToken token)
+         {
+-            if (_openElements.Count > 1 &&
+-                _openElements[_openElements.Count - 1].LocalName.Is(TagNames.Option) &&
+-                _openElements[_openElements.Count - 2].LocalName.Is(TagNames.Optgroup))
+-            {
+-                CloseCurrentNode();
+-            }
+-
+-            if (CurrentNode.LocalName.Is(TagNames.Optgroup))
+-            {
++            if (IsInSelectScope(TagNames.Optgroup))
++            {
++                ClearStackBackTo(TagNames.Optgroup);
+                 CloseCurrentNode();
+             }
+             else
+@@ -3637,8 +3590,14 @@
+             {
+                 case HtmlTokenType.Character:
+                 {
+-                    AddCharacters(token.Data.Replace(Symbols.Null, Symbols.Replacement));
+-                    _frameset = !token.HasContent && _frameset;
++                    AddCharacters(token.Data.Memory.Span.IndexOf(Symbols.Null) < 0 ? token.Data : token.Data.Replace(Symbols.Null, Symbols.Replacement));
++                    if (_frameset)
++                        foreach (var character in token.Data.Memory.Span)
++                            if (character != Symbols.Null && !character.IsSpaceCharacter())
++                            {
++                                _frameset = false;
++                                break;
++                            }
+                     return;
+                 }
+                 case HtmlTokenType.StartTag:
+@@ -3672,6 +3631,12 @@
+                 }
+                 case HtmlTokenType.EndTag:
+                 {
++                    if (token.Name.IsOneOf(TagNames.P, TagNames.Br))
++                    {
++                        RaiseErrorOccurred(HtmlParseError.TagCannotEndHere, ref token);
++                        ExitForeignContent(ref token);
++                        return;
++                    }
+                     var tagName = token.Name;
+                     var node = CurrentNode;
+ 
+@@ -3781,36 +3746,17 @@
+         private void ForeignNormalTag(ref StructHtmlToken tag)
+         {
+             RaiseErrorOccurred(HtmlParseError.TagCannotStartHere, ref tag);
+-
+-            if (!IsFragmentCase)
+-            {
+-                const NodeFlags Annotated = NodeFlags.HtmlTip | NodeFlags.MathTip | NodeFlags.HtmlMember;
+-                var node = CurrentNode;
+-
+-                do
+-                {
+-                    if (node.Flags.HasFlag(NodeFlags.MathMember) && node.LocalName.Is(TagNames.AnnotationXml))
+-                    {
+-                        var value = node.GetAttribute(default, AttributeNames.Encoding);
+-
+-                        if (value.Isi(MimeTypeNames.Html) || value.Isi(MimeTypeNames.ApplicationXHtml))
+-                        {
+-                            AddElement(ref tag);
+-                            return;
+-                        }
+-                    }
+-
+-                    CloseCurrentNode();
+-                    node = CurrentNode;
+-                }
+-                while ((node.Flags & Annotated) == NodeFlags.None);
+-
+-                Consume(ref tag);
+-            }
+-            else
+-            {
+-                ForeignSpecialTag(ref tag);
+-            }
++            ExitForeignContent(ref tag);
++        }
++
++        private void ExitForeignContent(ref StructHtmlToken tag)
++        {
++            const NodeFlags Annotated = NodeFlags.HtmlTip | NodeFlags.MathTip | NodeFlags.HtmlMember;
++            while ((CurrentNode.Flags & Annotated) == NodeFlags.None && !IsHtmlTip(CurrentNode))
++            {
++                CloseCurrentNode();
++            }
++            Home(ref tag);
+         }
+ 
+         #endregion
+@@ -3828,11 +3774,11 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (node.LocalName.Is(tagName))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(tagName))
+                 {
+                     return true;
+                 }
+-                else if (node.Flags.HasFlag(NodeFlags.Scoped))
++                else if (node.Flags.HasFlag(NodeFlags.Scoped) || node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(TagNames.Select))
+                 {
+                     return false;
+                 }
+@@ -3851,11 +3797,11 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (tags.Contains(node.LocalName))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && tags.Contains(node.LocalName))
+                 {
+                     return true;
+                 }
+-                else if (node.Flags.HasFlag(NodeFlags.Scoped))
++                else if (node.Flags.HasFlag(NodeFlags.Scoped) || node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(TagNames.Select))
+                 {
+                     return false;
+                 }
+@@ -3874,11 +3820,11 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (node.LocalName.Is(TagNames.Li))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(TagNames.Li))
+                 {
+                     return true;
+                 }
+-                else if (node.Flags.HasFlag(NodeFlags.Scoped) || (node.Flags.HasFlag(NodeFlags.HtmlListScoped)))
++                else if (node.Flags.HasFlag(NodeFlags.Scoped) || node.Flags.HasFlag(NodeFlags.HtmlListScoped) || node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(TagNames.Select))
+                 {
+                     return false;
+                 }
+@@ -3897,11 +3843,11 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (node.LocalName.Is(TagNames.P))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(TagNames.P))
+                 {
+                     return true;
+                 }
+-                else if (node.Flags.HasFlag(NodeFlags.Scoped) || node.LocalName.Is(TagNames.Button))
++                else if (node.Flags.HasFlag(NodeFlags.Scoped) || node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.IsOneOf(TagNames.Button, TagNames.Select))
+                 {
+                     return false;
+                 }
+@@ -3920,7 +3866,7 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (tags.Contains(node.LocalName))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && tags.Contains(node.LocalName))
+                 {
+                     return true;
+                 }
+@@ -3944,7 +3890,7 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (node.LocalName.Is(tagName))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(tagName))
+                 {
+                     return true;
+                 }
+@@ -3968,11 +3914,11 @@
+             {
+                 var node = _openElements[i];
+ 
+-                if (node.LocalName.Is(tagName))
++                if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(tagName))
+                 {
+                     return true;
+                 }
+-                else if (!node.Flags.HasFlag(NodeFlags.HtmlSelectScoped))
++                else if (node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.IsOneOf(TagNames.Select, TagNames.Template, TagNames.Html))
+                 {
+                     return false;
+                 }
+@@ -4291,7 +4237,7 @@
+         {
+             var node = CurrentNode;
+ 
+-            if (_foster && TagNames.AllTableMajor.Contains(node.LocalName))
++            if (_foster && node.Flags.HasFlag(NodeFlags.HtmlMember) && TagNames.AllTableMajor.Contains(node.LocalName))
+             {
+                 AddElementWithFoster(element);
+             }
+@@ -4360,7 +4306,7 @@
+             {
+                 var node = CurrentNode;
+ 
+-                if (_foster && TagNames.AllTableMajor.Contains(node.LocalName))
++                if (_foster && node.Flags.HasFlag(NodeFlags.HtmlMember) && TagNames.AllTableMajor.Contains(node.LocalName))
+                 {
+                     AddCharactersWithFoster(text);
+                 }
+@@ -4382,12 +4328,12 @@
+ 
+             while (--index != 0)
+             {
+-                if (_openElements[index].LocalName.Is(TagNames.Template))
++                if (_openElements[index].Flags.HasFlag(NodeFlags.HtmlMember) && _openElements[index].LocalName.Is(TagNames.Template))
+                 {
+                     _openElements[index].AppendText(text, _emitWhitespaceTextNodes);
+                     return;
+                 }
+-                else if (_openElements[index].LocalName.Is(TagNames.Table))
++                else if (_openElements[index].Flags.HasFlag(NodeFlags.HtmlMember) && _openElements[index].LocalName.Is(TagNames.Table))
+                 {
+                     table = true;
+                     break;
+@@ -4438,7 +4384,7 @@
+         {
+             var node = CurrentNode;
+ 
+-            while (!node.LocalName.Is(tagName) && !(node is HtmlHtmlElement || node is HtmlTemplateElement))
++            while (!(node.Flags.HasFlag(NodeFlags.HtmlMember) && node.LocalName.Is(tagName)) && !(node is HtmlHtmlElement || node is HtmlTemplateElement))
+             {
+                 CloseCurrentNode();
+                 node = CurrentNode;
+@@ -4452,7 +4398,7 @@
+         {
+             var node = CurrentNode;
+ 
+-            while (!tags.Contains(node.LocalName) && !node.LocalName.IsOneOf(TagNames.Html, TagNames.Template))
++            while (!(node.Flags.HasFlag(NodeFlags.HtmlMember) && (tags.Contains(node.LocalName) || node.LocalName.IsOneOf(TagNames.Html, TagNames.Template))))
+             {
+                 CloseCurrentNode();
+                 node = CurrentNode;
+--- a/src/AngleSharp/Dom/TagNames.cs
++++ b/src/AngleSharp/Dom/TagNames.cs
+@@ -826,7 +826,7 @@
+ 
+         internal static readonly HashSet<StringOrMemory> AllBodyClosed = new (OrdinalStringOrMemoryComparer.Instance)
+         {
+-            MenuItem, Param, Source, Track
++            Param, Source, Track
+         };
+ 
+         internal static readonly HashSet<StringOrMemory> AllNoScript = new (OrdinalStringOrMemoryComparer.Instance)
+@@ -843,13 +843,13 @@
+         {
+             Ol, Ul, Dl, Fieldset, Button, Figcaption, Figure, Article, Aside, BlockQuote,
+             Center, Address, Dialog, Dir, Summary, Details, Listing, Footer, Header, Nav,
+-            Section, Menu, Hgroup, Main, Pre
++            Section, Menu, Hgroup, Main, Pre, "search"
+         };
+ 
+         internal static readonly HashSet<StringOrMemory> AllBody = new (OrdinalStringOrMemoryComparer.Instance)
+         {
+             Ol, Dl, Fieldset, Figcaption, Figure, Article, Aside, BlockQuote, Center, Address,
+-            Dialog, Dir, Summary, Details, Main, Footer, Header, Nav, Section, Menu, Hgroup
++            Dialog, Dir, Summary, Details, Main, Footer, Header, Nav, Section, Menu, Hgroup, "search"
+         };
+ 
+         internal static readonly HashSet<StringOrMemory> AllBodyObsolete = new (OrdinalStringOrMemoryComparer.Instance)
+--- a/src/AngleSharp/Html/HtmlElementFactory.cs
++++ b/src/AngleSharp/Html/HtmlElementFactory.cs
+@@ -97,6 +97,7 @@
+         { TagNames.Tt, (document, prefix) => new HtmlTeletypeTextElement(document, prefix) },
+         { TagNames.Address, (document, prefix) => new HtmlAddressElement(document, prefix) },
+         { TagNames.Main, (document, prefix) => new HtmlSemanticElement(document, TagNames.Main, prefix) },
++        { "search", (document, prefix) => new HtmlSemanticElement(document, "search", prefix) },
+         { TagNames.Summary, (document, prefix) => new HtmlSemanticElement(document, TagNames.Summary, prefix) },
+         { TagNames.Center, (document, prefix) => new HtmlSemanticElement(document, TagNames.Center, prefix) },
+         { TagNames.Listing, (document, prefix) => new HtmlSemanticElement(document, TagNames.Listing, prefix) },
+@@ -131,7 +132,6 @@
+         { TagNames.Html, (document, prefix) => new HtmlHtmlElement(document, prefix) },
+         { TagNames.Area, (document, prefix) => new HtmlAreaElement(document, prefix) },
+         { TagNames.Embed, (document, prefix) => new HtmlEmbedElement(document, prefix) },
+-        { TagNames.MenuItem, (document, prefix) => new HtmlMenuItemElement(document, prefix) },
+         { TagNames.Slot, (document, prefix) => new HtmlSlotElement(document, prefix) },
+         { TagNames.NoScript, (document, prefix) => new HtmlNoScriptElement(document, prefix) },
+         { TagNames.NoEmbed, (document, prefix) => new HtmlNoEmbedElement(document, prefix) },
+@@ -144,7 +144,6 @@
+         { TagNames.Marquee, (document, prefix) => new HtmlMarqueeElement(document, prefix) },
+         { TagNames.Data, (document, prefix) => new HtmlDataElement(document, prefix) },
+         { TagNames.Plaintext, (document, prefix) => new HtmlSemanticElement(document, TagNames.Plaintext, prefix) },
+-        { TagNames.IsIndex, (document, prefix) => new HtmlIsIndexElement(document, prefix) },
+         { TagNames.Mark, (document, _) => new HtmlElement(document, TagNames.Mark) },
+         { TagNames.Sub, (document, _) => new HtmlElement(document, TagNames.Sub) },
+         { TagNames.Sup, (document, _) => new HtmlElement(document, TagNames.Sup) },
+--- a/src/AngleSharp/Html/Parser/HtmlForeignExtensions.cs
++++ b/src/AngleSharp/Html/Parser/HtmlForeignExtensions.cs
+@@ -26,12 +26,8 @@
+             { "baseprofile", "baseProfile" },
+             { "calcmode", "calcMode" },
+             { "clippathunits", "clipPathUnits" },
+-            { "contentscripttype", "contentScriptType" },
+-            { "contentstyletype", "contentStyleType" },
+             { "diffuseconstant", "diffuseConstant" },
+             { "edgemode", "edgeMode" },
+-            { "externalresourcesrequired", "externalResourcesRequired" },
+-            { "filterres", "filterRes" },
+             { "filterunits", "filterUnits" },
+             { "glyphref", "glyphRef" },
+             { "gradienttransform", "gradientTransform" },
+--- a/src/AngleSharp/Html/Parser/HtmlTokenizer.cs
++++ b/src/AngleSharp/Html/Parser/HtmlTokenizer.cs
+@@ -290,6 +290,7 @@
+ 
+                     case Symbols.Null:
+                         RaiseErrorOccurred(HtmlParseError.Null);
++                        Append(c);
+                         break;
+ 
+                     default:
+@@ -987,7 +988,7 @@
+ 
+                 State = HtmlParseMode.PCData;
+ 
+-                return ref NewProcessingInstruction();
++                return ref NewProcessingInstruction(c == Symbols.GreaterThan);
+             }
+         }
+ 
+@@ -2848,15 +2849,27 @@
+             return ref _token;
+         }
+ 
+-        private ref StructHtmlToken NewProcessingInstruction()
++        private ref StructHtmlToken NewProcessingInstruction(Boolean terminated)
+         {
+             if (SkipProcessingInstructions)
+             {
+                 return ref NewSkippedContent(HtmlTokenType.Comment);
+             }
+ 
+-            var content = FlushBufferFast();
+-            _token = StructHtmlToken.ProcessingInstruction(content, _position);
++            var raw = FlushBufferFast();
++            var content = raw.Memory.Slice(1);
++            if (terminated && content.Length > 0 && content.Span[content.Length - 1] == Symbols.QuestionMark)
++                content = content.Slice(0, content.Length - 1);
++            var targetLength = 0;
++            while (targetLength < content.Length && !content.Span[targetLength].IsSpaceCharacter()) targetLength++;
++            var target = content.Slice(0, targetLength).ToString();
++            if (content.Length == 0 && !terminated) return ref NewEof();
++            if (!target.IsXmlName() || target.Equals("xml", StringComparison.OrdinalIgnoreCase))
++                _token = StructHtmlToken.Comment(raw, _position);
++            else if (!terminated)
++                return ref NewEof();
++            else
++                _token = StructHtmlToken.ProcessingInstruction(new StringOrMemory(content), _position);
+             return ref _token;
+         }
+ 
+--- a/src/AngleSharp/Html/Parser/Tokens/Struct/StructHtmlToken.cs
++++ b/src/AngleSharp/Html/Parser/Tokens/Struct/StructHtmlToken.cs
+@@ -399,6 +399,22 @@
+         return new StringOrMemory(t);
+     }
+ 
++    internal void RemoveNullCharacters()
++    {
++        var count = 0;
++        foreach (var c in _name.Memory.Span) if (c == Symbols.Null) count++;
++        if (count == 0) return;
++#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
++        _name = new StringOrMemory(String.Create(_name.Length - count, _name, static (output, source) =>
++        {
++            var index = 0;
++            foreach (var c in source.Memory.Span) if (c != Symbols.Null) output[index++] = c;
++        }));
++#else
++        _name = new StringOrMemory(_name.ToString().Replace("\0", String.Empty));
++#endif
++    }
++
+     private static readonly Char[] Spaces = new Char[]
+     {
+         Symbols.Space,
+--- a/src/AngleSharp/Dom/Internal/ProcessingInstruction.cs
++++ b/src/AngleSharp/Dom/Internal/ProcessingInstruction.cs
+@@ -1,6 +1,7 @@
+ namespace AngleSharp.Dom
+ {
+     using System;
++    using AngleSharp.Text;
+ 
+     /// <summary>
+     /// Represents a processing instruction node.
+@@ -36,12 +37,15 @@
+         /// </summary>
+         internal static ProcessingInstruction Create(Document owner, String data)
+         {
+-            var nameLength = data.IndexOf(' ');
+-            var pi = new ProcessingInstruction(owner, nameLength <= 0 ? data : data.Substring(0, nameLength));
++            var nameLength = 0;
++            while (nameLength < data.Length && !data[nameLength].IsSpaceCharacter()) nameLength++;
++            var dataStart = nameLength;
++            while (dataStart < data.Length && data[dataStart].IsSpaceCharacter()) dataStart++;
++            var pi = new ProcessingInstruction(owner, data.Substring(0, nameLength));
+ 
+-            if (nameLength > 0)
++            if (dataStart < data.Length)
+             {
+-                pi.Data = data.Substring(nameLength);
++                pi.Data = data.Substring(dataStart);
+             }
+ 
+             return pi;

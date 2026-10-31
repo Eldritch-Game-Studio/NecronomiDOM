@@ -1,0 +1,12 @@
+<Project>
+  <!-- Import once from the host Godot project's .csproj:
+       <Import Project="addons/necronomidom/NecronomiDom.targets" /> -->
+  <PropertyGroup>
+    <NecronomiDomDirectory>$(MSBuildThisFileDirectory)</NecronomiDomDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The engine-independent core and vendored parser build as their own assemblies. -->
+    <Compile Remove="$(NecronomiDomDirectory)core/**;$(NecronomiDomDirectory)vendor/**" />
+    <ProjectReference Include="$(NecronomiDomDirectory)core/NecronomiDom.csproj" />
+  </ItemGroup>
+</Project>

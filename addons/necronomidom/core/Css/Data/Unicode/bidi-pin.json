@@ -1,0 +1,10 @@
+{
+  "unicode_version": "17.0.0",
+  "source_url": "https://www.unicode.org/Public/17.0.0/ucd/extracted/DerivedBidiClass.txt",
+  "license": "Unicode-3.0",
+  "normalization": "omit blank lines and trim trailing whitespace; substantive source lines retained",
+  "data_sha256": "1cd809429cd061dea6ae1f291dc96f1ec3da671d7eaf288d11dbcd21d321a1dc",
+  "generated_sha256": "45193f6c9677dbe65d3a7211b7d1a283f3cbed51fd204f4bd07503e9387e0176",
+  "strong_ranges": 564,
+  "generated_file": "Css/Selectors/UnicodeDirection.g.cs"
+}

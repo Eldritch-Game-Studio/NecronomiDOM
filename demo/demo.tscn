@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/necronomidom/runtime/DocumentHost.cs" id="1"]
+[ext_resource type="Script" path="res://demo/Demo.cs" id="2"]
+
+[node name="Demo" type="Node"]
+script = ExtResource("2")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Document" type="Control" parent="UI"]
+script = ExtResource("1")
+DocumentPath = "res://demo/grimoire.html"
