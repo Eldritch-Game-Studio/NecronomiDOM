@@ -1,7 +1,8 @@
 # Local AngleSharp patches
 
 This directory's parent is AngleSharp 1.8.4 (upstream commit `32981ded5b0c78c4a5afcfbb677ffb329078fdf8`), trimmed to
-the production library (`src/AngleSharp/**`, build properties, signing key, license, readme, changelog and logo).
+the production library (`src/AngleSharp/**`, build properties, signing key, license, readme, changelog and logo). The project builds only `net8.0` (upstream also builds
+netstandard2.0, net10.0 and .NET Framework) and compiles as C# 12, so it needs nothing beyond the .NET 8 SDK.
 
 `fragment-context.patch` is a cumulative unified diff against that upstream commit, already applied to the sources
 here. It fixes HTML tree construction in eight parser files:

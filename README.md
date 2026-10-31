@@ -61,12 +61,18 @@ while authoring instead of in a shipped build.
 
 ## Requirements
 
-- Godot 4.7 or newer, .NET edition, with the default `TextServerAdvanced`.
-- .NET SDK 10 (projects target `net10.0`).
+- Godot 4.7 or newer, **.NET edition** (NecronomiDOM is C#).
+- Nothing else to install: it targets `net8.0`, the default of Godot C# projects, and needs no engine
+  modules.
 
 ## Add it to your project
 
-You need Godot 4.7+ **.NET edition** and the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+### From the Godot Asset Store
+
+Search for **NecronomiDOM** in the editor's **AssetLib** tab (or on [store.godotengine.org](https://store.godotengine.org/))
+and install it; it lands in `res://addons/necronomidom/`. Then do steps 1 and 3–6 below.
+
+### Step by step
 
 ### 1. Make sure the project uses C#
 
@@ -87,23 +93,22 @@ Copy the `addons/necronomidom/` folder from this repository into your project, s
 
 You only need `addons/necronomidom/`; the demo, tests and docs stay behind.
 
-### 3. Edit your `.csproj`
+### 3. Add one line to your `.csproj`
 
-Open your project's `.csproj` (next to `project.godot`). Set the target framework to `net10.0` (Godot creates
-projects with `net8.0`) and add the `Import` line:
+Open your project's `.csproj` (next to `project.godot`) and add the `Import` line before `</Project>`:
 
 ```xml
 <Project Sdk="Godot.NET.Sdk/4.7.2">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
   <Import Project="addons/necronomidom/NecronomiDom.targets" />
 </Project>
 ```
 
-Keep whatever else your file already contains. The import references the core library as its own assembly and
-compiles the Godot glue (`addons/necronomidom/runtime/`) into your game.
+This is the only manual step; Godot gives addons no way to change a project's build. The import references the core
+library as its own assembly and compiles the Godot glue (`addons/necronomidom/runtime/`) into your game.
 
 ### 4. Build
 

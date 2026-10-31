@@ -1,3 +1,4 @@
+#nullable enable
 using NecronomiDom.Layout;
 
 namespace NecronomiDom.Runtime;

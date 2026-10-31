@@ -2,8 +2,9 @@
   <!-- Engine-independent HTML/CSS/DOM core: URL policy, DOM, HTML import, CSS syntax/CSSOM, value grammars,
        selectors, cascade, computed values, layout and display lists. Must not reference Godot. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <!-- net8.0 / C# 12: the defaults of Godot 4 C# projects and the .NET 8 SDK. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>NecronomiDom</RootNamespace>

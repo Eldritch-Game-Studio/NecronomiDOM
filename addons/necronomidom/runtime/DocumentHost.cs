@@ -1,3 +1,4 @@
+#nullable enable
 using Godot;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Dom;

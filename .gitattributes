@@ -1,5 +1,11 @@
+# Normalize line endings for all files that Git considers text files.
 * text=auto eol=lf
 *.otf binary
 *.ttf binary
 *.png binary
 *.snk binary
+
+# Asset Store / GitHub ZIP downloads contain only the addon.
+/** export-ignore
+/addons !export-ignore
+/addons/** !export-ignore

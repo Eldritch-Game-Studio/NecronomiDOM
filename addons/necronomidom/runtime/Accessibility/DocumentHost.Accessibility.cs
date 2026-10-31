@@ -1,3 +1,4 @@
+#nullable enable
 using Godot;
 using NecronomiDom.Accessibility;
 using NecronomiDom.Dom;
