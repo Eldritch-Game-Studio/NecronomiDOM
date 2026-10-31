@@ -10,6 +10,23 @@ parses them into a live DOM, runs the CSS cascade, lays the document out and pai
 
 The demo (`demo/grimoire.html` + `grimoire.css`) rendered by stock Godot 4.7.2, Forward+, 1280×720.
 
+## Live interfaces, not just menus
+
+![NecronomiDOM rendering scrolling HTML elements, CSS arrow shapes, state feedback and live text updates in Godot](docs/images/rhythmchart.gif)
+
+HTML/CSS can drive continuously changing game interfaces—not just static screens. This recording demonstrates:
+
+- **Live DOM updates:** C# creates elements, updates text and changes styles while the interface is running.
+- **Positioned layout:** independently moving elements and variable-height indicators inside a clipped playfield.
+- **CSS geometry and styling:** arrow shapes built from polygons and rectangles, 2D transforms, borders and rounded corners.
+- **State-driven feedback:** class changes restyle active elements and status text; numeric readouts and a progress bar update alongside them.
+- **Native Godot rendering:** every visible UI element is painted through NecronomiDOM, without a browser or native UI widgets.
+
+Captured in Godot 4.7.2 Forward+ using a standalone rhythm-interface adaptation from Kraken's Keg.
+Movement and feedback are driven by C# updating the DOM, not CSS keyframe animations.
+
+### Addon capabilities
+
 - **DOM**: elements, attributes, events (`click`, pointer, keyboard, focus, input), `MutationObserver`, custom
   elements, shadow roots in the DOM API, CSSOM and CSS Typed OM from C#; a selector-based API and signals from
   GDScript.
