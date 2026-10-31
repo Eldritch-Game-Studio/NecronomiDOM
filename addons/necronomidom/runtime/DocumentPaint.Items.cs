@@ -3,6 +3,7 @@ using Godot;
 using NecronomiDom.Paint;
 
 namespace NecronomiDom.Runtime;
+[GodotClass]
 public partial class ShapedTextPaint : Node2D, INativePaintBounds
 {
     public AdvancedTextShaper Shaper { get; }
@@ -15,6 +16,7 @@ public partial class ShapedTextPaint : Node2D, INativePaintBounds
     public override void _Draw() => Shaper.Draw(GetCanvasItem(), Run);
 }
 
+[GodotClass]
 public partial class NativeImagePaint : Node2D, INativePaintBounds
 {
     private static readonly StringName RasterRectParameter = "image_raster_rect";

@@ -25,11 +25,20 @@ public partial class DocumentHost
     private void PublishLiveDocument()
     {
         LiveHosts.Add(this);
+        OnDocumentLive();
         DocumentLive?.Invoke(this);
     }
 
+    /// <summary>Per-build hook (the GDExtension script API attaches its DOM listeners here).</summary>
+    partial void OnDocumentLive();
+
+    /// <summary>Per-build hook after a live document is withdrawn.</summary>
+    partial void OnDocumentWithdrawn();
+
     private void RetractLiveDocument()
     {
-        if (LiveHosts.Remove(this)) DocumentWithdrawing?.Invoke(this);
+        if (!LiveHosts.Remove(this)) return;
+        DocumentWithdrawing?.Invoke(this);
+        OnDocumentWithdrawn();
     }
 }

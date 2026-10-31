@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- GDExtension build of addons/necronomidom/runtime for standard (non-.NET) Godot: the same sources compiled against
+       the GDExtension .NET bindings and published with NativeAOT. See native/README.md. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <AssemblyName>NecronomiDom.Native</AssemblyName>
+    <RootNamespace>NecronomiDom.Runtime</RootNamespace>
+    <!-- IL2104/IL2111: trim notes from the bindings package itself; registration keeps the members it reflects on. -->
+    <NoWarn>$(NoWarn);IL2104;IL2111</NoWarn>
+    <DefineConstants>$(DefineConstants);NECRONOMIDOM_GDEXTENSION</DefineConstants>
+    <RuntimeSourceDir>$(MSBuildThisFileDirectory)../addons/necronomidom/runtime/</RuntimeSourceDir>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Godot.Bindings" Version="$(GodotBindingsVersion)" />
+    <PackageReference Include="Godot.SourceGeneration" Version="$(GodotBindingsVersion)" PrivateAssets="all" />
+    <ProjectReference Include="../addons/necronomidom/core/NecronomiDom.csproj" />
+    <RuntimeSource Include="$(RuntimeSourceDir)**/*.cs" />
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+  <PropertyGroup>
+    <GodotBindingsVersion Condition="'$(GodotBindingsVersion)' == ''">4.7.0-dev</GodotBindingsVersion>
+  </PropertyGroup>
+
+  <!-- GodotSharp declares engine virtuals public; the bindings declare them protected. The shared runtime sources use
+       GodotSharp's form, so this build compiles adapted copies: virtual overrides re-declared protected, and static
+       singleton calls routed through the bindings' Singleton instances. -->
+  <UsingTask TaskName="AdaptRuntimeSource" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Sources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputRoot ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+foreach (var item in Sources)
+{
+    string source = item.GetMetadata("FullPath");
+    string target = Path.Combine(OutputRoot, item.GetMetadata("RecursiveDir") + item.GetMetadata("Filename") + item.GetMetadata("Extension"));
+    string text = Regex.Replace(File.ReadAllText(source), @"public override (\S+ _[A-Z])", "protected override $1");
+    // GodotSharp exposes engine singletons as static classes; the bindings expose an instance through Singleton.
+    text = Regex.Replace(text, @"\b(Input|InputMap|AccessibilityServer|Time|ClassDB|RenderingServer|Engine|TextServerManager|ProjectSettings|DisplayServer)\.([A-Z]\w*)(?=\s*(\(|[+-]=))",
+        m => m.Groups[1].Value + ".Singleton." + m.Groups[2].Value);
+    if (text.Contains("using Server = Godot.AccessibilityServer;"))
+        text = Regex.Replace(text, @"\bServer\.([A-Z]\w*)(?=\s*\()", m => "Server.Singleton." + m.Groups[1].Value);
+    Directory.CreateDirectory(Path.GetDirectoryName(target));
+    if (!File.Exists(target) || File.ReadAllText(target) != text) File.WriteAllText(target, text);
+}
+]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="AdaptRuntimeSources" BeforeTargets="BeforeCompile;CoreCompile">
+    <PropertyGroup>
+      <AdaptedSourceDir>$(IntermediateOutputPath)runtime/</AdaptedSourceDir>
+    </PropertyGroup>
+    <AdaptRuntimeSource Sources="@(RuntimeSource)" OutputRoot="$(MSBuildProjectDirectory)/$(AdaptedSourceDir)" />
+    <ItemGroup>
+      <Compile Include="@(RuntimeSource->'$(AdaptedSourceDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+  </Target>
+</Project>

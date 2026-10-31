@@ -15,7 +15,8 @@ public interface INativePaintBounds
 /// content lives in its own World2D, not the parent's shared CanvasGroup backbuffer.
 /// DOM/input ownership remains with DocumentHost, outside these render-only viewports.
 /// </summary>
-public abstract partial class PolygonComposite : Node2D
+[GodotClass]
+public partial class PolygonComposite : Node2D
 {
     private readonly World2D _world = new();
     private readonly SubViewport _target;
@@ -24,7 +25,7 @@ public abstract partial class PolygonComposite : Node2D
     private readonly ViewportTexture _texture;
     private readonly Vector2[] _quad = new Vector2[4];
     private readonly Vector2[] _uv = new Vector2[4];
-    private readonly Color[] _colors = [Colors.White];
+    private readonly Color[] _colors = [new Color(1, 1, 1, 1)];
     private Rect2 _logicalBounds;
     private bool _measured, _hasPaint;
     private Vector2I _capacity = new(2, 2);
@@ -186,7 +187,7 @@ public abstract partial class PolygonComposite : Node2D
 
     public override void _Draw()
     {
-        if (_hasPaint) DrawPolygon(_quad, _colors, _uv, _texture);
+        if (_hasPaint) DrawPolygon(Packed.Vector2s(_quad), Packed.Colors(_colors), Packed.Vector2s(_uv), _texture);
     }
     public override void _Notification(int what)
     {

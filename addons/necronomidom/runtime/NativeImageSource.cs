@@ -43,14 +43,14 @@ public sealed class NativeImageSource : IImageSource, IBackgroundImageSource, ID
             {
                 using var file = Godot.FileAccess.Open(resolution.ResourcePath, Godot.FileAccess.ModeFlags.Read);
                 if (file == null) throw new InvalidOperationException("Cannot load image " + resolution.ResourcePath + ": " + Godot.FileAccess.GetOpenError());
-                bytes = file.GetBuffer((long)file.GetLength());
+                bytes = Packed.ToBytes(file.GetBuffer((long)file.GetLength()));
             }
             else bytes = ResourceDataBody.Decode(resolution);
             var image = new Image();
             Error error;
-            if (bytes.Length >= 8 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) error = image.LoadPngFromBuffer(bytes);
-            else if (bytes.Length >= 2 && bytes[0] == 255 && bytes[1] == 216) error = image.LoadJpgFromBuffer(bytes);
-            else if (bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8) && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)) error = image.LoadWebpFromBuffer(bytes);
+            if (bytes.Length >= 8 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) error = image.LoadPngFromBuffer(Packed.Bytes(bytes));
+            else if (bytes.Length >= 2 && bytes[0] == 255 && bytes[1] == 216) error = image.LoadJpgFromBuffer(Packed.Bytes(bytes));
+            else if (bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8) && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)) error = image.LoadWebpFromBuffer(Packed.Bytes(bytes));
             else { image.Dispose(); throw new NotSupportedException("Runtime image decoder supports PNG/JPEG/WebP; other media remain open: " + key); }
             if (error != Error.Ok) { image.Dispose(); throw new InvalidOperationException("Cannot decode image: " + key + ": " + error); }
             if (LinearComposition) LinearPremultiply(image);
@@ -80,14 +80,14 @@ public sealed class NativeImageSource : IImageSource, IBackgroundImageSource, ID
         // Decode before premultiplication/filtering, without the 8-bit linear quantization
         // of Image.SrgbToLinear(). Float textures have no automatic sRGB sampler decode.
         image.Convert(Image.Format.Rgbaf);
-        byte[] data = image.GetData();
+        byte[] data = Packed.ToBytes(image.GetData());
         Span<float> pixels = MemoryMarshal.Cast<byte, float>(data.AsSpan());
         for (int i = 0; i < pixels.Length; i += 4)
         {
             var c = new Color(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]).SrgbToLinear();
             pixels[i] = c.R * c.A; pixels[i + 1] = c.G * c.A; pixels[i + 2] = c.B * c.A;
         }
-        image.SetData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf, data);
+        image.SetData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf, Packed.Bytes(data));
     }
     internal NativeImageOwnership[] CaptureOwnership()
     {

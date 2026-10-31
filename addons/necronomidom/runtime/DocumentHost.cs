@@ -4,6 +4,11 @@ using NecronomiDom.Css.Cascade;
 using NecronomiDom.Dom;
 using NecronomiDom.Layout;
 using NecronomiDom.Paint;
+#if NECRONOMIDOM_GDEXTENSION
+using GodotStringDictionary = Godot.Collections.GodotDictionary<string, string>;
+#else
+using GodotStringDictionary = Godot.Collections.Dictionary<string, string>;
+#endif
 
 namespace NecronomiDom.Runtime;
 
@@ -12,17 +17,18 @@ namespace NecronomiDom.Runtime;
 /// A host is one document under its caller's nonzero CanvasLayer; no Godot Buttons/Labels or focus search.
 /// Unsupported profiles are exceptions, not fallback UI. See FlowLayout for the executable property set.
 /// </summary>
+[GodotClass]
 public partial class DocumentHost : Control
 {
     /// <summary>res:// (or user://ui/) HTML document loaded when the host becomes ready.</summary>
-    [Export] public string DocumentPath { get; set; } = "";
+    [Export, BindProperty(Name = "document_path")] public string DocumentPath { get; set; } = "";
     /// <summary>Font file for <see cref="FontFamily"/>, the family documents name in <c>font-family</c>.</summary>
-    [Export] public string FontPath { get; set; } = "res://addons/necronomidom/fonts/NotoSans-Regular.otf";
-    [Export] public string FontFamily { get; set; } = "Noto Sans";
+    [Export, BindProperty(Name = "font_path")] public string FontPath { get; set; } = "res://addons/necronomidom/fonts/NotoSans-Regular.otf";
+    [Export, BindProperty(Name = "font_family")] public string FontFamily { get; set; } = "Noto Sans";
     /// <summary>Additional family name → font file mappings; <c>@font-face</c> rules in document stylesheets also map families.</summary>
-    [Export] public Godot.Collections.Dictionary<string, string> FontPaths { get; set; } = new();
+    [Export, BindProperty(Name = "font_paths")] public GodotStringDictionary FontPaths { get; set; } = new();
     /// <summary>Ordered font files searched for code points a family's own face lacks (for example CJK or emoji fonts).</summary>
-    [Export] public string[] FallbackFontPaths { get; set; } = System.Array.Empty<string>();
+    [Export, BindProperty(Name = "fallback_font_paths")] public string[] FallbackFontPaths { get; set; } = System.Array.Empty<string>();
     public Document Document { get; private set; } = null!;
     public DisplayList DisplayList { get; private set; } = new();
     public StyleEngine Styles { get; private set; } = null!;

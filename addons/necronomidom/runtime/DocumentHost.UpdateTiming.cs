@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace NecronomiDom.Runtime;
 
@@ -21,13 +20,9 @@ public partial class DocumentHost
         // Measure every active document, emit only costly updates. This is diagnostic coverage,
         // never a whole-frame qualification filter; logging/subscribers are outside this span.
         if (ObserveEntryUpdates && (update.TotalMs >= 10 || update.AllocatedBytes >= 1_000_000))
-            Godot.GD.Print("NecronomiDOM document-update " + JsonSerializer.Serialize(new
-            {
-                DocumentPath, NodePath = GetPath().ToString(), ProcessFrame = Godot.Engine.GetProcessFrames(),
-                LayoutRevision, Timing = update,
-                Coverage = "Active DocumentHost._Process; emitted at >=10ms or >=1000000 caller-thread bytes. " +
-                    "Nested allocations/GC are inclusive; logging/subscribers and other callbacks are outside this span."
-            }));
+            // Emitted at >=10 ms or >=1 MB caller-thread allocation; nested allocations/GC are inclusive.
+            Godot.GD.Print($"NecronomiDOM document-update {DocumentPath} node={GetPath()} frame={Godot.Engine.GetProcessFrames()} " +
+                $"layout={LayoutRevision} {update}");
     }
 
     private struct UpdateTimer

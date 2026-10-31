@@ -1,0 +1,12 @@
+[configuration]
+
+entry_symbol = "necronomidom_init"
+compatibility_minimum = "4.7"
+
+[libraries]
+
+linux.x86_64 = "res://addons/necronomidom/bin/linux-x64/libnecronomidom.so"
+linux.arm64 = "res://addons/necronomidom/bin/linux-arm64/libnecronomidom.so"
+windows.x86_64 = "res://addons/necronomidom/bin/win-x64/necronomidom.dll"
+macos.arm64 = "res://addons/necronomidom/bin/osx-arm64/libnecronomidom.dylib"
+macos.x86_64 = "res://addons/necronomidom/bin/osx-x64/libnecronomidom.dylib"

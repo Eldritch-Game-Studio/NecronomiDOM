@@ -2,10 +2,16 @@
 using System;
 using Godot;
 using NecronomiDom.Paint;
+#if NECRONOMIDOM_GDEXTENSION
+using GodotArray = Godot.Collections.GodotArray;
+#else
+using GodotArray = Godot.Collections.Array;
+#endif
 
 namespace NecronomiDom.Runtime;
 
 /// <summary>Indexed triangle fans, with a retained vertex buffer updated only when DOM geometry changes.</summary>
+[GodotClass]
 public partial class PolygonPaint : Node2D, INativePaintBounds
 {
     private ArrayMesh? _mesh;
@@ -64,15 +70,15 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
             var indices = new int[(count - 2) * 3];
             for (int i = 0; i < count - 2; i++)
             { indices[i * 3] = 0; indices[i * 3 + 1] = i + 1; indices[i * 3 + 2] = i + 2; }
-            var arrays = new Godot.Collections.Array(); arrays.Resize((int)Mesh.ArrayType.Max);
-            arrays[(int)Mesh.ArrayType.Vertex] = vertices!;
-            arrays[(int)Mesh.ArrayType.Index] = indices;
+            var arrays = new GodotArray(); arrays.Resize(Packed.MeshArrayCount);
+            arrays[(int)Mesh.ArrayType.Vertex] = Packed.Vector3s(vertices!);
+            arrays[(int)Mesh.ArrayType.Index] = Packed.Ints(indices);
             _mesh ??= new ArrayMesh(); _mesh.ClearSurfaces();
             _mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: Mesh.ArrayFormat.FlagUseDynamicUpdate);
             SurfaceBuildCount++;
             _vertexCount = count; QueueRedraw();
         }
-        else _mesh!.SurfaceUpdateVertexRegion(0, 0, _vertexBytes);
+        else _mesh!.SurfaceUpdateVertexRegion(0, 0, Packed.Bytes(_vertexBytes));
         // Fit/composite only the background's actual border-box intersection, not out-of-box CSS clip vertices.
         minX = Math.Clamp(minX, FiniteFloat(run.Bounds.X), FiniteFloat(run.Bounds.X + run.Bounds.Width));
         minY = Math.Clamp(minY, FiniteFloat(run.Bounds.Y), FiniteFloat(run.Bounds.Y + run.Bounds.Height));
@@ -107,6 +113,7 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
 }
 
 /// <summary>Convex coverage applied to an isolated subtree, never a shared screen/backbuffer sampler.</summary>
+[GodotClass]
 public partial class PolygonClipGroup : PolygonComposite
 {
     private Image? _image;
@@ -161,6 +168,7 @@ public partial class PolygonClipGroup : PolygonComposite
     }
 }
 
+[GodotClass]
 public partial class RoundedRectClipGroup : PolygonComposite
 {
     private Rect _bounds;
@@ -183,6 +191,7 @@ public partial class RoundedRectClipGroup : PolygonComposite
     }
 }
 
+[GodotClass]
 public partial class PolygonOpacityGroup : PolygonComposite
 {
     private float _opacity = -1;

@@ -58,6 +58,7 @@ public sealed class NativeGradientPaintStore : IDisposable
 /// Color conversion reuses pure CSS interpolation via a segment-local float lookup palette.
 /// The palette samples only color progress, never spatial pixels, and is uploaded only when colors change.
 /// </summary>
+[GodotClass]
 public partial class NativeGradientPaint : Node2D, INativePaintBounds
 {
     private const int Intervals = 2048;
@@ -152,7 +153,7 @@ public partial class NativeGradientPaint : Node2D, INativePaintBounds
         if (_linear) c = c.SrgbToLinear();
         return new Color(c.R * c.A, c.G * c.A, c.B * c.A, c.A);
     }
-    public override void _Draw() => DrawRect(PaintBounds, Colors.White);
+    public override void _Draw() => DrawRect(PaintBounds, new Color(1, 1, 1, 1));
     public override void _Notification(int what)
     {
         if (what != NotificationPredelete) return;

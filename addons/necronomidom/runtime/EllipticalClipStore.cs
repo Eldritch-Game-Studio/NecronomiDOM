@@ -8,6 +8,7 @@ using NecronomiDom.Paint;
 namespace NecronomiDom.Runtime;
 
 /// <summary>New clip geometry on the existing isolated, tight device-ink, retained composite backend.</summary>
+[GodotClass]
 public partial class EllipticalClipGroup : PolygonComposite
 {
     private static readonly StringName ClipRectParameter = new("clip_rect");

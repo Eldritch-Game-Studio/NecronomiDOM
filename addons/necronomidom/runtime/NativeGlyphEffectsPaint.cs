@@ -8,6 +8,7 @@ namespace NecronomiDom.Runtime;
 /// <summary>Glyph effects borrow the painter's cached native positions. Destroy this item before the shaper clears.
 /// Fill, centered FreeType stroke and shadow masks share that run; blurred shadows retain one glyph-mask target
 /// until this dirty-layout paint item is replaced. There is no per-frame shaping, mask render or allocation.</summary>
+[GodotClass]
 public partial class NativeGlyphEffectsPaint : Node2D, INativePaintBounds
 {
     private readonly NativeShapedTextRun _shaped;
@@ -118,6 +119,7 @@ public partial class NativeGlyphEffectsPaint : Node2D, INativePaintBounds
     private static Rect2 Merge(Rect2 first, Rect2 second) => !first.HasArea() ? second : !second.HasArea() ? first : first.Merge(second);
 }
 
+[GodotClass]
 public partial class NativeGlyphMaskPaint : Node2D
 {
     private readonly NativeShapedTextRun _shaped;
@@ -127,11 +129,12 @@ public partial class NativeGlyphMaskPaint : Node2D
     { _shaped = shaped; _baseline = baseline; _outline = outline; }
     public override void _Draw()
     {
-        _shaped.Draw(GetCanvasItem(), _baseline, Colors.White);
-        if (_outline > 0) _shaped.Draw(GetCanvasItem(), _baseline, Colors.White, _outline);
+        _shaped.Draw(GetCanvasItem(), _baseline, new Color(1, 1, 1, 1));
+        if (_outline > 0) _shaped.Draw(GetCanvasItem(), _baseline, new Color(1, 1, 1, 1), _outline);
     }
 }
 
+[GodotClass]
 public partial class NativeGlyphShadowPaint : Node2D
 {
     private readonly NativeShapedTextRun _shaped;

@@ -5,6 +5,7 @@ namespace NecronomiDom.Runtime;
 
 /// <summary>One horizontal Gaussian pass shared by shadows with the same radius on a shaped run.
 /// The shadow canvas performs the vertical pass. Both are dirty-only child texture dependencies.</summary>
+[GodotClass]
 public partial class NativeGlyphBlurTarget : Node
 {
     private readonly World2D _world = new();
@@ -31,6 +32,7 @@ public partial class NativeGlyphBlurTarget : Node
     }
 }
 
+[GodotClass]
 public partial class NativeGlyphBlurPass : Node2D
 {
     private readonly ViewportTexture _source;
@@ -39,7 +41,7 @@ public partial class NativeGlyphBlurPass : Node2D
     internal NativeGlyphBlurPass(ViewportTexture source, Vector2I size, float sigma)
     {
         _source = source; _rect = new Rect2(Vector2.Zero, size);
-        _material = GlyphBlurMaterial.Create(sigma, new Vector2(1f / size.X, 1f / size.Y), Vector2.Right, Colors.White);
+        _material = GlyphBlurMaterial.Create(sigma, new Vector2(1f / size.X, 1f / size.Y), Vector2.Right, new Color(1, 1, 1, 1));
         Material = _material;
     }
     public override void _Draw() => DrawTextureRect(_source, _rect, false);

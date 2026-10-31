@@ -3,6 +3,11 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using NecronomiDom.Layout;
+#if NECRONOMIDOM_GDEXTENSION
+using GodotRidArray = Godot.Collections.GodotArray<Godot.Rid>;
+#else
+using GodotRidArray = Godot.Collections.Array<Godot.Rid>;
+#endif
 
 namespace NecronomiDom.Runtime;
 
@@ -12,7 +17,7 @@ public sealed partial class AdvancedTextShaper
     private sealed class Face : IDisposable
     {
         public readonly FontFile Font;
-        public readonly Godot.Collections.Array<Rid> Fonts;
+        public readonly GodotRidArray Fonts;
         public readonly Rid MetricRid;
         private readonly FontFile _metricFont;
         private readonly Rid _paintFont;
@@ -42,7 +47,7 @@ public sealed partial class AdvancedTextShaper
                 // Unhinted high-precision shaping is an engine extension absent from stock Godot 4.7; use it when bound.
                 if (HasHighPrecisionShaping) _metricFont.Call(SetHighPrecisionShaping, true);
                 MetricRid = _metricFont.GetRids()[0];
-                Fonts = new Godot.Collections.Array<Rid> { MetricRid };
+                Fonts = new GodotRidArray { MetricRid };
                 _paintFont = Font.GetRids()[0];
             }
             catch { _metricFont?.Dispose(); Font.Dispose(); throw; }
@@ -84,7 +89,7 @@ public sealed partial class AdvancedTextShaper
         }
         private static float CapHeightEm(FontFile font)
         {
-            var metrics = OpenTypeLineMetrics.Parse(font.Data);
+            var metrics = OpenTypeLineMetrics.Parse(Packed.Span(font.Data));
             return metrics.CapHeight > 0 ? (float)metrics.CapHeight / metrics.UnitsPerEm : 0.7f;
         }
         internal void CaptureOwnership(List<NativeFontOwnership> result)

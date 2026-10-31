@@ -10,14 +10,14 @@ namespace NecronomiDom.Runtime;
 public partial class DocumentHost
 {
     /// <summary>Input action that activates the focused element (joypad confirm; keyboard Enter/Space arrive as DOM keys).</summary>
-    [Export] public StringName SubmitAction { get; set; } = "ui_accept";
+    [Export, BindProperty(Name = "submit_action")] public StringName SubmitAction { get; set; } = "ui_accept";
     /// <summary>Input action that raises <see cref="CancelRequested"/>; Escape also raises it unless the DOM cancels the key.</summary>
-    [Export] public StringName CancelAction { get; set; } = "ui_cancel";
+    [Export, BindProperty(Name = "cancel_action")] public StringName CancelAction { get; set; } = "ui_cancel";
     /// <summary>Directional actions that move document focus between focusable elements.</summary>
-    [Export] public StringName NavigateLeftAction { get; set; } = "ui_left";
-    [Export] public StringName NavigateRightAction { get; set; } = "ui_right";
-    [Export] public StringName NavigateUpAction { get; set; } = "ui_up";
-    [Export] public StringName NavigateDownAction { get; set; } = "ui_down";
+    [Export, BindProperty(Name = "navigate_left_action")] public StringName NavigateLeftAction { get; set; } = "ui_left";
+    [Export, BindProperty(Name = "navigate_right_action")] public StringName NavigateRightAction { get; set; } = "ui_right";
+    [Export, BindProperty(Name = "navigate_up_action")] public StringName NavigateUpAction { get; set; } = "ui_up";
+    [Export, BindProperty(Name = "navigate_down_action")] public StringName NavigateDownAction { get; set; } = "ui_down";
     /// <summary>Raised once per cancel press (Escape or <see cref="CancelAction"/>) while the host accepts input.
     /// Closing screens, popping menus or vetoing the intent belongs to the application.</summary>
     public event Action? CancelRequested;
@@ -208,7 +208,8 @@ public partial class DocumentHost
             viewport.SetInputAsHandled();
             if (_waitForRelease) return;
             var translated = TranslateKey(key);
-            string text = key.Unicode > 0 ? char.ConvertFromUtf32((int)key.Unicode) : "";
+            int unicode = Packed.Unicode(key);
+            string text = unicode > 0 ? char.ConvertFromUtf32(unicode) : "";
             bool cancel = translated.Key == "Escape" && key.Pressed && !key.Echo && !_cancelDown;
             if (translated.Key == "Escape") _cancelDown = key.Pressed;
             bool allowed = documentInput.Key(translated, text);
@@ -225,7 +226,7 @@ public partial class DocumentHost
             Key.Left => "ArrowLeft", Key.Right => "ArrowRight", Key.Up => "ArrowUp", Key.Down => "ArrowDown",
             Key.Shift => "Shift", Key.Ctrl => "Control", Key.Alt => "Alt", Key.Meta => "Meta", Key.Backspace => "Backspace",
             Key.Delete => "Delete", Key.Home => "Home", Key.End => "End", Key.Pageup => "PageUp", Key.Pagedown => "PageDown",
-            _ => input.Unicode >= 0x20 ? char.ConvertFromUtf32((int)input.Unicode) : logical >= Key.A && logical <= Key.Z ? (input.ShiftPressed ? (char)logical : char.ToLowerInvariant((char)logical)).ToString() : "Unidentified"
+            _ => Packed.Unicode(input) >= 0x20 ? char.ConvertFromUtf32(Packed.Unicode(input)) : logical >= Key.A && logical <= Key.Z ? (input.ShiftPressed ? (char)logical : char.ToLowerInvariant((char)logical)).ToString() : "Unidentified"
         };
         string code = physical >= Key.A && physical <= Key.Z ? "Key" + (char)physical : physical >= Key.Key0 && physical <= Key.Key9 ? "Digit" + (char)physical : physical switch
         {

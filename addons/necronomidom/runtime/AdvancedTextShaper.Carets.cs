@@ -22,7 +22,7 @@ public sealed partial class AdvancedTextShaper
         if (text.InlineFragment != null)
             return new[] { new Vector2((float)InlineCaretX(text, start), (float)InlineCaretX(text, end)) };
         var run = GetShapedRun(text);
-        var spans = _server.ShapedTextGetSelection(run.ShapedRid, ContextOffset(text, start), ContextOffset(text, end));
+        var spans = Packed.ToArray(_server.ShapedTextGetSelection(run.ShapedRid, ContextOffset(text, start), ContextOffset(text, end)));
         for (int i = 0; i < spans.Length; i++)
             spans[i] = new Vector2((float)PaintX(run, text.LetterSpacing, spans[i].X), (float)PaintX(run, text.LetterSpacing, spans[i].Y));
         return spans;

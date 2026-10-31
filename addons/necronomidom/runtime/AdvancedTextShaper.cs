@@ -6,6 +6,11 @@ using System.Text;
 using Godot;
 using NecronomiDom.Layout;
 using NecronomiDom.Paint;
+#if NECRONOMIDOM_GDEXTENSION
+using GodotDictionary = Godot.Collections.GodotDictionary;
+#else
+using GodotDictionary = Godot.Collections.Dictionary;
+#endif
 
 namespace NecronomiDom.Runtime;
 
@@ -18,7 +23,7 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
     private readonly Func<int, int, bool> _hasGlyph;
     private readonly List<FontFaceRange> _items = new();
     private List<bool>? _trackingScalars;
-    private readonly Godot.Collections.Dictionary _trackingFeatures = new() { { "liga", 0 }, { "clig", 0 } };
+    private readonly GodotDictionary _trackingFeatures = new() { { "liga", 0 }, { "clig", 0 } };
     private readonly OpenTypeLineMetrics _rawLineMetrics;
     private readonly Dictionary<int, FontLineMetrics> _lineMetrics = new();
     private readonly Dictionary<(string Text, int Size, double Weight, double Tracking, bool Italic), (NativeShapedTextRun Run, Rect2? Ink, TextMetrics Metrics, long LayoutPass)> _runs = new();
@@ -35,7 +40,7 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
     /// </summary>
     public AdvancedTextShaper(FontFile font, IReadOnlyList<string> fallbackPaths)
     {
-        _rawLineMetrics = OpenTypeLineMetrics.Parse(font.Data);
+        _rawLineMetrics = OpenTypeLineMetrics.Parse(Packed.Span(font.Data));
         _server = TextServerManager.GetPrimaryInterface();
         if (!_server.IsClass("TextServerAdvanced")) throw new NotSupportedException("DocumentHost requires TextServerAdvanced, got " + _server.GetClass() + ": " + _server.GetName());
         _fallbackPaths = fallbackPaths;
@@ -50,7 +55,7 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
         return _faces[index] = new Face(GD.Load<FontFile>(path)
             ?? throw new InvalidOperationException("Missing fallback font: " + path));
     }
-    private bool HasGlyph(int face, int scalar) => FaceAt(face).Font.HasChar(scalar);
+    private bool HasGlyph(int face, int scalar) => Packed.HasChar(FaceAt(face).Font, scalar);
     private Face FaceOf(Rid metric)
     {
         foreach (var face in _faces)

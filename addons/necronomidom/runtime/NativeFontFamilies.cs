@@ -5,6 +5,11 @@ using Godot;
 using NecronomiDom.Dom;
 using NecronomiDom.Layout;
 using NecronomiDom.Paint;
+#if NECRONOMIDOM_GDEXTENSION
+using GodotStringDictionary = Godot.Collections.GodotDictionary<string, string>;
+#else
+using GodotStringDictionary = Godot.Collections.Dictionary<string, string>;
+#endif
 
 namespace NecronomiDom.Runtime;
 
@@ -33,7 +38,7 @@ public sealed partial class NativeFontFamilies : INativeFontFamilies, IDisposabl
         { "serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong" };
     private readonly List<AdvancedTextShaper> _distinct = new();
 
-    public NativeFontFamilies(string family, string path, Godot.Collections.Dictionary<string, string> mapped, string[] fallbacks)
+    public NativeFontFamilies(string family, string path, GodotStringDictionary mapped, string[] fallbacks)
     {
         _mapped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in mapped) _mapped.Add(pair.Key, pair.Value);

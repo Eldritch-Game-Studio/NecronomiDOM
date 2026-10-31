@@ -7,6 +7,7 @@ using NecronomiDom.Paint;
 namespace NecronomiDom.Runtime;
 
 /// <summary>One child canvas item per consecutive run; box instances have unmodulated style-row data.</summary>
+[GodotClass]
 public partial class DocumentPaint : Node2D
 {
     private readonly List<Node2D> _items = new();

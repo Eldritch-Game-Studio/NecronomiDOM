@@ -27,6 +27,15 @@ internal static class WebPaintShaders
     internal static Shader AsymmetricBorder => _asymmetricBorder ??= Load("asymmetric-border");
     internal static Shader LinearDocument => _linearDocument ??= Load("linear-document");
 
+    /// <summary>Drops the process-lifetime references when the GDExtension library unloads; the engine then frees the
+    /// shaders. GodotSharp builds never call this.</summary>
+    internal static void Release()
+    {
+        foreach (var shader in new[] { _box, _image, _polygonFill, _polygonClip, _ellipticalClip, _glyphShadow, _gradient, _asymmetricBorder, _linearDocument })
+            shader?.Dispose();
+        _box = _image = _polygonFill = _polygonClip = _ellipticalClip = _glyphShadow = _gradient = _asymmetricBorder = _linearDocument = null;
+    }
+
     private static Shader Load(string name) => GD.Load<Shader>(Root + name + ".gdshader")
         ?? throw new InvalidOperationException("Missing web paint shader: " + Root + name + ".gdshader");
 }

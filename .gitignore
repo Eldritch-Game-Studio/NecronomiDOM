@@ -5,3 +5,8 @@ obj/
 .vs/
 .idea/
 TestResults/
+
+# Native libraries and their manifest are build outputs (native/build.sh, release ZIPs).
+/addons/necronomidom/bin/
+/addons/necronomidom/necronomidom.gdextension
+/addons/necronomidom/necronomidom.gdextension.uid

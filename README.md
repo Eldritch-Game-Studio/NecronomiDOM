@@ -1,6 +1,6 @@
 # NecronomiDOM
 
-HTML and CSS user interfaces for Godot 4 (C#). Author screens as ordinary `.html` and `.css` files; NecronomiDOM
+HTML and CSS user interfaces for Godot 4, from GDScript or C#. Author screens as ordinary `.html` and `.css` files; NecronomiDOM
 parses them into a live DOM, runs the CSS cascade, lays the document out and paints it natively through Godot's
 `RenderingServer` and `TextServerAdvanced`, with pointer, keyboard, gamepad and screen-reader support.
 
@@ -11,7 +11,8 @@ parses them into a live DOM, runs the CSS cascade, lays the document out and pai
 The demo (`demo/grimoire.html` + `grimoire.css`) rendered by stock Godot 4.7.2, Forward+, 1280×720.
 
 - **DOM**: elements, attributes, events (`click`, pointer, keyboard, focus, input), `MutationObserver`, custom
-  elements, shadow roots in the DOM API, CSSOM and CSS Typed OM, all from C#.
+  elements, shadow roots in the DOM API, CSSOM and CSS Typed OM from C#; a selector-based API and signals from
+  GDScript.
 - **HTML**: standards-based parsing (a patched copy of [AngleSharp](https://github.com/AngleSharp/AngleSharp)); no
   scripting, no network.
 - **CSS**: selectors (including `:is`, `:where`, `:not`, `:has`, `:focus-visible`, `:hover`), custom properties,
@@ -61,41 +62,36 @@ while authoring instead of in a shipped build.
 
 ## Requirements
 
-- Godot 4.7 or newer, **.NET edition** (NecronomiDOM is C#).
-- Nothing else to install: it targets `net8.0`, the default of Godot C# projects, and needs no engine
-  modules.
+Godot 4.7 or newer, standard or .NET edition.
+
+| | Standard Godot (GDScript) | Godot .NET edition |
+|---|---|---|
+| Runs on | Windows x64, Linux x64/arm64, macOS (Apple silicon and Intel) | Platforms Godot .NET exports to (desktop, Android, iOS) |
+| API | `DocumentHost` node, selector methods, signals | The same, plus the full C# DOM, CSSOM and layout API |
+| Setup | Copy the addon | Copy the addon, add one line to the `.csproj` |
+
+The standard-edition build is a GDExtension: the same C# code compiled ahead of time into a native library, so
+no .NET runtime or SDK is needed. Web, Android and iOS exports are not supported by it yet.
 
 ## Add it to your project
 
-### From the Godot Asset Store
+### 1. Get the addon
 
-Search for **NecronomiDOM** in the editor's **AssetLib** tab (or on [store.godotengine.org](https://store.godotengine.org/))
-and install it; it lands in `res://addons/necronomidom/`. Then do steps 1 and 3–6 below.
+Download `NecronomiDOM.zip` from the [releases page](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases)
+(or install from the Godot Asset Store) and copy its `addons/necronomidom/` folder into your project, so you have
+`res://addons/necronomidom/`. Restart the editor so it loads the extension.
 
-### Step by step
+The release ZIP contains the prebuilt native libraries. A plain clone or GitHub source ZIP does not; build them with
+`native/build.sh` (see [Building the native libraries](#building-the-native-libraries)).
 
-### 1. Make sure the project uses C#
+### 2. GDScript projects: done
 
-If your project has no `.csproj` yet, open it in Godot and choose **Project → Tools → C# → Create C# solution**.
+Add a **DocumentHost** node (search for it in **Add Node**) under a `CanvasLayer` and set its **Document Path**.
 
-### 2. Copy the addon
+### 3. C# projects: add one line to your `.csproj`
 
-Copy the `addons/necronomidom/` folder from this repository into your project, so you have
-`res://addons/necronomidom/`. Either:
-
-- download the repository ZIP from GitHub and copy the folder out of it, or
-- clone it and copy the folder:
-
-  ```sh
-  git clone --depth 1 https://github.com/Eldritch-Game-Studio/NecronomiDOM.git
-  cp -r NecronomiDOM/addons/necronomidom your-project/addons/
-  ```
-
-You only need `addons/necronomidom/`; the demo, tests and docs stay behind.
-
-### 3. Add one line to your `.csproj`
-
-Open your project's `.csproj` (next to `project.godot`) and add the `Import` line before `</Project>`:
+C# projects can use the GDScript API as is. For the C# DOM API, open your project's `.csproj` (next to
+`project.godot`) and add the `Import` line before `</Project>`:
 
 ```xml
 <Project Sdk="Godot.NET.Sdk/4.7.2">
@@ -107,41 +103,29 @@ Open your project's `.csproj` (next to `project.godot`) and add the `Import` lin
 </Project>
 ```
 
-This is the only manual step; Godot gives addons no way to change a project's build. The import references the core
-library as its own assembly and compiles the Godot glue (`addons/necronomidom/runtime/`) into your game.
+Godot gives addons no way to change a project's build, so this one step is manual. The import references the core
+library as its own assembly and compiles the Godot glue (`addons/necronomidom/runtime/`) into your game; build with
+the editor's **Build** button or `dotnet build`. In C#, attach `res://addons/necronomidom/runtime/DocumentHost.cs` to a
+`Control` to get the C# class.
 
-### 4. Build
-
-Press **Build** in the Godot editor (top right), or run `dotnet build` in the project folder.
-
-### 5. Add a document
-
-Create `res://ui/menu.html` and `res://ui/menu.css` (see [Use](#use) below for an example). Then, in a scene:
-
-1. Add a **CanvasLayer**.
-2. Under it, add a **Control** and attach the script `res://addons/necronomidom/runtime/DocumentHost.cs`.
-3. In the inspector, set **Document Path** to `res://ui/menu.html`.
-
-Run the scene; the document fills the window.
-
-### 6. Recommended setting
+### 4. Recommended setting
 
 Turn off **Project Settings → GUI → Common → Snap Controls to Pixels**
 (`gui/common/snap_controls_to_pixels=false`); documents position boxes and glyphs at fractional pixels.
 
 ### Updating
 
-Replace `addons/necronomidom/` with the new version and rebuild.
+Replace `addons/necronomidom/` with the new version and restart the editor (C#: rebuild).
 
 ## Use
 
-Add a `DocumentHost` (a `Control`) under a `CanvasLayer` and point it at a document:
+Put a `DocumentHost` under a `CanvasLayer` and point it at a document:
 
 ```
 Main (Node)
 └── UI (CanvasLayer)
-    └── Document (Control, script: res://addons/necronomidom/runtime/DocumentHost.cs)
-        DocumentPath = "res://ui/menu.html"
+    └── Document (DocumentHost)
+        document_path = "res://ui/menu.html"
 ```
 
 ```html
@@ -150,7 +134,43 @@ Main (Node)
 <body><main><p id="status">Ready.</p><button id="start" autofocus>Start</button></main></body></html>
 ```
 
-Wire behavior in C#:
+### From GDScript
+
+```gdscript
+extends Node
+
+@onready var ui: DocumentHost = $UI/Document
+
+func _ready() -> void:
+    ui.clicked.connect(_on_clicked)
+    ui.cancel.connect(get_tree().quit)
+
+func _on_clicked(element_id: String) -> void:
+    if element_id == "start":
+        ui.set_text("#status", "Started.")
+```
+
+Elements are addressed by CSS selector (the first match); events report the `id` of the clicked element or its
+nearest ancestor with one.
+
+| Member | Purpose |
+|---|---|
+| `document_path`, `load_document(path)` | Document to show (`res://…`, or `user://ui/…`). |
+| `get_text` / `set_text(selector, text)` | Element text content. |
+| `get_attribute` / `set_attribute` / `remove_attribute(selector, name, …)` | Attributes. |
+| `has_class` / `add_class` / `remove_class` / `toggle_class(selector, class)` | Classes, which drive your CSS. |
+| `get_value` / `set_value(selector, value)` | `<input>` / `<textarea>` values. |
+| `focus_element(selector)`, `has_element(selector)`, `query_ids(selector)` | Focus, existence, ids of all matches. |
+| `listen(type)` + signal `dom_event(type, element_id)` | Any other DOM event, e.g. `"input"`, `"focusin"`. |
+| signals `clicked(element_id)`, `cancel()` | Clicks; Escape or the cancel action. |
+| `set_input_enabled(bool)`, `set_application_navigation(bool)`, `apply_text_scale(float)` | Input and scaling (see the table below). |
+| `font_path`, `font_family`, `font_paths`, `fallback_font_paths` | Fonts (see the table below). |
+| `submit_action`, `cancel_action`, `navigate_*_action` | Input actions. |
+
+### From C#
+
+With the `.csproj` import (step 3), attach `DocumentHost.cs` instead of using the native node, and the C# class
+exposes the whole DOM:
 
 ```csharp
 using NecronomiDom.Dom;
@@ -172,7 +192,7 @@ A host under a `CanvasLayer` fills the viewport; a host under another `Control` 
 `LoadDocument(path)` to switch documents. DOM changes made from C# re-layout on the next frame (or immediately via
 `FlushPendingLayout()`).
 
-### `DocumentHost` settings
+### `DocumentHost` settings (C# names)
 
 | Member | Default | Purpose |
 |---|---|---|
@@ -232,14 +252,32 @@ Two capabilities use engine APIs that stock Godot 4.7 does not expose. Necronomi
 
 ## Demo and tests
 
-The repository root is a Godot project with a demo (`demo/demo.tscn`):
+The repository root is a Godot project with two demos of the same page: `demo/gdscript/demo.tscn` (GDScript, any
+edition, needs the native library) and `demo/demo.tscn` (C#, .NET edition).
 
 ```sh
+native/build.sh                                      # native library for this machine
+godot --path . res://demo/gdscript/demo.tscn        # GDScript demo
 dotnet build NecronomiDOM.Demo.csproj
-godot --path .                          # run the demo
-godot --headless --path . -- --smoke    # lay out, click a button, print a summary, exit 0 on success
-dotnet test tests/NecronomiDom.Tests    # core library tests (no engine required)
+godot --path .                                       # C# demo (.NET edition)
+godot --headless --path . -- --smoke                 # C# smoke run: exit 0 on success
+dotnet test tests/NecronomiDom.Tests                 # core library tests (no engine required)
 ```
+
+## Building the native libraries
+
+`native/build.sh [RID…]` builds the GDExtension library for this machine (or the given runtime identifiers:
+`linux-x64`, `linux-arm64`, `win-x64`, `osx-arm64`, `osx-x64`) into `addons/necronomidom/bin/` and writes
+`addons/necronomidom/necronomidom.gdextension`. It needs the .NET 10 SDK and the C toolchain NativeAOT uses (clang on
+Linux, Xcode on macOS, Visual Studio build tools on Windows), and fetches and builds the pinned
+[Godot GDExtension .NET bindings](https://github.com/godotengine/godot-dotnet), which are not on NuGet yet. NativeAOT
+only compiles for the OS it runs on; the GitHub workflow builds every platform and assembles the release ZIP.
+
+The runtime sources are shared: `native/` compiles `addons/necronomidom/runtime/` against the bindings with
+`NECRONOMIDOM_GDEXTENSION` defined, and adds the GDScript API (`native/src/`).
+
+Known issue: on quit, a GDExtension build may print a few "RIDs … were leaked" warnings for paint meshes still awaiting
+.NET finalization. Memory does not grow while running (measured over 1000 re-layouts).
 
 ## Layout of this repository
 
@@ -250,7 +288,8 @@ dotnet test tests/NecronomiDom.Tests    # core library tests (no engine required
 | `addons/necronomidom/shaders/` | Canvas shaders used by the painter. |
 | `addons/necronomidom/fonts/` | Default font (Noto Sans). |
 | `addons/necronomidom/vendor/AngleSharp/` | Patched AngleSharp 1.8.4 HTML parser (see `patches/`). |
-| `demo/` | Example scene, document and C# script. |
+| `demo/` | Example document with C# and GDScript scenes. |
+| `native/` | GDExtension build for standard Godot: project, GDScript API, build script. |
 | `tests/` | NUnit tests for the core library. |
 
 ## License
