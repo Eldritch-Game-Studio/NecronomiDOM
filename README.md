@@ -64,19 +64,69 @@ while authoring instead of in a shipped build.
 - Godot 4.7 or newer, .NET edition, with the default `TextServerAdvanced`.
 - .NET SDK 10 (projects target `net10.0`).
 
-## Install
+## Add it to your project
 
-1. Copy `addons/necronomidom/` into your Godot project.
-2. Add one line to your project's `.csproj`:
+You need Godot 4.7+ **.NET edition** and the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
-   ```xml
-   <Import Project="addons/necronomidom/NecronomiDom.targets" />
-   ```
+### 1. Make sure the project uses C#
 
-   This references the engine-independent core library (`addons/necronomidom/core/NecronomiDom.csproj`) and keeps
-   its sources out of your game assembly. The Godot glue in `addons/necronomidom/runtime/` compiles into your game.
-3. Recommended: set **Project Settings → GUI → Common → Snap Controls to Pixels** to off
-   (`gui/common/snap_controls_to_pixels=false`); documents position boxes and glyphs at fractional pixels.
+If your project has no `.csproj` yet, open it in Godot and choose **Project → Tools → C# → Create C# solution**.
+
+### 2. Copy the addon
+
+Copy the `addons/necronomidom/` folder from this repository into your project, so you have
+`res://addons/necronomidom/`. Either:
+
+- download the repository ZIP from GitHub and copy the folder out of it, or
+- clone it and copy the folder:
+
+  ```sh
+  git clone --depth 1 https://github.com/Eldritch-Game-Studio/NecronomiDOM.git
+  cp -r NecronomiDOM/addons/necronomidom your-project/addons/
+  ```
+
+You only need `addons/necronomidom/`; the demo, tests and docs stay behind.
+
+### 3. Edit your `.csproj`
+
+Open your project's `.csproj` (next to `project.godot`). Set the target framework to `net10.0` (Godot creates
+projects with `net8.0`) and add the `Import` line:
+
+```xml
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <Import Project="addons/necronomidom/NecronomiDom.targets" />
+</Project>
+```
+
+Keep whatever else your file already contains. The import references the core library as its own assembly and
+compiles the Godot glue (`addons/necronomidom/runtime/`) into your game.
+
+### 4. Build
+
+Press **Build** in the Godot editor (top right), or run `dotnet build` in the project folder.
+
+### 5. Add a document
+
+Create `res://ui/menu.html` and `res://ui/menu.css` (see [Use](#use) below for an example). Then, in a scene:
+
+1. Add a **CanvasLayer**.
+2. Under it, add a **Control** and attach the script `res://addons/necronomidom/runtime/DocumentHost.cs`.
+3. In the inspector, set **Document Path** to `res://ui/menu.html`.
+
+Run the scene; the document fills the window.
+
+### 6. Recommended setting
+
+Turn off **Project Settings → GUI → Common → Snap Controls to Pixels**
+(`gui/common/snap_controls_to_pixels=false`); documents position boxes and glyphs at fractional pixels.
+
+### Updating
+
+Replace `addons/necronomidom/` with the new version and rebuild.
 
 ## Use
 
