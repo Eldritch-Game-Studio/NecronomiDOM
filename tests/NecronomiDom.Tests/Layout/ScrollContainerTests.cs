@@ -54,6 +54,25 @@ public sealed partial class ScrollContainerTests
         scroller.ScrollTo(10000, 10000); Assert.That((scroller.ScrollLeft, scroller.ScrollTop), Is.EqualTo((140d, 130d)));
         scroller.ScrollTo(-1, double.NaN); Assert.That((scroller.ScrollLeft, scroller.ScrollTop), Is.EqualTo((0d, 0d)));
     }
+    // A textarea scrolled to its end must still paint its last lines: its own text clip moves with the
+    // scroll offset, so it has to span every line, not just the first screenful.
+    [Test]
+    public void ScrolledTextareaKeepsLinesBelowTheFirstScreenfulInsideItsClip()
+    {
+        using var v = new View("<textarea id=log readonly></textarea>",
+            "#log{display:block;appearance:none;width:200px;height:64px;padding:0;border:0;overflow:auto}");
+        var log = (HTMLTextAreaElement)v.E("log");
+        log.Value = string.Join("\n", Enumerable.Range(0, 10).Select(i => "line " + i));
+        v.Update();
+        log.ScrollTop = log.ScrollHeight; v.Update();
+        Assert.That(log.ScrollTop, Is.EqualTo(96));
+        var runs = v.Display.Runs.ToList();
+        var last = runs.OfType<TextRun>().Single(r => ReferenceEquals(r.TextControl, log) && r.Text == "line 9");
+        var clip = runs.Take(runs.IndexOf(last)).OfType<BeginRectClipRun>().Last().Bounds;
+        Assert.That(last.ControlLine.Y, Is.EqualTo(48));
+        Assert.That(clip.Y + clip.Height, Is.GreaterThanOrEqualTo(last.ControlLine.Y + last.ControlLine.Height),
+            "the last line is inside the textarea's text clip");
+    }
     [Test]
     public void NestedClippedOverflowDoesNotInflateOuterAreaAndOffsetsCompose()
     {

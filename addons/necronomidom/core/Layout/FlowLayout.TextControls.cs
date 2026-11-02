@@ -21,7 +21,12 @@ public sealed partial class FlowLayout
         var lines = ControlLines(value, size, shaping, wrap ? plan.ContentWidth : double.PositiveInfinity,
             style.GetPropertyValue("overflow-wrap") == "break-word");
         double contentHeight = plan.DefiniteContentHeight ?? height * lines.Count;
-        _result.Runs.Add(new BeginRectClipRun(new Rect(plan.ContentOriginX, plan.ContentOriginY, plan.ContentWidth, contentHeight)));
+        // A scroll container translates every run it emitted, this clip included, by its scroll offset.
+        // Clip the full line extent so lines below the first screenful stay visible once scrolled; the
+        // container's own overflow clip still bounds what is shown.
+        string overflowY = style.GetPropertyValue("overflow-y");
+        double clipHeight = overflowY is "auto" or "scroll" or "hidden" ? Math.Max(contentHeight, height * lines.Count) : contentHeight;
+        _result.Runs.Add(new BeginRectClipRun(new Rect(plan.ContentOriginX, plan.ContentOriginY, plan.ContentWidth, clipHeight)));
         double y = plan.ContentOriginY;
         foreach (var line in lines)
         {
