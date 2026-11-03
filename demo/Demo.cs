@@ -1,6 +1,9 @@
 using System;
+using System.Linq;
 using Godot;
+using NecronomiDom.Bindings;
 using NecronomiDom.Dom;
+using NecronomiDom.Paint;
 using NecronomiDom.Runtime;
 
 namespace NecronomiDomDemo;
@@ -9,11 +12,15 @@ namespace NecronomiDomDemo;
 public partial class Demo : Godot.Node
 {
     private DocumentHost _host = null!;
-    private int _summoned;
+    private readonly GrimoireViewModel _model = new();
     private bool _smoke;
     private int _frames;
     private bool _developerUi;
-    private Document? _boundDocument;
+    private DocumentBindings? _bindings;
+    private Element? _summonButton;
+    private Element? _banishButton;
+    private DelegateEventListener? _summonClick;
+    private DelegateEventListener? _banishClick;
 
     public override void _Ready()
     {
@@ -21,22 +28,58 @@ public partial class Demo : Godot.Node
         _smoke = Array.IndexOf(OS.GetCmdlineUserArgs(), "--smoke") >= 0;
         _developerUi = Array.IndexOf(OS.GetCmdlineUserArgs(), "--dev-ui") >= 0;
         BindDocument();
-        _host.CancelRequested += () => GD.Print("cancel requested");
+        _host.CancelRequested += OnCancelRequested;
         if (_developerUi)
         {
             _host.DeveloperReloadEnabled = true;
-            _host.ReloadCompleted += _ => BindDocument();
+            _host.ReloadCompleted += OnReloadCompleted;
             GD.Print("UI authoring: F6 inspector, F7 reload changed files, F8 force reload.");
         }
     }
 
     private void BindDocument()
     {
-        if (ReferenceEquals(_boundDocument, _host.Document)) return;
-        _boundDocument = _host.Document;
-        _boundDocument.GetElementById("summon")!.AddEventListener("click", new DelegateEventListener(_ => Summon(1)));
-        _boundDocument.GetElementById("banish")!.AddEventListener("click", new DelegateEventListener(_ => Summon(-_summoned)));
-        Summon(0);
+        if (_bindings is { IsDisposed: false }) return;
+        var bindings = _host.CreateBindings();
+        _bindings = bindings;
+        bindings.Disposed += DetachDocument;
+        try
+        {
+            bindings.Text("#count", _model, nameof(GrimoireViewModel.CountText), model => model.CountText);
+            _summonButton = _host.Document.GetElementById("summon")!;
+            _banishButton = _host.Document.GetElementById("banish")!;
+            _summonClick = new DelegateEventListener(_ => Summon());
+            _banishClick = new DelegateEventListener(_ => Banish());
+            _summonButton.AddEventListener("click", _summonClick);
+            _banishButton.AddEventListener("click", _banishClick);
+        }
+        catch
+        {
+            bindings.Dispose();
+            throw;
+        }
+    }
+
+    private void DetachDocument()
+    {
+        _summonButton?.RemoveEventListener("click", _summonClick);
+        _banishButton?.RemoveEventListener("click", _banishClick);
+        _summonButton = null;
+        _banishButton = null;
+        _summonClick = null;
+        _banishClick = null;
+        if (_bindings != null) _bindings.Disposed -= DetachDocument;
+        _bindings = null;
+    }
+
+    private void OnReloadCompleted(DeveloperReloadResult result) => BindDocument();
+    private static void OnCancelRequested() => GD.Print("cancel requested");
+
+    public override void _ExitTree()
+    {
+        _host.ReloadCompleted -= OnReloadCompleted;
+        _host.CancelRequested -= OnCancelRequested;
+        _bindings?.Dispose();
     }
 
     public override void _Input(Godot.InputEvent input)
@@ -52,13 +95,8 @@ public partial class Demo : Godot.Node
         GetViewport().SetInputAsHandled();
     }
 
-    private void Summon(int delta)
-    {
-        _summoned = Math.Max(0, _summoned + delta);
-        _host.Document.GetElementById("count")!.TextContent = _summoned == 0
-            ? "Nothing stirs."
-            : _summoned == 1 ? "One shape stirs beneath the page." : _summoned + " shapes stir beneath the page.";
-    }
+    private void Summon() => _model.Summon();
+    private void Banish() => _model.Banish();
 
     public override void _Process(double delta)
     {
@@ -70,6 +108,8 @@ public partial class Demo : Godot.Node
         string count = _host.Document.GetElementById("count")!.TextContent ?? "";
         GD.Print($"smoke: layout={_host.LayoutRevision} boxes={_host.PaintedBoxCount} text={_host.PaintedTextRunCount} " +
             $"backend={_host.TextBackend} count=\"{count}\"");
-        GetTree().Quit(count.StartsWith("One shape", StringComparison.Ordinal) ? 0 : 1);
+        bool painted = _host.DisplayList.Runs.Select(run => run is TextEffectsRun effects ? effects.Text : run)
+            .OfType<TextRun>().Any(run => run.Owner?.Id == "count" && run.Text == _model.CountText);
+        GetTree().Quit(_model.Count == 1 && painted ? 0 : 1);
     }
 }

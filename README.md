@@ -236,6 +236,54 @@ media.Features["-necronomidom-input"] = "gamepad";   // matches @media (-necrono
 host.Styles.Media = media;
 ```
 
+### Typed C# state bindings
+
+`host.CreateBindings()` creates a `NecronomiDom.Bindings.DocumentBindings` scope for the host's
+currently live document. Sources implement ordinary `INotifyPropertyChanged`; getters are typed
+delegates, not reflection, markup expressions or scripts. For example, the working Grimoire presenter
+binds its view model's text with:
+
+```csharp
+var bindings = host.CreateBindings();
+bindings.Text("#count", model, nameof(GrimoireViewModel.CountText), state => state.CountText);
+```
+
+| Method | One-way target |
+|---|---|
+| `Text(selector, source, property, getter)` | Literal `textContent`, never HTML or an input's `value`. |
+| `Class(selector, className, source, property, getter)` | Presence of one class token; other classes remain intact. |
+| `Visible(selector, source, property, getter)` | Inverse `hidden` attribute. Author CSS must honor `[hidden]`, e.g. `[hidden] { display: none !important; }`. |
+| `Enabled(selector, source, property, getter)` | Inverse `disabled` attribute on a button, input or textarea. |
+
+Binding applies the initial value immediately. Later, only matching `PropertyChanged` notifications
+read that getter (`null`/empty property means all); unchanged values do not rewrite the DOM.
+Selectors resolve once to connected elements in this exact document. Missing/detached targets,
+invalid tokens and getter failures throw `BindingException` with the source type/property,
+target selector/property and original inner failure. Create, notify and dispose on the owning UI
+thread; marshal background model notifications before publishing them.
+
+The scope automatically unsubscribes and releases its document references on host withdrawal.
+CSS-only reload keeps the scope. Markup reload needs a fresh scope and bindings on the replacement
+document. Manual `Dispose()` also unsubscribes; `IsDisposed` and `Disposed` expose that lifetime.
+For non-Godot DOM consumers, `new DocumentBindings(document)` is available with caller-owned disposal.
+
+Bindings never write back to models. Keep clicks and edits as explicit application commands, and
+detach those handlers as part of the presenter's document lifetime (the scope's `Disposed` event
+can own that cleanup). See [`demo/Demo.cs`](demo/Demo.cs) and
+[`demo/GrimoireViewModel.cs`](demo/GrimoireViewModel.cs): summon/banish remain commands, while
+the counter is state-driven and markup reload detaches/rebinds exactly once.
+
+Run the real-engine binding scenario with .NET Godot:
+
+```sh
+godot --headless --path . res://demo/bindings/smoke.tscn
+godot --path . res://demo/bindings/smoke.tscn -- --proof-out=/absolute/screenshot-directory
+```
+
+It exercises painted text/class/visibility transitions, actual disabled-button input, CSS scope
+survival, markup disposal/rebinding and retired-document isolation. The typed API is C# only;
+GDScript's existing selector/signal API is unchanged.
+
 ## Developer authoring tools
 
 The inspector and file reload are explicit opt-ins, available only in a debug engine/export template.

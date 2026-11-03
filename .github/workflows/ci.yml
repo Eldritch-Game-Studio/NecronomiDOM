@@ -143,6 +143,8 @@ jobs:
           "$GODOT_MONO" --headless --path . -- --smoke
       - name: C# inspector and state-preserving reload
         run: '"$GODOT_MONO" --headless --path . res://demo/authoring/smoke.tscn'
+      - name: Typed binding state, input and document lifetime
+        run: '"$GODOT_MONO" --headless --path . res://demo/bindings/smoke.tscn'
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]
