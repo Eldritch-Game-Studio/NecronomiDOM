@@ -35,6 +35,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - uses: actions/setup-python@v5
+        if: vars.LINUX_RUNNER != 'self-hosted'
         with:
           python-version: '3.12'
       - name: Check generated capability reference
