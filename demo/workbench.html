@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>The Nightward Guild · NecronomiDOM workbench</title>
+    <link rel="stylesheet" href="workbench.css">
+</head>
+<body>
+<main>
+    <div class="masthead" role="banner">
+        <div><p class="eyebrow">NECRONOMIDOM / INTERACTIVE UI WORKBENCH</p><p class="heading-one" role="heading" aria-level="1">The Nightward Guild</p><p class="muted">An authored HTML + CSS interface. A small C# model. No browser or JavaScript.</p></div>
+        <div class="edition"><p class="eyebrow">FIELD EDITION / 01</p><p id="supply-count" class="accent">0 supplies earned</p></div>
+    </div>
+    <section class="authoring" aria-label="Developer authoring tools">
+        <div class="toolbar">
+            <p class="toolbar-label">AUTHORING</p>
+            <button id="inspect" type="button">Inspect / F6</button>
+            <button id="watch" type="button">Watch sources: OFF</button>
+            <button id="reload" type="button">Reload changed / F7</button>
+            <button id="force-reload" type="button">Force markup / F8</button>
+            <button id="reference" type="button">Reference + editor setup</button>
+        </div>
+        <p id="reload-status" role="status">Ready · manual reload only. Source watching is off.</p>
+        <p id="release-notice" hidden>Inspector and source reload are disabled in release templates. Use a debug engine for authoring.</p>
+    </section>
+    <div class="workspace">
+        <section id="character-card" class="panel character" aria-label="Character and loadout">
+            <p class="eyebrow">01 / YOUR ADVENTURER</p>
+            <p class="heading-two" role="heading" aria-level="2">Character &amp; loadout</p>
+            <p class="field-label" id="name-label">Adventurer name</p>
+            <input id="name" type="text" maxlength="28" aria-label="Adventurer name" value="Aster Vale">
+            <p class="field-label" id="motto-label">Field motto</p>
+            <input id="motto" type="text" maxlength="48" aria-label="Field motto" value="Leave a light in the dark.">
+            <div id="loadout" class="loadout">
+                <p class="eyebrow">LIVE PREVIEW</p>
+                <p id="character-preview" class="heading-three">Aster Vale</p>
+                <p id="loadout-text">Travel satchel only</p>
+                <p id="lantern-hint" class="accent" hidden>Lantern ready. A little light goes a long way.</p>
+            </div>
+            <button id="equip" type="button">Equip lantern</button>
+            <button id="save-profile" class="primary" type="button" disabled>Save profile</button>
+            <p id="profile-status" class="small muted" role="status">Profile saved. Make this adventurer yours.</p>
+            <div class="binding-note"><p class="eyebrow">WHAT IS LIVE?</p><p class="small">Typing updates the preview. Unsaved edits mark this card. The lantern changes a class and reveals a hint. Save enables only for valid changes.</p></div>
+        </section>
+        <section class="panel board" aria-label="Quest board">
+            <div class="section-heading"><div><p class="eyebrow">02 / NOTICE BOARD</p><p class="heading-two" role="heading" aria-level="2">Work after sundown</p></div><p class="badge">3 CONTRACTS</p></div>
+            <p class="muted small intro">Choose one quest. Record three findings, then collect 12 supplies. This board is self-contained demo state, not a game service.</p>
+            <div class="quest"><div><p class="heading-three">Lights in the marsh</p><p class="small muted">Relight three beacons along the old causeway.</p><p class="reward">EXPLORATION · 12 SUPPLIES</p></div><button id="accept-0" type="button">Accept quest</button></div>
+            <div class="quest"><div><p class="heading-three">The missing pages</p><p class="small muted">Recover three leaves from the archivist's ledger.</p><p class="reward">DISCOVERY · 12 SUPPLIES</p></div><button id="accept-1" type="button">Accept quest</button></div>
+            <div class="quest"><div><p class="heading-three">A remedy for rain</p><p class="small muted">Gather three sprigs for the guild apothecary.</p><p class="reward">GATHERING · 12 SUPPLIES</p></div><button id="accept-2" type="button">Accept quest</button></div>
+            <div id="empty-tracker" class="empty-tracker"><p class="eyebrow">QUEST TRACKER</p><p>No active quest yet.</p><p class="small muted">Accept a contract above to reveal its bound tracker.</p></div>
+            <div id="tracker" class="tracker" hidden>
+                <p class="eyebrow">ACTIVE QUEST / MODEL-BOUND</p><p id="tracker-title" class="heading-three"></p><p id="tracker-progress" class="accent"></p><p id="tracker-hint" class="small muted"></p>
+                <div class="actions"><button id="record" type="button">Record finding</button><button id="claim" class="primary" type="button" disabled>Collect 12 supplies</button></div>
+            </div>
+        </section>
+        <section class="panel guide" aria-label="Guided live editing">
+            <p class="eyebrow">03 / TRY LIVE AUTHORING</p><p class="heading-two" role="heading" aria-level="2">Keep the story. Edit the UI.</p>
+            <div class="step"><p class="step-number">1 / MAKE IT YOURS</p><p>Type a name and equip the lantern. Accept a quest. Your state lives in WorkbenchViewModel.cs, not in the markup.</p></div>
+            <div class="step"><p class="step-number">2 / CHANGE THE ACCENT</p><p>In demo/workbench.css, change --accent from #b9e38c to #eebd78. Save. Keep the name field focused and press F7.</p><p class="small muted">CSS reload keeps the same DOM: value, caret, selection and focus survive. Or explicitly turn on Watch sources.</p><button id="open-css" type="button">Open linked stylesheet</button></div>
+            <div class="step"><p class="step-number">3 / REPLACE THE MARKUP</p><p>Edit this heading in demo/workbench.html (keep the control IDs). Press F8 to force replacement, even without an edit.</p><p class="small muted">Model state survives; C# restores form values and rebinds controls. Focus starts anew. Record another finding to try a rebound handler.</p></div>
+            <div class="step last"><p class="step-number">4 / FAIL SAFELY</p><p>Temporarily add body { display: grid; } to the CSS and press F7. Grid is not supported: reload is rejected, an error explains why, and this UI keeps working. Remove the rule and reload.</p></div>
+        </section>
+    </div>
+    <section id="reference-panel" class="panel reference" hidden aria-label="Capability reference and editor completion">
+        <p class="heading-two" role="heading" aria-level="2">Author within the supported profile</p>
+        <p>The generated docs/capabilities.md distinguishes parser acceptance from actual layout, paint and input support. This is not a browser: no JavaScript, grid, templates or automatic two-way binding.</p>
+        <button id="open-reference" type="button">Open generated capability reference</button>
+        <p class="small">VS Code workspace settings (paths relative to the repo root):</p>
+        <p class="code">{ "css.customData": ["./docs/generated/necronomidom.css-data.json"],</p>
+        <p class="code">"html.customData": ["./docs/generated/necronomidom.html-data.json"] }</p>
+        <p class="small muted">Custom data supplements completion; it cannot hide every unsupported browser suggestion. Run python3 scripts/generate-capabilities.py --check to check generated data. Reference + editor setup closes this panel.</p>
+    </section>
+    <div class="footer" role="contentinfo"><p>AUTHORED HTML / CSS · TYPED C# STATE · NATIVE GODOT PAINT</p><p>Tab to navigate · F6 inspector · F7 changed files · F8 markup</p></div>
+</main>
+</body>
+</html>

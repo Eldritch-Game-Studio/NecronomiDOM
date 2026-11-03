@@ -6,6 +6,10 @@ config/name="NecronomiDOM Demo"
 run/main_scene="res://demo/demo.tscn"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
+[display]
+window/size/viewport_width=1440
+window/size/viewport_height=1000
+
 [dotnet]
 project/assembly_name="NecronomiDOM.Demo"
 

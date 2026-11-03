@@ -10,4 +10,4 @@ script = ExtResource("2")
 
 [node name="Document" type="Control" parent="UI"]
 script = ExtResource("1")
-DocumentPath = "res://demo/grimoire.html"
+DocumentPath = "res://demo/workbench.html"
