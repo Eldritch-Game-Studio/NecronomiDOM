@@ -236,6 +236,83 @@ media.Features["-necronomidom-input"] = "gamepad";   // matches @media (-necrono
 host.Styles.Media = media;
 ```
 
+## Developer authoring tools
+
+The inspector and file reload are explicit opt-ins, available only in a debug engine/export template.
+Ordinary hosts do not allocate an inspector, retain reload source snapshots or poll files.
+Launch either demo with `-- --dev-ui`: **F6** toggles the inspector, **F7** checks changed files,
+and **F8** reparses/remounts the document even if files are unchanged.
+
+### Live inspector
+
+![Picking a rendered button and inspecting its inherited custom property and computed color](docs/images/authoring-inspector.png)
+
+Call `host.OpenInspector()` from C#, or `host.open_inspector()` from GDScript. Use **Pick element**,
+the ancestry list, **Parent**, or a CSS selector to select a connected element. The tabs show:
+
+- Logical/visual bounds and HTML start-token provenance where available.
+- Matched stylesheet paths, selectors, live CSSOM rules and actual cascade winners.
+- Computed values, custom-property inputs/resolution and consumer fallback results.
+- Focus/pointer/text-selection state, layout/paint counters and opt-in CPU host timings.
+
+The overlay suspends this host's document input; picking does not click the underlying element.
+**Close** or **Escape** restores prior input/focus when still applicable. Applications that poll
+global game input directly must separately pause their gameplay controls while a tool is open.
+CSSOM does not retain rule/declaration line-column offsets; the inspector says so rather than
+inventing locations. Highlights are visual AABBs, not clipped polygons. Timings exclude inspector
+work and are neither GPU timings nor whole-frame measurements.
+
+Additional C# APIs: `AttachInspector()`, `ToggleInspector()`, `BeginInspectorPick()`,
+`SelectInspectorElement(selector)`, `GetInspectorReport()`, `InspectorOpen`, `InspectorSelection`.
+GDScript equivalents use snake_case; state getters are `is_inspector_open()` and
+`get_inspector_selection()`. `pick_inspector_element(x, y)` takes document-local CSS pixels.
+
+### File reload and document ownership
+
+Set `DeveloperReloadEnabled = true` (`developer_reload_enabled` in GDScript) to poll the current
+HTML and its linked stylesheets every 0.5 seconds. Content comparison catches same-timestamp edits.
+Enabling on an existing document establishes a baseline from current disk contents without changing
+that document; edits made before enabling require `ForceReload()`. Disabling releases the baseline.
+
+`ReloadChangedFiles()` preserves the exact DOM, input values/selections, focus, listeners and scroll
+state for CSS-only edits; changed geometry can naturally clamp scroll offsets. It validates candidate
+layout/native paint in an isolated snapshot using the current media environment before publishing
+styles. Invalid CSS/resource edits report failure and leave the current UI intact during preparation.
+Developer operations require a mounted host with a nonzero viewport, and use bounded local file reads.
+`@import` remains outside the runtime profile; reload does not silently enable unsupported CSS.
+
+Changed HTML or `ForceReload()` withdraws the old document and publishes a replacement. Discard old
+element handles and bind the new document explicitly:
+
+```csharp
+host.ReloadCompleted += result =>
+{
+    if (result.DocumentReplaced) BindDocument();
+};
+host.DeveloperReloadEnabled = true;
+```
+
+GDScript methods `reload_changed_files()` / `force_reload()` return the kind, and signal
+`developer_reloaded(kind, document_replaced, error)` supplies the details. Kinds:
+Disabled=0, Unchanged=1, Styles=2, Document=3, Failed=4. Automatic idle checks are silent.
+Preparation is isolated; application callback exceptions or failures during actual mounting are
+not a transactional rollback of arbitrary application state.
+
+### Generated capability reference
+
+[Renderable capabilities](docs/capabilities.md) distinguish parser acceptance from actual
+layout/paint/input admission and context-dependent restrictions. Runtime validation and the generator
+share the same admission manifest; named native APIs/signals come from their binding annotations.
+
+```sh
+python3 scripts/generate-capabilities.py          # regenerate reference and editor data
+python3 scripts/generate-capabilities.py --check  # CI: fail on stale/missing generated output
+```
+
+`docs/generated/necronomidom.css-data.json` and `necronomidom.html-data.json` are VS Code custom-data
+files. Add them to `css.customData` / `html.customData` in workspace settings. They supplement
+completion/documentation; they do not suppress every unsupported browser suggestion.
+
 ## Supported profile
 
 NecronomiDOM implements a deliberate subset of the web platform and refuses the rest loudly: content outside the
@@ -280,6 +357,19 @@ godot --path .                                       # C# demo (.NET edition)
 godot --headless --path . -- --smoke                 # C# smoke run: exit 0 on success
 dotnet test tests/NecronomiDom.Tests                 # core library tests (no engine required)
 ```
+
+Authoring-tool scenarios use isolated temporary `user://ui/` files and never modify the demo sources:
+
+```sh
+godot --headless --path . res://demo/authoring/native-smoke.tscn  # standard Godot + built extension
+godot --headless --path . res://demo/authoring/smoke.tscn         # .NET Godot
+godot --path . res://demo/authoring/smoke.tscn -- --proof-out=/absolute/screenshot-directory
+```
+
+The .NET scenario intentionally attempts unsupported CSS and expects a failure diagnostic while the
+previous UI remains usable. It then exercises actual mouse picking, stylesheet/markup reload and
+rebinding. The native scenario additionally withdraws one of two hosts and updates the survivor.
+
 
 ## Building the native libraries
 

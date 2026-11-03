@@ -1,0 +1,722 @@
+{
+  "version": 1.1,
+  "properties": [
+    {
+      "name": "-webkit-text-stroke-color",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity."
+    },
+    {
+      "name": "-webkit-text-stroke-width",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity."
+    },
+    {
+      "name": "align-content",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "align-items",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "align-self",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "appearance",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "values": [
+        {
+          "name": "none"
+        }
+      ]
+    },
+    {
+      "name": "background-clip",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-color",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-image",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-origin",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-position-x",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-position-y",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-repeat",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "background-size",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support."
+    },
+    {
+      "name": "block-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "border-block-end-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-block-end-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-block-end-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-block-start-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-block-start-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-block-start-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-bottom-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-bottom-left-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-bottom-right-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-bottom-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-bottom-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-end-end-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-end-start-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-inline-end-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-inline-end-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-inline-end-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-inline-start-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-inline-start-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-inline-start-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-left-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-left-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-left-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-right-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-right-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-right-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-start-end-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-start-start-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-top-color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-top-left-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-top-right-radius",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "border-top-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "border-top-width",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "bottom",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "box-sizing",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "caret-color",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing."
+    },
+    {
+      "name": "clip-path",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "color",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "column-gap",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "cursor",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "values": [
+        {
+          "name": "auto"
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "pointer"
+        },
+        {
+          "name": "text"
+        }
+      ]
+    },
+    {
+      "name": "display",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "flex-basis",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "flex-direction",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "flex-grow",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "flex-shrink",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "flex-wrap",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "font-family",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "font-size",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "font-style",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "values": [
+        {
+          "name": "normal"
+        },
+        {
+          "name": "italic"
+        }
+      ]
+    },
+    {
+      "name": "font-weight",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "height",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "image-rendering",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected."
+    },
+    {
+      "name": "inline-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "inset-block-end",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "inset-block-start",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "inset-inline-end",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "inset-inline-start",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "justify-content",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "left",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "letter-spacing",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "line-height",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "margin-block-end",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-block-start",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-bottom",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-inline-end",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-inline-start",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-left",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-right",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "margin-top",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "max-block-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "max-height",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "max-inline-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "max-width",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "min-block-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "min-height",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "min-inline-size",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "min-width",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    },
+    {
+      "name": "object-fit",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected."
+    },
+    {
+      "name": "object-position",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected."
+    },
+    {
+      "name": "opacity",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "order",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "outline-color",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "outline-offset",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "outline-style",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "values": [
+        {
+          "name": "none"
+        },
+        {
+          "name": "solid"
+        },
+        {
+          "name": "auto"
+        }
+      ]
+    },
+    {
+      "name": "outline-width",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry."
+    },
+    {
+      "name": "overflow-block",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "overflow-inline",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "overflow-x",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "overflow-y",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "padding-block-end",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-block-start",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-bottom",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-inline-end",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-inline-start",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-left",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-right",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "padding-top",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths."
+    },
+    {
+      "name": "pointer-events",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "values": [
+        {
+          "name": "auto"
+        },
+        {
+          "name": "none"
+        }
+      ]
+    },
+    {
+      "name": "position",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "right",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "rotate",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "row-gap",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords."
+    },
+    {
+      "name": "scale",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "scrollbar-width",
+      "description": "layout, paint and input. Bounded renderer admission, not full CSS grammar support. Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties."
+    },
+    {
+      "name": "spatial-navigation-action",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing."
+    },
+    {
+      "name": "spatial-navigation-contain",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing."
+    },
+    {
+      "name": "spatial-navigation-function",
+      "description": "input. Bounded renderer admission, not full CSS grammar support. Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing."
+    },
+    {
+      "name": "text-align",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "values": [
+        {
+          "name": "start"
+        },
+        {
+          "name": "left"
+        },
+        {
+          "name": "center"
+        },
+        {
+          "name": "end"
+        },
+        {
+          "name": "right"
+        }
+      ]
+    },
+    {
+      "name": "text-overflow",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "values": [
+        {
+          "name": "clip"
+        },
+        {
+          "name": "ellipsis"
+        }
+      ]
+    },
+    {
+      "name": "text-shadow",
+      "description": "paint. Bounded renderer admission, not full CSS grammar support. Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity."
+    },
+    {
+      "name": "text-wrap-mode",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "values": [
+        {
+          "name": "wrap"
+        },
+        {
+          "name": "nowrap"
+        }
+      ]
+    },
+    {
+      "name": "top",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR."
+    },
+    {
+      "name": "transform",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "transform-box",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "transform-origin",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "translate",
+      "description": "paint and input. Bounded renderer admission, not full CSS grammar support. Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable."
+    },
+    {
+      "name": "unicode-bidi",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "values": [
+        {
+          "name": "normal"
+        },
+        {
+          "name": "isolate"
+        }
+      ]
+    },
+    {
+      "name": "white-space-collapse",
+      "description": "layout and paint. Bounded renderer admission, not full CSS grammar support. CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete."
+    },
+    {
+      "name": "width",
+      "description": "layout. Bounded renderer admission, not full CSS grammar support. Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected."
+    }
+  ],
+  "pseudoClasses": [
+    {
+      "name": ":active",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":disabled",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":empty",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":enabled",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":first-child",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":first-of-type",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":focus",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":focus-visible",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":focus-within",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":has",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":hover",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":is",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":last-child",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":last-of-type",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":not",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":nth-child",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":nth-last-child",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":nth-last-of-type",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":nth-of-type",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":only-child",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":only-of-type",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":root",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":scope",
+      "description": "Admitted by the bounded runtime selector validator."
+    },
+    {
+      "name": ":where",
+      "description": "Admitted by the bounded runtime selector validator."
+    }
+  ]
+}

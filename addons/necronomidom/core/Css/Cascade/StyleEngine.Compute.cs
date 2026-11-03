@@ -154,18 +154,25 @@ namespace NecronomiDom.Css.Cascade
         }
         private static CssValue? Winner(List<Candidate> candidates)
         {
+            int index = WinnerIndex(candidates);
+            return index < 0 ? null : candidates[index].Value;
+        }
+        private static int WinnerIndex(List<Candidate> candidates)
+        {
             int maximumOrigin = (int)CascadeOrigin.Author;
             HashSet<(CascadeOrigin, Node, int, bool, int)>? revertedLayers = null;
-            foreach (ref readonly Candidate candidate in CollectionsMarshal.AsSpan(candidates))
+            var span = CollectionsMarshal.AsSpan(candidates);
+            for (int index = 0; index < span.Length; index++)
             {
+                ref readonly Candidate candidate = ref span[index];
                 var priority = candidate.Priority;
                 if ((int)priority.Origin > maximumOrigin || revertedLayers?.Contains((priority.Origin, candidate.Root, priority.Layer, priority.Important, priority.EncapsulationDepth)) == true) continue;
                 if (candidate.Value is CssWideKeyword { Kind: CssWideKeywordKind.Revert }) { maximumOrigin = (int)priority.Origin - 1; continue; }
                 if (candidate.Value is CssWideKeyword { Kind: CssWideKeywordKind.RevertLayer })
                 { (revertedLayers ??= new()).Add((priority.Origin, candidate.Root, priority.Layer, priority.Important, priority.EncapsulationDepth)); continue; }
-                return candidate.Value;
+                return index;
             }
-            return null;
+            return -1;
         }
         private static CssValue Specified(string name, Dictionary<string, List<Candidate>> groups, Entry? parent, out CssValue? cascaded) =>
             Specified(LonghandInputFor(name), groups, parent, out cascaded);

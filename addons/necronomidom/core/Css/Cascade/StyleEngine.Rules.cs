@@ -20,6 +20,8 @@ namespace NecronomiDom.Css.Cascade
             internal readonly Dictionary<string, Registration> Properties = new(StringComparer.Ordinal);
             internal readonly HashSet<CSSStyleSheet> ImportStack = new();
             internal readonly Dictionary<(CSSRule, CascadeLayers.Layer), CascadeLayers.Layer> RuleLayers = new();
+            // Allocated only for an explicit inspector snapshot, never for normal cascade entries.
+            internal Dictionary<long, CSSStyleDeclaration>? InspectionSources;
             internal long Order;
             internal void Clear()
             {
@@ -201,6 +203,7 @@ namespace NecronomiDom.Css.Cascade
             RuleCollection result, CascadeLayers.Layer layer, CascadeOrigin origin, Node root, int depth, int proximity, bool inline, long? order = null)
         {
             long sourceOrder = order ?? ++result.Order;
+            result.InspectionSources?.TryAdd(sourceOrder, declarations);
             foreach (var declaration in declarations.EnumerateLonghands())
             {
                 var priority = new CascadePriority(origin, declaration.Important, 0, inline, specificity, proximity, sourceOrder, depth);

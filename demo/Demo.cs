@@ -12,15 +12,44 @@ public partial class Demo : Godot.Node
     private int _summoned;
     private bool _smoke;
     private int _frames;
+    private bool _developerUi;
+    private Document? _boundDocument;
 
     public override void _Ready()
     {
         _host = GetNode<DocumentHost>("UI/Document");
         _smoke = Array.IndexOf(OS.GetCmdlineUserArgs(), "--smoke") >= 0;
-        var document = _host.Document;
-        document.GetElementById("summon")!.AddEventListener("click", new DelegateEventListener(_ => Summon(1)));
-        document.GetElementById("banish")!.AddEventListener("click", new DelegateEventListener(_ => Summon(-_summoned)));
+        _developerUi = Array.IndexOf(OS.GetCmdlineUserArgs(), "--dev-ui") >= 0;
+        BindDocument();
         _host.CancelRequested += () => GD.Print("cancel requested");
+        if (_developerUi)
+        {
+            _host.DeveloperReloadEnabled = true;
+            _host.ReloadCompleted += _ => BindDocument();
+            GD.Print("UI authoring: F6 inspector, F7 reload changed files, F8 force reload.");
+        }
+    }
+
+    private void BindDocument()
+    {
+        if (ReferenceEquals(_boundDocument, _host.Document)) return;
+        _boundDocument = _host.Document;
+        _boundDocument.GetElementById("summon")!.AddEventListener("click", new DelegateEventListener(_ => Summon(1)));
+        _boundDocument.GetElementById("banish")!.AddEventListener("click", new DelegateEventListener(_ => Summon(-_summoned)));
+        Summon(0);
+    }
+
+    public override void _Input(Godot.InputEvent input)
+    {
+        if (!_developerUi || input is not InputEventKey { Pressed: true, Echo: false } key) return;
+        switch (key.Keycode)
+        {
+            case Key.F6: _host.ToggleInspector(); break;
+            case Key.F7: _host.ReloadChangedFiles(); break;
+            case Key.F8: _host.ForceReload(); break;
+            default: return;
+        }
+        GetViewport().SetInputAsHandled();
     }
 
     private void Summon(int delta)

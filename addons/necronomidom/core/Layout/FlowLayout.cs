@@ -61,41 +61,6 @@ public sealed partial class FlowLayout
         return text;
     }
     private DisplayList _result = new();
-    private static readonly HashSet<string> Supported = new(StringComparer.Ordinal)
-    {
-        "display", "width", "height", "box-sizing", "background-color", "color", "font-family",
-        "background-image", "background-size", "background-position-x", "background-position-y",
-        "background-origin", "background-clip", "background-repeat",
-        "font-size", "font-style", "font-weight", "letter-spacing", "line-height", "text-align", "pointer-events", "cursor", "unicode-bidi", "appearance",
-        "white-space-collapse", "text-wrap-mode", "text-overflow",
-        "-webkit-text-stroke-width", "text-shadow",
-        "flex-direction", "flex-wrap", "flex-grow", "flex-shrink", "flex-basis", "align-items", "align-self", "align-content", "justify-content",
-        "order", "row-gap", "column-gap", "min-width", "max-width", "min-height", "max-height",
-        "min-inline-size", "max-inline-size", "min-block-size", "max-block-size",
-        "margin-top", "margin-right", "margin-bottom", "margin-left",
-        "padding-top", "padding-right", "padding-bottom", "padding-left",
-        "border-top-width", "border-right-width", "border-bottom-width", "border-left-width",
-        "border-top-color", "border-right-color", "border-bottom-color", "border-left-color",
-        "border-top-style", "border-right-style", "border-bottom-style", "border-left-style",
-        "border-top-left-radius", "border-top-right-radius", "border-bottom-left-radius", "border-bottom-right-radius",
-        // Existing cascade maps these aliases to the same physical values (horizontal LTR profile).
-        "inline-size", "block-size",
-        "margin-block-start", "margin-block-end", "margin-inline-start", "margin-inline-end",
-        "padding-block-start", "padding-block-end", "padding-inline-start", "padding-inline-end",
-        "border-block-start-width", "border-block-end-width", "border-inline-start-width", "border-inline-end-width",
-        "border-block-start-style", "border-block-end-style", "border-inline-start-style", "border-inline-end-style",
-        "border-block-start-color", "border-block-end-color", "border-inline-start-color", "border-inline-end-color",
-        "border-start-start-radius", "border-start-end-radius", "border-end-start-radius", "border-end-end-radius",
-        // These initial colors are currentcolor, so their serialization changes with color even while invisible.
-        "outline-color", "outline-width", "outline-style", "outline-offset",
-        "text-decoration-color", "column-rule-color", "caret-color", "-webkit-text-stroke-color",
-        "spatial-navigation-contain", "spatial-navigation-action", "spatial-navigation-function",
-        "object-fit", "object-position", "image-rendering",
-        "position", "top", "right", "bottom", "left",
-        "inset-block-start", "inset-block-end", "inset-inline-start", "inset-inline-end",
-        "overflow-x", "overflow-y", "overflow-block", "overflow-inline", "scrollbar-width", "opacity", "clip-path",
-        "transform", "translate", "rotate", "scale", "transform-origin", "transform-box"
-    };
     public FlowLayout(StyleEngine styles, ITextShaper shaper, string fontFamily, IImageSource? images = null,
         IAnimatedOpacitySource? animatedOpacity = null, IAnimatedBackgroundColorSource? animatedBackgroundColor = null,
         IAnimatedWidthSource? animatedWidth = null, IAnimatedScaleSource? animatedScale = null,
@@ -209,13 +174,13 @@ public sealed partial class FlowLayout
     }
     private void Validate(Element e, CSSStyleDeclaration s)
     {
-        if (e.LocalName is not ("html" or "body" or "div" or "main" or "section" or "p" or "span" or "button" or "a" or "img" or "input" or "textarea")) Fail(e, "element", e.LocalName);
+        if (!RuntimeCapabilities.AdmitsElement(e.LocalName)) Fail(e, "element", e.LocalName);
         if (e is HTMLInputElement { IsTextEditable: false } input) Fail(e, "input type", input.Type);
         if (e.ShadowRootInternal != null) Fail(e, "shadow-root", "unsupported");
         List<string>? unsupported = null;
         foreach (var d in s.EnumerateLonghands())
         {
-            if (d.Name.StartsWith("--", StringComparison.Ordinal) || Supported.Contains(d.Name)) continue;
+            if (d.Name.StartsWith("--", StringComparison.Ordinal) || RuntimeCapabilities.AdmitsProperty(d.Name)) continue;
             if ((_animatedOpacity != null || _animatedBackgroundColor != null || _animatedWidth != null || _animatedScale != null || _animatedForegroundColor != null)
                 && IsTransitionProperty(d.Name)) continue;
             // Prove identical initial serialization directly; unknown/live value classes still serialize below.
@@ -229,19 +194,17 @@ public sealed partial class FlowLayout
             if (value != InitialText(d.Name)) (unsupported ??= new()).Add(d.Name + ": " + value);
         }
         if (unsupported != null) Fail(e, "properties", string.Join("; ", unsupported));
-        if (s.GetPropertyValue("unicode-bidi") is not ("normal" or "isolate")) Fail(e, "unicode-bidi", s.GetPropertyValue("unicode-bidi"));
-        if (s.GetPropertyValue("appearance") != "none") Fail(e, "appearance", s.GetPropertyValue("appearance"));
+        var keywordProperties = RuntimeCapabilities.KeywordProperties;
+        for (int i = 0; i < keywordProperties.Count; i++)
+        {
+            string property = keywordProperties[i];
+            if (!RuntimeCapabilities.AdmitsKeyword(property, s.GetPropertyValue(property)))
+                Fail(e, property, s.GetPropertyValue(property));
+        }
         _ = ResolveTextFamily(s);
-        if (s.GetPropertyValue("font-style") is not ("normal" or "italic")) Fail(e, "font-style", s.GetPropertyValue("font-style"));
-        if (s.GetPropertyValue("text-align") is not ("start" or "left" or "center" or "end" or "right")) Fail(e, "text-align", s.GetPropertyValue("text-align"));
         if (s.GetPropertyValue("white-space-collapse") != "collapse"
             && !(e is HTMLTextAreaElement && s.GetPropertyValue("white-space-collapse") == "preserve"))
             Fail(e, "white-space-collapse", s.GetPropertyValue("white-space-collapse"));
-        if (s.GetPropertyValue("text-wrap-mode") is not ("wrap" or "nowrap")) Fail(e, "text-wrap-mode", s.GetPropertyValue("text-wrap-mode"));
-        if (s.GetPropertyValue("text-overflow") is not ("clip" or "ellipsis")) Fail(e, "text-overflow", s.GetPropertyValue("text-overflow"));
-        if (s.GetPropertyValue("cursor") is not ("auto" or "default" or "pointer" or "text")) Fail(e, "cursor", s.GetPropertyValue("cursor"));
-        if (s.GetPropertyValue("pointer-events") is not ("auto" or "none")) Fail(e, "pointer-events", s.GetPropertyValue("pointer-events"));
-        if (s.GetPropertyValue("outline-style") is not ("none" or "solid" or "auto")) Fail(e, "outline-style", s.GetPropertyValue("outline-style"));
     }
     private static string Collapse(string text)
     {

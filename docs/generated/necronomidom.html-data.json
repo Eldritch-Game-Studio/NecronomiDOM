@@ -1,0 +1,53 @@
+{
+  "version": 1.1,
+  "tags": [
+    {
+      "name": "a",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "body",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "button",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "div",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "html",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "img",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "input",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "main",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "p",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "section",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "span",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    },
+    {
+      "name": "textarea",
+      "description": "Admitted rendered element. Bounded layout/paint rules still apply; see docs/capabilities.md."
+    }
+  ]
+}

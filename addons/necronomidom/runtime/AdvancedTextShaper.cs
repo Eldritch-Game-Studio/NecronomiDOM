@@ -18,6 +18,13 @@ namespace NecronomiDom.Runtime;
 public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontFamilies, IDisposable
 {
     private readonly TextServer _server;
+    private bool _disposed;
+#if NECRONOMIDOM_GDEXTENSION
+    // Bindings canonicalize RefCounted wrappers. All live shapers share one owned
+    // wrapper reference; disposing it per face/family would invalidate its peers.
+    private static TextServer? _sharedServer;
+    private static int _serverOwners;
+#endif
     private readonly IReadOnlyList<string> _fallbackPaths;
     private readonly Face?[] _faces;
     private readonly Func<int, int, bool> _hasGlyph;
@@ -41,13 +48,43 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
     public AdvancedTextShaper(FontFile font, IReadOnlyList<string> fallbackPaths)
     {
         _rawLineMetrics = OpenTypeLineMetrics.Parse(Packed.Span(font.Data));
+#if NECRONOMIDOM_GDEXTENSION
+        _server = AcquireServer();
+#else
         _server = TextServerManager.GetPrimaryInterface();
-        if (!_server.IsClass("TextServerAdvanced")) throw new NotSupportedException("DocumentHost requires TextServerAdvanced, got " + _server.GetClass() + ": " + _server.GetName());
-        _fallbackPaths = fallbackPaths;
-        _faces = new Face?[1 + fallbackPaths.Count];
-        _faces[0] = new Face(font);
-        _hasGlyph = HasGlyph;
+#endif
+        try
+        {
+            if (!_server.IsClass("TextServerAdvanced")) throw new NotSupportedException("DocumentHost requires TextServerAdvanced, got " + _server.GetClass() + ": " + _server.GetName());
+            _fallbackPaths = fallbackPaths;
+            _faces = new Face?[1 + fallbackPaths.Count];
+            _faces[0] = new Face(font);
+            _hasGlyph = HasGlyph;
+        }
+        catch
+        {
+            _trackingFeatures.Dispose();
+#if NECRONOMIDOM_GDEXTENSION
+            ReleaseServer();
+#endif
+            throw;
+        }
     }
+#if NECRONOMIDOM_GDEXTENSION
+    private static TextServer AcquireServer()
+    {
+        _sharedServer ??= TextServerManager.GetPrimaryInterface();
+        _serverOwners++;
+        return _sharedServer;
+    }
+    private static void ReleaseServer()
+    {
+        if (--_serverOwners != 0) return;
+        var server = _sharedServer;
+        _sharedServer = null;
+        server?.Dispose();
+    }
+#endif
     private Face FaceAt(int index)
     {
         if (_faces[index] is Face loaded) return loaded;
@@ -157,8 +194,13 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
     { foreach (var face in _faces) face?.CaptureOwnership(result); }
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         Clear(); _trackingFeatures.Dispose();
         foreach (var face in _faces) face?.Dispose();
+#if NECRONOMIDOM_GDEXTENSION
+        ReleaseServer();
+#endif
     }
 
 }

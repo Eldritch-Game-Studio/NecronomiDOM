@@ -34,6 +34,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check generated capability reference
+        run: |
+          python3 scripts/generate-capabilities.py --check
+          python3 -m unittest discover -s scripts -p 'test_generate_capabilities.py'
       - run: dotnet test tests/NecronomiDom.Tests -nologo
 
   native-linux-x64:
@@ -125,12 +132,16 @@ jobs:
           cp native/necronomidom.gdextension addons/necronomidom/
           "$GODOT" --headless --path . --import || true
           "$GODOT" --headless --path . res://demo/gdscript/demo.tscn -- --smoke
+      - name: Native authoring tools and shared-resource lifetime
+        run: '"$GODOT" --headless --path . res://demo/authoring/native-smoke.tscn'
       - name: C# demo in .NET Godot
         run: |
           rm -rf .godot
           "$GODOT_MONO" --headless --path . --import || true
           dotnet build NecronomiDOM.Demo.csproj -nologo
           "$GODOT_MONO" --headless --path . -- --smoke
+      - name: C# inspector and state-preserving reload
+        run: '"$GODOT_MONO" --headless --path . res://demo/authoring/smoke.tscn'
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]

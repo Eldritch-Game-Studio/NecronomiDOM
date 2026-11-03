@@ -16,6 +16,7 @@ internal static class ExtensionEntryPoint
     {
         if (level != InitializationLevel.Scene) return;
         GodotRegistry.RegisterRuntimeClass<DocumentHost>(DocumentHost.BindMembers);
+        GodotRegistry.RegisterInternalClass<DocumentInspector>(DocumentInspector.BindMembers);
         GodotRegistry.RegisterInternalClass<DocumentPaint>(DocumentPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<ShapedTextPaint>(ShapedTextPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeImagePaint>(NativeImagePaint.BindMembers);

@@ -38,11 +38,11 @@ public partial class DocumentHost
         foreach (var type in _listenedTypes) AttachScriptListener(type);
     }
 
-    partial void OnDocumentWithdrawn()
+    partial void OnDocumentResourcesWithdrawn()
     {
         if (LiveHosts.Count != 0) return;
-        // NativeAOT has no engine-driven finalization at shutdown: when the last document goes, drop the shared shaders
-        // and collect released paint wrappers so their engine resources are freed before the servers shut down.
+        // NativeAOT has no engine-driven finalization at shutdown. Run after paint/input/font/image
+        // owners are withdrawn, not during DocumentWithdrawing while those owners still retain wrappers.
         WebPaintShaders.Release();
         GC.Collect();
         GC.WaitForPendingFinalizers();

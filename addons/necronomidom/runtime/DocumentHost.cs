@@ -119,7 +119,11 @@ public partial class DocumentHost : Control
         ClearDocumentBackgroundColor(now);
         ClearDocumentGeometry(now);
         ClearDocumentForegroundColor(now);
+        OnDocumentResourcesWithdrawn();
     }
+    // NativeAOT releases collectible engine wrappers only after their document owners have let go.
+    // The unimplemented partial disappears entirely from the managed runtime build.
+    partial void OnDocumentResourcesWithdrawn();
     internal NativeImageOwnership[] CaptureImageOwnership() =>
         _images?.CaptureOwnership() ?? System.Array.Empty<NativeImageOwnership>();
     internal NativeFontOwnership[] CaptureFontOwnership() =>
@@ -127,6 +131,7 @@ public partial class DocumentHost : Control
     public override void _Process(double delta)
     {
         if (!_entryActive) return;
+        ProcessDeveloperReload(delta);
         bool measureUpdate = UpdateMeasured != null || ObserveEntryUpdates;
         UpdateTimer timer = measureUpdate ? new UpdateTimer() : default;
         ProcessDocumentInput(delta);
@@ -204,6 +209,7 @@ public partial class DocumentHost : Control
     }
     public override void _ExitTree()
     {
+        StopDeveloperReloadWatch();
         if (!_entryActive) return;
         _entryActive = false;
         WithdrawDocumentAccessibility();

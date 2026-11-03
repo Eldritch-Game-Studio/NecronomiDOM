@@ -46,7 +46,7 @@ foreach (var item in Sources)
     string target = Path.Combine(OutputRoot, item.GetMetadata("RecursiveDir") + item.GetMetadata("Filename") + item.GetMetadata("Extension"));
     string text = Regex.Replace(File.ReadAllText(source), @"public override (\S+ _[A-Z])", "protected override $1");
     // GodotSharp exposes engine singletons as static classes; the bindings expose an instance through Singleton.
-    text = Regex.Replace(text, @"\b(Input|InputMap|AccessibilityServer|Time|ClassDB|RenderingServer|Engine|TextServerManager|ProjectSettings|DisplayServer)\.([A-Z]\w*)(?=\s*(\(|[+-]=))",
+    text = Regex.Replace(text, @"\b(Input|InputMap|AccessibilityServer|Time|ClassDB|RenderingServer|Engine|TextServerManager|ProjectSettings|DisplayServer|OS)\.([A-Z]\w*)(?=\s*(\(|[+-]=))",
         m => m.Groups[1].Value + ".Singleton." + m.Groups[2].Value);
     if (text.Contains("using Server = Godot.AccessibilityServer;"))
         text = Regex.Replace(text, @"\bServer\.([A-Z]\w*)(?=\s*\()", m => "Server.Singleton." + m.Groups[1].Value);

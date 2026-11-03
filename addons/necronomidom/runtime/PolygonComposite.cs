@@ -132,7 +132,22 @@ public partial class PolygonComposite : Node2D
         _target.UseHdr2D = LinearTarget || GetViewport().UseHdr2D;
         // The parent render target is an actual device clipping boundary. Do not
         // allocate offscreen textures for overflow pixels it cannot display.
-        Vector2 physicalSize = GetViewport().GetTexture().GetSize();
+        Viewport viewport = GetViewport();
+        Vector2 physicalSize;
+        if (viewport is SubViewport && viewport.GetParent() is PolygonComposite owner)
+            physicalSize = owner._texture.GetSize();
+        else
+        {
+#if NECRONOMIDOM_GDEXTENSION
+            // This query needs no retained reference. Release the native binding's
+            // temporary wrapper before render-server teardown; never dispose an
+            // ancestor composite's owned texture (handled above).
+            using var texture = viewport.GetTexture();
+#else
+            var texture = viewport.GetTexture();
+#endif
+            physicalSize = texture.GetSize();
+        }
         Rect2 painted = (device * _logicalBounds).Intersection(new Rect2(Vector2.Zero, physicalSize));
         if (painted.Size.X <= 0 || painted.Size.Y <= 0)
         {

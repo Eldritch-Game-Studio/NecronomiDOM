@@ -79,7 +79,7 @@ public sealed partial class FlowLayout
     private void ValidateInlineElement(Element element, CSSStyleDeclaration style, CSSStyleDeclaration rootStyle)
     {
         Validate(element, style);
-        if (element.LocalName is not ("span" or "a")) Fail(element, "inline element", "only text spans and anchors are supported");
+        if (!RuntimeCapabilities.AdmitsInlineElement(element.LocalName)) Fail(element, "inline element", "only text spans and anchors are supported");
         // Inline box edges, positioning and independent compositing are not silently treated as text styles.
         foreach (string side in new[] { "top", "right", "bottom", "left" })
             foreach (string property in new[] { "margin-" + side, "padding-" + side, "border-" + side + "-width" })

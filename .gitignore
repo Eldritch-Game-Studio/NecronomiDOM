@@ -12,3 +12,4 @@ TestResults/
 /addons/necronomidom/necronomidom.gdextension.uid
 .act/
 dist/
+/scripts/__pycache__/

@@ -2,11 +2,7 @@
 using System;
 using Godot;
 using NecronomiDom.Css.Cascade;
-using NecronomiDom.Css.Om;
-using NecronomiDom.Layout;
-using NecronomiDom.Dom;
 using NecronomiDom.Html;
-using NecronomiDom.Url;
 
 namespace NecronomiDom.Runtime;
 
@@ -15,27 +11,9 @@ public partial class DocumentHost
     public void LoadDocument(string path) => LoadPreparedDocument(PrepareDocument(path));
 
     /// <summary>Unattached HTML/CSS only; the owner transfers this result from its worker before mounting it.</summary>
-    internal readonly record struct PreparedDocument(string Path, HtmlImportResult Content);
+    internal readonly record struct PreparedDocument(string Path, HtmlImportResult Content, DocumentFileReload? Files = null);
 
-    internal static PreparedDocument PrepareDocument(string path)
-    {
-        if (!path.StartsWith("res://", StringComparison.Ordinal) && !path.StartsWith("user://ui/", StringComparison.Ordinal)) throw new ArgumentException("Document path must be res:// or user://ui/.", nameof(path));
-        WebUrl url = WebUrl.Parse(path.Replace("://", ":///", StringComparison.Ordinal)) ?? throw new ArgumentException("Invalid document URL.");
-        var imported = HtmlImporter.Import(Read(path), path, url);
-        var document = imported.Document;
-        foreach (Element link in document.QuerySelectorAll("link"))
-        {
-            if (link.GetAttribute("rel") != "stylesheet") throw new NotSupportedException("Runtime supports only stylesheet links.");
-            var resolved = ResourceUrlPolicy.Default.Resolve(link.GetAttribute("href") ?? "", url, ResourceKind.Stylesheet);
-            if (!resolved.Allowed || resolved.ResourcePath == null) throw new NotSupportedException("Runtime stylesheet URL: " + resolved);
-            var sheet = CSSStyleSheet.Parse(Read(resolved.ResourcePath), resolved.ResourcePath, resolved.Url);
-            sheet.OwnerNode = link;
-            if (link.GetAttribute("media") is { } media) sheet.Media.MediaText = media;
-            document.StyleSheets.Add(sheet);
-        }
-        RuntimeStyleProfile.Validate(document);
-        return new PreparedDocument(path, imported);
-    }
+    internal static PreparedDocument PrepareDocument(string path) => new(path, DocumentFileReload.Load(path, Read));
 
     internal void LoadPreparedDocument(PreparedDocument prepared)
     {
@@ -48,12 +26,18 @@ public partial class DocumentHost
         _ = document.DefaultView;
         Styles = new StyleEngine(document) { IncrementalReconciliation = RetainedUpdates };
         DocumentPath = prepared.Path;
+        _reloadFiles = DeveloperReloadEnabled ? prepared.Files : null;
         if (_entryActive) CreateDocumentResources();
+        if (DeveloperReloadEnabled && OS.IsDebugBuild() && _reloadFiles == null) CaptureDeveloperReloadBaseline();
     }
-    private static string Read(string path)
+    private static string Read(string path) => ReadSource(path, false);
+    private static string ReadDeveloperSource(string path) => ReadSource(path, true);
+    private static string ReadSource(string path, bool developerOperation)
     {
         using var file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
         if (file == null) throw new InvalidOperationException("Cannot load " + path + ": " + Godot.FileAccess.GetOpenError());
+        if (developerOperation && file.GetLength() > (ulong)DocumentFileReload.MaxFileCharacters * 4)
+            throw new InvalidOperationException("Document source byte limit exceeded: " + path);
         return file.GetAsText();
     }
 }

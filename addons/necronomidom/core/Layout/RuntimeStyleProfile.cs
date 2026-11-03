@@ -20,7 +20,8 @@ public static class RuntimeStyleProfile
         var adopted = document.AdoptedStyleSheets;
         for (int i = 0; i < adopted.Count; i++) Validate(adopted[i]);
     }
-    private static void Validate(CSSStyleSheet sheet)
+    /// <summary>Validate an unattached candidate sheet before publishing it to a live document.</summary>
+    public static void Validate(CSSStyleSheet sheet)
     {
         var state = Validated.GetValue(sheet, static _ => new Validation());
         if (state.Revision == sheet.Revision) return;
@@ -32,7 +33,7 @@ public static class RuntimeStyleProfile
         for (int i = 0; i < rules.Length; i++)
         {
             var rule = rules[i];
-            if (rule is not CSSStyleRule && rule is not CSSMediaRule && rule is not CSSNestedDeclarations && rule is not CSSFontFaceRule)
+            if (!RuntimeCapabilities.AdmitsStylesheetRule(rule.GetType().Name))
                 throw new NotSupportedException("Runtime stylesheet rule: " + rule.GetType().Name);
             if (rule is CSSStyleRule style) ValidateSelectors(style.Selectors);
             if (rule is CSSGroupingRule group) ValidateRules(group.CssRules);
@@ -51,10 +52,7 @@ public static class RuntimeStyleProfile
                     var simple = compound.SimpleSelectors[k];
                     if (simple is PseudoElementSelector) throw new NotSupportedException("Runtime pseudo-element: " + simple.Serialize());
                     if (simple is not PseudoClassSelector pseudo) continue;
-                    if (pseudo.Name is not ("root" or "empty" or "first-child" or "last-child" or "only-child" or "nth-child" or "nth-last-child"
-                        or "first-of-type" or "last-of-type" or "only-of-type" or "nth-of-type" or "nth-last-of-type"
-                        or "is" or "not" or "where" or "has" or "scope" or "enabled" or "disabled"
-                        or "focus" or "focus-visible" or "focus-within" or "hover" or "active"))
+                    if (!RuntimeCapabilities.AdmitsPseudoClass(pseudo.Name))
                         throw new NotSupportedException("Runtime state selector: " + pseudo.Serialize());
                     if (pseudo.Arguments != null) ValidateSelectors(pseudo.Arguments);
                     if (pseudo.Nth?.Of != null) ValidateSelectors(pseudo.Nth.Of);

@@ -1,0 +1,2321 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/generate-capabilities.py",
+  "sourceSha256": {
+    "addons/necronomidom/core/Css/Data/runtime-capabilities.json": "7b543f9198818821194c7eac6a63620a10a04540099bfceba4946bb335108330",
+    "addons/necronomidom/core/Css/Data/supported-properties.json": "0a27a16b96c76540a646af8df7257cc809e8bc07395198dc5632842862626492",
+    "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs": "e916de66dcb42902ce6b78511ff3a89d17010fa94f9ea8422f9ed1f57d60b77d",
+    "addons/necronomidom/runtime/DocumentHost.Inspector.cs": "6a177d3ff9d3f435d9b20ea0c486a9abf3f8498c01f20fe68b0320618dfb44ab",
+    "native/src/DocumentHost.Scripting.cs": "ec69fecc22141e9462d50aa3623f42cccb07204d081b99468fe1db2648d7202d"
+  },
+  "description": "Admission is not unrestricted implementation of a property's CSS grammar. Computed values, formatting context, resources and the constraints below determine renderability. Hidden display:none subtrees do not exercise rendering validation.",
+  "elements": [
+    "html",
+    "body",
+    "div",
+    "main",
+    "section",
+    "p",
+    "span",
+    "button",
+    "a",
+    "img",
+    "input",
+    "textarea"
+  ],
+  "inlineElements": [
+    "span",
+    "a"
+  ],
+  "properties": [
+    {
+      "name": "-webkit-text-stroke-color",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/TextEffectsResolver.cs",
+        "../runtime/NativeGlyphEffectsPaint.cs"
+      ]
+    },
+    {
+      "name": "-webkit-text-stroke-width",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/TextEffectsResolver.cs",
+        "../runtime/NativeGlyphEffectsPaint.cs"
+      ]
+    },
+    {
+      "name": "align-content",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "align-items",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "align-self",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "appearance",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [
+        "none"
+      ],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "background-clip",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-color",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-image",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-origin",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-position-x",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-position-y",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-repeat",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "background-size",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Resolved colors, decoded URL tiles and generated gradient layers. URL backgrounds require no-repeat on both axes and native background source adapter. Generated layers support no-repeat/repeat/round (not space). Contain/cover or computed two-axis sizes. Border/padding/content-box edges. Root/body image propagation rejected. Background grammar support does not imply arbitrary image-function support.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.BackgroundImages.cs",
+        "Layout/FlowLayout.GradientBackgrounds.cs",
+        "Layout/GradientLayout.cs"
+      ]
+    },
+    {
+      "name": "block-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "border-block-end-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-block-end-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-block-end-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-block-start-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-block-start-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-block-start-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-bottom-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-bottom-left-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-bottom-right-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-bottom-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-bottom-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-end-end-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-end-start-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-inline-end-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-inline-end-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-inline-end-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-inline-start-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-inline-start-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-inline-start-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-left-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-left-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-left-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-right-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-right-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-right-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-start-end-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-start-start-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-top-color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-top-left-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-top-right-radius",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "border-top-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "border-top-width",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "bottom",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "box-sizing",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "caret-color",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "clip-path",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "color",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "column-gap",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "cursor",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [
+        "auto",
+        "default",
+        "pointer",
+        "text"
+      ],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "display",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "flex-basis",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "flex-direction",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "flex-grow",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "flex-shrink",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "flex-wrap",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "font-family",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "font-size",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "font-style",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [
+        "normal",
+        "italic"
+      ],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "font-weight",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "height",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "image-rendering",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/ImageLayout.cs",
+        "Layout/FlowLayout.WidthTransitions.cs"
+      ]
+    },
+    {
+      "name": "inline-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "inset-block-end",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "inset-block-start",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "inset-inline-end",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "inset-inline-start",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "justify-content",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "left",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "letter-spacing",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "line-height",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "margin-block-end",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-block-start",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-bottom",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-inline-end",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-inline-start",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-left",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-right",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "margin-top",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "max-block-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "max-height",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "max-inline-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "max-width",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "min-block-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "min-height",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "min-inline-size",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "min-width",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    },
+    {
+      "name": "object-fit",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/ImageLayout.cs",
+        "Layout/FlowLayout.WidthTransitions.cs"
+      ]
+    },
+    {
+      "name": "object-position",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Decoded img resources require host image source; intrinsic sizing and bounded object fitting/positioning. Sampling auto/smooth/high-quality/crisp-edges/pixelated. Animated width on replaced images rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/ImageLayout.cs",
+        "Layout/FlowLayout.WidthTransitions.cs"
+      ]
+    },
+    {
+      "name": "opacity",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "order",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "outline-color",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "outline-offset",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "outline-style",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [
+        "none",
+        "solid",
+        "auto"
+      ],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "outline-width",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Elliptical independent corner radii. Outlines require uniform circular corner geometry; nonuniform-corner outlines rejected. Outline style none/solid/auto. Padding-edge clips share paint/hit geometry.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.PaintContexts.cs",
+        "Layout/FlowLayout.EllipticalClips.cs"
+      ]
+    },
+    {
+      "name": "overflow-block",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "overflow-inline",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "overflow-x",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "overflow-y",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "padding-block-end",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-block-start",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-bottom",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-inline-end",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-inline-start",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-left",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-right",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "padding-top",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "Computed resolved lengths/percentages as allowed by the containing block; horizontal LTR logical aliases. Border styles none/hidden/solid only. Ordinary-flow vertical margins must be zero except body-under-html origin; no margin collapsing. Inline spans/anchors require zero margins/padding/border widths.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/BoxDecorationResolver.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "pointer-events",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [
+        "auto",
+        "none"
+      ],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "position",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "right",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "rotate",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "row-gap",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Row/row-reverse/column/column-reverse; nowrap and row wrap only. No column wrapping or wrap-reverse. Order must be zero. Nonnegative finite grow/shrink. Alignment and intrinsic sizing use bounded flex solver, not all parser-accepted alignment keywords.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Flex.cs",
+        "Layout/FlowLayout.FlexSizing.cs",
+        "Layout/FlowLayout.FlexWrap.cs",
+        "Layout/FlexLineSolver.cs"
+      ]
+    },
+    {
+      "name": "scale",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "scrollbar-width",
+      "syntaxAccepted": true,
+      "stage": "layout, paint and input",
+      "constraints": "Scroll containers and rectangular/elliptical/polygon clipping use matching hit geometry. Single-axis rounded clips unavailable. clip-path is a bounded polygon profile, not every accepted basic shape or URL. Scrollbar sizes depend on native profile and custom properties.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Scroll.cs",
+        "Layout/FlowLayout.ScrollSizing.cs",
+        "Layout/FlowLayout.Scrollbars.cs",
+        "Paint/PolygonClipResolver.cs"
+      ]
+    },
+    {
+      "name": "spatial-navigation-action",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "spatial-navigation-contain",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "spatial-navigation-function",
+      "syntaxAccepted": true,
+      "stage": "input",
+      "constraints": "Pointer-events auto/none; cursor auto/default/pointer/text. Appearance none only; no native browser widgets. Spatial navigation and text controls are host integrations, not paint features. Inputs must be text-editable types; textarea has bounded multiline editing.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/TextControlColors.cs",
+        "Dom/DocumentInput.cs"
+      ]
+    },
+    {
+      "name": "text-align",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [
+        "start",
+        "left",
+        "center",
+        "end",
+        "right"
+      ],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "text-decoration-color",
+      "syntaxAccepted": true,
+      "stage": "admission only; no corresponding effect",
+      "constraints": "Admitted by validation to allow inherited currentcolor serialization. This does not enable text-decoration painting.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs"
+      ]
+    },
+    {
+      "name": "text-overflow",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [
+        "clip",
+        "ellipsis"
+      ],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "text-shadow",
+      "syntaxAccepted": true,
+      "stage": "paint",
+      "constraints": "Computed stroke and ordered shadows retain line geometry. Native stroke profile is 1px/2px; shadows support offsets and blur. See effect resolver for context-dependent value restrictions; not a claim of arbitrary CSS effect fidelity.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/TextEffectsResolver.cs",
+        "../runtime/NativeGlyphEffectsPaint.cs"
+      ]
+    },
+    {
+      "name": "text-wrap-mode",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [
+        "wrap",
+        "nowrap"
+      ],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "top",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Static/relative/absolute only; fixed/sticky/z-index unavailable. Final containing-block geometry; percentage child widths in shrink-to-fit formatting rejected. Absolute descendants crossing a static opacity/clip-path group rejected. Logical aliases are horizontal LTR.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/PositionedLayoutSolver.cs",
+        "Layout/FlowLayout.Positioned.cs"
+      ]
+    },
+    {
+      "name": "transform",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "transform-box",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "transform-origin",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "translate",
+      "syntaxAccepted": true,
+      "stage": "paint and input",
+      "constraints": "Finite computed opacity and genuine 2D affine transforms only; no 3D/perspective. Translate z must be zero, scale z one, rotation about z only. Transform-origin z zero. Content-box/fill-box transform references rejected. Independent inline compositing unavailable.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/BoxTransformResolver.cs",
+        "Layout/FlowLayout.Opacity.cs",
+        "Layout/FlowLayout.InlineFragments.cs"
+      ]
+    },
+    {
+      "name": "unicode-bidi",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [
+        "normal",
+        "isolate"
+      ],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "white-space-collapse",
+      "syntaxAccepted": true,
+      "stage": "layout and paint",
+      "constraints": "CSS font-family must resolve to an authored/mapped family; no implicit substitution for an unmapped CSS family. Native generic families map to the host default unless explicitly mapped. Missing glyphs in an admitted family can use the host's explicitly configured, ordered FallbackFontPaths (fallback_font_paths). Integer computed font-size 1..256 px; numeric font-weight 1..1000. Normal line-height uses font metrics, otherwise resolved length. Supported LTR Unicode only, no RTL/bidi controls. White-space-collapse is collapse (preserve additionally on textarea); wrap/nowrap. Ellipsis requires clipped horizontal overflow. Font/effect raster fidelity remains incomplete.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.Inline.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/UnicodeLtrText.cs",
+        "../runtime/NativeFontFamilies.cs"
+      ]
+    },
+    {
+      "name": "width",
+      "syntaxAccepted": true,
+      "stage": "layout",
+      "constraints": "Block/flow-root/flex boxes; inline text fragments only for span/a; none skips rendering. No grid, table or general inline formatting. Definite percentage heights and bounded intrinsic sizing; ordinary-flow vertical margins remain zero except body-under-html origin. Logical aliases use horizontal LTR axes. Mixed block/inline content is rejected.",
+      "allowedKeywords": [],
+      "sources": [
+        "Layout/FlowLayout.cs",
+        "Layout/FlowLayout.InlineFragments.cs",
+        "Layout/PositionedLayoutSolver.cs"
+      ]
+    }
+  ],
+  "pseudoClasses": [
+    "root",
+    "empty",
+    "first-child",
+    "last-child",
+    "only-child",
+    "nth-child",
+    "nth-last-child",
+    "first-of-type",
+    "last-of-type",
+    "only-of-type",
+    "nth-of-type",
+    "nth-last-of-type",
+    "is",
+    "not",
+    "where",
+    "has",
+    "scope",
+    "enabled",
+    "disabled",
+    "focus",
+    "focus-visible",
+    "focus-within",
+    "hover",
+    "active"
+  ],
+  "stylesheetRuleTypes": [
+    "CSSStyleRule",
+    "CSSMediaRule",
+    "CSSNestedDeclarations",
+    "CSSFontFaceRule"
+  ],
+  "conditional": [
+    {
+      "name": "Custom properties",
+      "constraint": "Names beginning -- are admitted for substitution; this does not enable unsupported consuming features."
+    },
+    {
+      "name": "Transitions",
+      "constraint": "Transition longhands admitted only when a transition source is installed. Host controllers implement bounded opacity, background-color, width, individual scale and foreground color transitions; not arbitrary animation or transition properties."
+    },
+    {
+      "name": "Textarea overflow-wrap",
+      "constraint": "break-word additionally admitted for textarea only; not general overflow-wrap support."
+    },
+    {
+      "name": "Inactive initial values",
+      "constraint": "Other properties can remain at initial computed serialization without enabling their feature. Initial currentcolor values and perspective-origin when perspective is none have explicit inert exceptions."
+    }
+  ],
+  "rejections": [
+    "Rendered elements outside the element list, non-text-editable input types, and attached shadow roots.",
+    "Pseudo-elements and pseudo-classes outside the list, including visited. Nested selector arguments are validated recursively.",
+    "Stylesheet rules outside the rule-type list, including @supports, @container, @layer and @keyframes, even where the parser/CSSOM can represent them.",
+    "Non-initial properties outside the admission list (except explicitly documented conditional/inert cases).",
+    "Grid/table layout, mixed block/inline formatting, RTL/bidi controls, fixed/sticky positioning, z-index stacking, 3D transforms, unsupported clip shapes and unsupported paint effects."
+  ],
+  "syntaxOnlyProperties": [
+    "-webkit-line-clamp",
+    "-webkit-text-stroke",
+    "accent-color",
+    "alignment-baseline",
+    "all",
+    "anchor-name",
+    "animation",
+    "animation-composition",
+    "animation-delay",
+    "animation-direction",
+    "animation-duration",
+    "animation-fill-mode",
+    "animation-iteration-count",
+    "animation-name",
+    "animation-play-state",
+    "animation-range",
+    "animation-range-end",
+    "animation-range-start",
+    "animation-timeline",
+    "animation-timing-function",
+    "animation-trigger",
+    "aspect-ratio",
+    "backdrop-filter",
+    "backface-visibility",
+    "background",
+    "background-attachment",
+    "background-blend-mode",
+    "background-position",
+    "baseline-shift",
+    "baseline-source",
+    "border",
+    "border-block",
+    "border-block-color",
+    "border-block-end",
+    "border-block-end-radius",
+    "border-block-start",
+    "border-block-start-radius",
+    "border-block-style",
+    "border-block-width",
+    "border-bottom",
+    "border-collapse",
+    "border-color",
+    "border-image",
+    "border-image-outset",
+    "border-image-repeat",
+    "border-image-slice",
+    "border-image-source",
+    "border-image-width",
+    "border-inline",
+    "border-inline-color",
+    "border-inline-end",
+    "border-inline-end-radius",
+    "border-inline-start",
+    "border-inline-start-radius",
+    "border-inline-style",
+    "border-inline-width",
+    "border-left",
+    "border-radius",
+    "border-right",
+    "border-shape",
+    "border-spacing",
+    "border-style",
+    "border-top",
+    "border-width",
+    "box-shadow",
+    "caption-side",
+    "clear",
+    "clip",
+    "color-scheme",
+    "contain",
+    "contain-intrinsic-block-size",
+    "contain-intrinsic-height",
+    "contain-intrinsic-inline-size",
+    "contain-intrinsic-size",
+    "contain-intrinsic-width",
+    "container",
+    "container-name",
+    "container-type",
+    "content",
+    "content-visibility",
+    "counter-increment",
+    "counter-reset",
+    "counter-set",
+    "direction",
+    "empty-cells",
+    "filter",
+    "flex",
+    "flex-flow",
+    "flex-line-count",
+    "float",
+    "font",
+    "font-feature-settings",
+    "font-kerning",
+    "font-language-override",
+    "font-optical-sizing",
+    "font-palette",
+    "font-size-adjust",
+    "font-synthesis",
+    "font-synthesis-position",
+    "font-synthesis-small-caps",
+    "font-synthesis-style",
+    "font-synthesis-weight",
+    "font-variant",
+    "font-variant-alternates",
+    "font-variant-caps",
+    "font-variant-east-asian",
+    "font-variant-emoji",
+    "font-variant-ligatures",
+    "font-variant-numeric",
+    "font-variant-position",
+    "font-variation-settings",
+    "font-width",
+    "gap",
+    "grid",
+    "grid-area",
+    "grid-auto-columns",
+    "grid-auto-flow",
+    "grid-auto-rows",
+    "grid-column",
+    "grid-column-end",
+    "grid-column-start",
+    "grid-row",
+    "grid-row-end",
+    "grid-row-start",
+    "grid-template",
+    "grid-template-areas",
+    "grid-template-columns",
+    "grid-template-rows",
+    "hyphens",
+    "inset",
+    "inset-block",
+    "inset-inline",
+    "isolation",
+    "justify-items",
+    "justify-self",
+    "line-break",
+    "list-style",
+    "list-style-image",
+    "list-style-position",
+    "list-style-type",
+    "margin",
+    "margin-block",
+    "margin-break",
+    "margin-inline",
+    "margin-trim",
+    "mask",
+    "mask-border",
+    "mask-border-mode",
+    "mask-border-outset",
+    "mask-border-repeat",
+    "mask-border-slice",
+    "mask-border-source",
+    "mask-border-width",
+    "mask-clip",
+    "mask-composite",
+    "mask-image",
+    "mask-mode",
+    "mask-origin",
+    "mask-position",
+    "mask-repeat",
+    "mask-size",
+    "mask-type",
+    "mix-blend-mode",
+    "outline",
+    "overflow",
+    "overflow-anchor",
+    "overflow-clip-margin",
+    "overflow-wrap",
+    "overscroll-behavior",
+    "overscroll-behavior-block",
+    "overscroll-behavior-inline",
+    "overscroll-behavior-x",
+    "overscroll-behavior-y",
+    "padding",
+    "padding-block",
+    "padding-inline",
+    "paint-order",
+    "perspective",
+    "perspective-origin",
+    "place-content",
+    "place-items",
+    "place-self",
+    "position-anchor",
+    "position-area",
+    "position-try",
+    "position-try-fallbacks",
+    "position-try-order",
+    "position-visibility",
+    "quotes",
+    "scroll-behavior",
+    "scroll-margin",
+    "scroll-margin-block",
+    "scroll-margin-block-end",
+    "scroll-margin-block-start",
+    "scroll-margin-bottom",
+    "scroll-margin-inline",
+    "scroll-margin-inline-end",
+    "scroll-margin-inline-start",
+    "scroll-margin-left",
+    "scroll-margin-right",
+    "scroll-margin-top",
+    "scroll-padding",
+    "scroll-padding-block",
+    "scroll-padding-block-end",
+    "scroll-padding-block-start",
+    "scroll-padding-bottom",
+    "scroll-padding-inline",
+    "scroll-padding-inline-end",
+    "scroll-padding-inline-start",
+    "scroll-padding-left",
+    "scroll-padding-right",
+    "scroll-padding-top",
+    "scroll-snap-align",
+    "scroll-snap-stop",
+    "scroll-snap-type",
+    "scrollbar-color",
+    "scrollbar-gutter",
+    "tab-size",
+    "table-layout",
+    "text-align-last",
+    "text-box",
+    "text-box-edge",
+    "text-box-trim",
+    "text-decoration",
+    "text-decoration-inset",
+    "text-decoration-line",
+    "text-decoration-skip",
+    "text-decoration-skip-ink",
+    "text-decoration-skip-spaces",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-indent",
+    "text-justify",
+    "text-transform",
+    "text-underline-offset",
+    "text-wrap",
+    "text-wrap-style",
+    "touch-action",
+    "transform-style",
+    "transition",
+    "transition-behavior",
+    "transition-delay",
+    "transition-duration",
+    "transition-property",
+    "transition-timing-function",
+    "user-select",
+    "vertical-align",
+    "visibility",
+    "white-space",
+    "will-change",
+    "word-break",
+    "word-spacing",
+    "z-index"
+  ],
+  "aliases": {
+    "-webkit-align-content": "align-content",
+    "-webkit-align-items": "align-items",
+    "-webkit-align-self": "align-self",
+    "-webkit-animation": "animation",
+    "-webkit-animation-delay": "animation-delay",
+    "-webkit-animation-direction": "animation-direction",
+    "-webkit-animation-duration": "animation-duration",
+    "-webkit-animation-fill-mode": "animation-fill-mode",
+    "-webkit-animation-iteration-count": "animation-iteration-count",
+    "-webkit-animation-name": "animation-name",
+    "-webkit-animation-play-state": "animation-play-state",
+    "-webkit-animation-timing-function": "animation-timing-function",
+    "-webkit-appearance": "appearance",
+    "-webkit-backface-visibility": "backface-visibility",
+    "-webkit-background-clip": "background-clip",
+    "-webkit-background-origin": "background-origin",
+    "-webkit-background-size": "background-size",
+    "-webkit-border-bottom-left-radius": "border-bottom-left-radius",
+    "-webkit-border-bottom-right-radius": "border-bottom-right-radius",
+    "-webkit-border-radius": "border-radius",
+    "-webkit-border-top-left-radius": "border-top-left-radius",
+    "-webkit-border-top-right-radius": "border-top-right-radius",
+    "-webkit-box-shadow": "box-shadow",
+    "-webkit-box-sizing": "box-sizing",
+    "-webkit-filter": "filter",
+    "-webkit-flex": "flex",
+    "-webkit-flex-basis": "flex-basis",
+    "-webkit-flex-direction": "flex-direction",
+    "-webkit-flex-flow": "flex-flow",
+    "-webkit-flex-grow": "flex-grow",
+    "-webkit-flex-shrink": "flex-shrink",
+    "-webkit-flex-wrap": "flex-wrap",
+    "-webkit-justify-content": "justify-content",
+    "-webkit-mask": "mask",
+    "-webkit-mask-box-image": "mask-border",
+    "-webkit-mask-box-image-outset": "mask-border-outset",
+    "-webkit-mask-box-image-repeat": "mask-border-repeat",
+    "-webkit-mask-box-image-slice": "mask-border-slice",
+    "-webkit-mask-box-image-source": "mask-border-source",
+    "-webkit-mask-box-image-width": "mask-border-width",
+    "-webkit-mask-clip": "mask-clip",
+    "-webkit-mask-composite": "mask-composite",
+    "-webkit-mask-image": "mask-image",
+    "-webkit-mask-origin": "mask-origin",
+    "-webkit-mask-position": "mask-position",
+    "-webkit-mask-repeat": "mask-repeat",
+    "-webkit-mask-size": "mask-size",
+    "-webkit-order": "order",
+    "-webkit-perspective": "perspective",
+    "-webkit-perspective-origin": "perspective-origin",
+    "-webkit-transform": "transform",
+    "-webkit-transform-origin": "transform-origin",
+    "-webkit-transform-style": "transform-style",
+    "-webkit-transition": "transition",
+    "-webkit-transition-delay": "transition-delay",
+    "-webkit-transition-duration": "transition-duration",
+    "-webkit-transition-property": "transition-property",
+    "-webkit-transition-timing-function": "transition-timing-function",
+    "font-stretch": "font-width",
+    "grid-column-gap": "column-gap",
+    "grid-gap": "gap",
+    "grid-row-gap": "row-gap",
+    "word-wrap": "overflow-wrap"
+  },
+  "apiScope": "Native/GDScript method and signal declarations below are generated from the authoritative named binding annotations. There is no authoritative finite registry of all C# DOM APIs or emitted DOM event types, so those are not inferred from public class discovery or event-constructor strings. Developer inspector/reload tooling is gated to debug engine builds and is not available in release templates; a listed binding is not a promise of release-tool availability. C# DOM/EventTarget APIs retain their source contracts. No JavaScript runtime is provided.",
+  "nativeApi": {
+    "methods": [
+      {
+        "name": "add_class",
+        "managedName": "AddClass",
+        "returnType": "void",
+        "parameters": "string selector, string className",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "apply_text_scale",
+        "managedName": "ScriptApplyTextScale",
+        "returnType": "void",
+        "parameters": "float scale",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "begin_inspector_pick",
+        "managedName": "BeginInspectorPick",
+        "returnType": "void",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "click",
+        "managedName": "ClickElement",
+        "returnType": "void",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "close_inspector",
+        "managedName": "CloseInspector",
+        "returnType": "void",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "focus_element",
+        "managedName": "FocusElement",
+        "returnType": "void",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "force_reload",
+        "managedName": "ScriptForceReload",
+        "returnType": "int",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs"
+      },
+      {
+        "name": "get_attribute",
+        "managedName": "GetAttribute",
+        "returnType": "string",
+        "parameters": "string selector, string name",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_inspector_report",
+        "managedName": "GetInspectorReport",
+        "returnType": "string",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "get_inspector_selection",
+        "managedName": "GetInspectorSelection",
+        "returnType": "string",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "get_text",
+        "managedName": "GetText",
+        "returnType": "string",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_value",
+        "managedName": "GetValue",
+        "returnType": "string",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "has_class",
+        "managedName": "HasClass",
+        "returnType": "bool",
+        "parameters": "string selector, string className",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "has_element",
+        "managedName": "HasElement",
+        "returnType": "bool",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "is_input_enabled",
+        "managedName": "IsInputEnabled",
+        "returnType": "bool",
+        "parameters": "",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "is_inspector_open",
+        "managedName": "IsInspectorOpen",
+        "returnType": "bool",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "listen",
+        "managedName": "Listen",
+        "returnType": "void",
+        "parameters": "string type",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "load_document",
+        "managedName": "ScriptLoadDocument",
+        "returnType": "void",
+        "parameters": "string path",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "open_inspector",
+        "managedName": "OpenInspector",
+        "returnType": "void",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "pick_inspector_element",
+        "managedName": "PickInspectorElement",
+        "returnType": "bool",
+        "parameters": "double x, double y",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "query_ids",
+        "managedName": "QueryIds",
+        "returnType": "PackedStringArray",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "reload_changed_files",
+        "managedName": "ScriptReloadChangedFiles",
+        "returnType": "int",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs"
+      },
+      {
+        "name": "remove_attribute",
+        "managedName": "RemoveAttribute",
+        "returnType": "void",
+        "parameters": "string selector, string name",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "remove_class",
+        "managedName": "RemoveClass",
+        "returnType": "void",
+        "parameters": "string selector, string className",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "select_inspector_element",
+        "managedName": "SelectInspectorElement",
+        "returnType": "bool",
+        "parameters": "string selector",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "set_application_navigation",
+        "managedName": "SetApplicationNavigation",
+        "returnType": "void",
+        "parameters": "bool enabled",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_attribute",
+        "managedName": "SetAttribute",
+        "returnType": "void",
+        "parameters": "string selector, string name, string value",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_input_enabled",
+        "managedName": "SetInputEnabled",
+        "returnType": "void",
+        "parameters": "bool enabled",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_text",
+        "managedName": "SetText",
+        "returnType": "void",
+        "parameters": "string selector, string text",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_value",
+        "managedName": "SetValue",
+        "returnType": "void",
+        "parameters": "string selector, string value",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "toggle_class",
+        "managedName": "ToggleClass",
+        "returnType": "bool",
+        "parameters": "string selector, string className",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "toggle_inspector",
+        "managedName": "ToggleInspector",
+        "returnType": "void",
+        "parameters": "",
+        "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      }
+    ],
+    "signals": [
+      {
+        "name": "cancel",
+        "managedName": "CancelEventHandler",
+        "returnType": "void",
+        "parameters": "",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "clicked",
+        "managedName": "ClickedEventHandler",
+        "returnType": "void",
+        "parameters": "string elementId",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "developer_reloaded",
+        "managedName": "DeveloperReloadedEventHandler",
+        "returnType": "void",
+        "parameters": "int kind, bool documentReplaced, string error",
+        "source": "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs"
+      },
+      {
+        "name": "dom_event",
+        "managedName": "DomEventEventHandler",
+        "returnType": "void",
+        "parameters": "string type, string elementId",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      }
+    ]
+  }
+}
