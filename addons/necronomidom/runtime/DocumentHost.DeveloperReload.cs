@@ -42,6 +42,11 @@ public partial class DocumentHost
         }
     }
 
+    /// <summary>Whether enabled developer reload also polls source files. Turn off for manual-only reload;
+    /// the source baseline is retained. Enabling this alone does not enable developer reload.</summary>
+    [Export, BindProperty(Name = "developer_reload_watch_enabled")]
+    public bool DeveloperReloadWatchEnabled { get; set; } = true;
+
     /// <summary>Completion after the new document is mounted. CSS results do not invalidate DOM handles.
     /// Document results require callers to discard old element handles and bind to Document again.
     /// DocumentWithdrawing/DocumentLive remain the authoritative detach/attach publication for shared observers.</summary>
@@ -203,7 +208,7 @@ public partial class DocumentHost
 
     private void ProcessDeveloperReload(double delta)
     {
-        if (!DeveloperReloadEnabled || !OS.IsDebugBuild() || Document == null) return;
+        if (!DeveloperReloadEnabled || !DeveloperReloadWatchEnabled || !OS.IsDebugBuild() || Document == null) return;
         _developerReloadElapsed += delta;
         if (_developerReloadElapsed < DeveloperReloadPollSeconds) return;
         _developerReloadElapsed = 0;

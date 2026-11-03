@@ -4,11 +4,12 @@ HTML and CSS user interfaces for Godot 4, from GDScript or C#. Author screens as
 parses them into a live DOM, runs the CSS cascade, lays the document out and paints it natively through Godot's
 `RenderingServer` and `TextServerAdvanced`, with pointer, keyboard, gamepad and screen-reader support.
 
-| Rendered | After clicks and typing | Gamepad navigation |
+| Default workbench | Live CSS edit, retained focus | Markup reload, rebound controls |
 |---|---|---|
-| ![Demo document](docs/images/demo.png) | ![Input editing](docs/images/demo-input.png) | ![Focus navigation](docs/images/demo-navigation.png) |
+| ![Nightward Guild workbench](docs/images/workbench.png) | ![Accent edit with retained input selection](docs/images/workbench-css.png) | ![Model retained after markup replacement](docs/images/workbench-rebound.png) |
 
-The demo (`demo/grimoire.html` + `grimoire.css`) rendered by stock Godot 4.7.2, Forward+, 1280×720.
+The default C# demo (`demo/workbench.html` + `workbench.css`) rendered by stock Godot 4.7.2 .NET,
+Forward+, 1440×1000. The smaller GDScript Grimoire example remains in `demo/gdscript/`.
 
 ## Live interfaces, not just menus
 
@@ -240,12 +241,12 @@ host.Styles.Media = media;
 
 `host.CreateBindings()` creates a `NecronomiDom.Bindings.DocumentBindings` scope for the host's
 currently live document. Sources implement ordinary `INotifyPropertyChanged`; getters are typed
-delegates, not reflection, markup expressions or scripts. For example, the working Grimoire presenter
+delegates, not reflection, markup expressions or scripts. For example, the workbench presenter
 binds its view model's text with:
 
 ```csharp
 var bindings = host.CreateBindings();
-bindings.Text("#count", model, nameof(GrimoireViewModel.CountText), state => state.CountText);
+bindings.Text("#character-preview", model, nameof(WorkbenchViewModel.CharacterPreview), state => state.CharacterPreview);
 ```
 
 | Method | One-way target |
@@ -270,8 +271,8 @@ For non-Godot DOM consumers, `new DocumentBindings(document)` is available with 
 Bindings never write back to models. Keep clicks and edits as explicit application commands, and
 detach those handlers as part of the presenter's document lifetime (the scope's `Disposed` event
 can own that cleanup). See [`demo/Demo.cs`](demo/Demo.cs) and
-[`demo/GrimoireViewModel.cs`](demo/GrimoireViewModel.cs): summon/banish remain commands, while
-the counter is state-driven and markup reload detaches/rebinds exactly once.
+[`demo/WorkbenchViewModel.cs`](demo/WorkbenchViewModel.cs): input events explicitly edit the model;
+quest/loadout/save clicks remain ordinary handlers. Markup reload detaches/rebinds exactly once.
 
 Run the real-engine binding scenario with .NET Godot:
 
@@ -288,8 +289,10 @@ GDScript's existing selector/signal API is unchanged.
 
 The inspector and file reload are explicit opt-ins, available only in a debug engine/export template.
 Ordinary hosts do not allocate an inspector, retain reload source snapshots or poll files.
-Launch either demo with `-- --dev-ui`: **F6** toggles the inspector, **F7** checks changed files,
-and **F8** reparses/remounts the document even if files are unchanged.
+The default C# workbench exposes them in its authoring toolbar, without requiring `--dev-ui`:
+**F6** toggles the inspector, **F7** checks changed files, and **F8** reparses/remounts the document
+even if files are unchanged. Its source watcher starts **off**. The smaller GDScript example still
+uses `-- --dev-ui` to enable its keyboard authoring controls and automatic source watching.
 
 ### Live inspector
 
@@ -322,6 +325,12 @@ HTML and its linked stylesheets every 0.5 seconds. Content comparison catches sa
 Enabling on an existing document establishes a baseline from current disk contents without changing
 that document; edits made before enabling require `ForceReload()`. Disabling releases the baseline.
 
+For manual-only reload, set `DeveloperReloadWatchEnabled = false`
+(`developer_reload_watch_enabled` in GDScript) **before** enabling `DeveloperReloadEnabled`.
+This retains the baseline and manual commands without polling. Toggling the watch property does
+not clear the baseline or enable reload by itself; its default is `true` to preserve existing
+opted-in hosts. The workbench's **Watch sources: OFF/ON** button is the explicit automatic-watch opt-in.
+
 `ReloadChangedFiles()` preserves the exact DOM, input values/selections, focus, listeners and scroll
 state for CSS-only edits; changed geometry can naturally clamp scroll offsets. It validates candidate
 layout/native paint in an isolated snapshot using the current media environment before publishing
@@ -337,6 +346,7 @@ host.ReloadCompleted += result =>
 {
     if (result.DocumentReplaced) BindDocument();
 };
+host.DeveloperReloadWatchEnabled = false; // manual commands only; enable watching separately
 host.DeveloperReloadEnabled = true;
 ```
 
@@ -394,17 +404,73 @@ Two capabilities use engine APIs that stock Godot 4.7 does not expose. Necronomi
 
 ## Demo and tests
 
-The repository root is a Godot project with two demos of the same page: `demo/gdscript/demo.tscn` (GDScript, any
-edition, needs the native library) and `demo/demo.tscn` (C#, .NET edition).
+The repository root opens the .NET **Nightward Guild UI workbench**, `demo/demo.tscn`.
+The independent, minimal GDScript Grimoire remains at `demo/gdscript/demo.tscn` (any Godot edition,
+needs the native library) and retains its original `grimoire.html` / `grimoire.css` sources.
 
 ```sh
 native/build.sh                                      # native library for this machine
 godot --path . res://demo/gdscript/demo.tscn        # GDScript demo (add `-- --smoke` for a check run)
 dotnet build NecronomiDOM.Demo.csproj
-godot --path .                                       # C# demo (.NET edition)
-godot --headless --path . -- --smoke                 # C# smoke run: exit 0 on success
+godot --path .                                       # default C# workbench (.NET edition)
+godot --headless --path . -- --smoke                 # default-demo acceptance: exit 0 on success
+godot --headless --path . -- --workbench-smoke       # full workbench + reload/input regression
 dotnet test tests/NecronomiDom.Tests                 # core library tests (no engine required)
 ```
+
+### Guided workbench exercise
+
+1. Edit the adventurer name/motto and equip the lantern. The preview is typed `Text` binding;
+   the unsaved-card and equipped-loadout styles are `Class` bindings. The lantern hint is a
+   `Visible` binding and Save profile is `Enabled` only for a nonblank, changed profile.
+2. Accept a quest. Its tracker becomes visible, other accept buttons disable, and Record finding
+   advances the local model. After three findings, collection enables; collect 12 supplies once.
+   These are explicitly simulated, self-contained demo contracts, not game integration or persistence.
+3. Change `--accent: #b9e38c` to `--accent: #eebd78` in `demo/workbench.css` and save. With the
+   name field focused/selected, press **F7**. The toolbar reports **CSS applied**; value, selection,
+   focus, DOM identity and bindings stay live. Watching is optional, never automatic by default.
+4. Edit a guide heading in `demo/workbench.html`, retaining all control IDs, and press **F8**.
+   The toolbar reports **Markup replaced**. The C# model (including unsaved form drafts, lantern,
+   quest progress and earned supplies) survives; new inputs are restored and event handlers rebound.
+   Markup replacement does **not** promise focus/selection preservation. Continue typing/recording.
+5. Temporarily add `body { display: grid; }` to the CSS. **F7** rejects the unsupported layout,
+   shows the runtime error and recovery instruction, and leaves the old working UI intact. Remove
+   the rule and reload. Application binding callbacks are not transactional: deleting required
+   control IDs is an application error, not a supported way to redesign the presenter.
+6. **Inspect / F6** opens the real inspector; select `#tracker` to inspect bound content.
+   **Reference + editor setup** exposes the generated capability-reference opener and displays
+   VS Code `css.customData` / `html.customData` settings. File openers use the OS-associated editor;
+   open the displayed repository paths manually if no association is configured.
+
+The HTML uses admitted `div`/`section`/`p` elements with ARIA names/heading roles, not unsupported
+browser elements. There is no JavaScript runtime, template engine, automatic two-way binding or
+game-framework dependency. Inspector/reload stay guarded by a debug engine/template; their toolbar
+actions are disabled in release templates. Model state is session-local, not saved to disk.
+
+`--workbench-smoke` drives the **actual default document** through Godot mouse/keyboard input.
+It copies HTML/CSS into an isolated temporary `user://ui/` directory for edits and removes it on
+exit. It checks native paint, typed text/class/visibility/enabled state, CSS focus/selection retention,
+forced markup rebinding, failed reload survival, once-only rewards, explicit watcher opt-in/off,
+and inspector/reference access. The headless dummy window uses a 1440×1000 logical viewport;
+this is behavioral/layout coverage, not rendered screenshot evidence.
+
+For actual rendered evidence, run .NET Godot on a private display (or normally on your own desktop):
+
+```sh
+godot --path . --rendering-method forward_plus --resolution 1440x1000 -- \\
+  --workbench-smoke --proof-out=/absolute/screenshot-directory
+```
+
+Seven viewport captures cover initial UI, bound state, CSS focus retention, rebound markup, rejected
+reload, editor-reference access and the inspector. Verification for this workbench used stock Godot
+4.7.2 .NET, Vulkan/Forward+ on AMD RX 7900 XTX under private headless gamescope, with all seven
+screenshots inspected. No desktop window, engine patch or software-rendering substitution was used.
+The negative CSS check intentionally logs a `display: grid` reload error; it must still finish
+`WORKBENCH_SMOKE_RESULT PASS`. OS external-editor launching and release-template export are not
+exercised by this regression.
+
+![Rejected CSS reload leaves the completed tracker and actions working](docs/images/workbench-rejected.png)
+
 
 Authoring-tool scenarios use isolated temporary `user://ui/` files and never modify the demo sources:
 

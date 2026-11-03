@@ -141,6 +141,7 @@ jobs:
           "$GODOT_MONO" --headless --path . --import || true
           dotnet build NecronomiDOM.Demo.csproj -nologo
           "$GODOT_MONO" --headless --path . -- --smoke
+          "$GODOT_MONO" --headless --path . -- --workbench-smoke
       - name: C# inspector and state-preserving reload
         run: '"$GODOT_MONO" --headless --path . res://demo/authoring/smoke.tscn'
       - name: Typed binding state, input and document lifetime
