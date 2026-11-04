@@ -20,9 +20,9 @@ case "$HOST_OS" in
   MINGW*|MSYS*|CYGWIN*)
     WORK="$(cygpath -u "$WORK")"
     if [[ -n "${MSYS2_ARG_CONV_EXCL:-}" ]]; then
-      export MSYS2_ARG_CONV_EXCL="$MSYS2_ARG_CONV_EXCL;/p:;https://;http://"
+      export MSYS2_ARG_CONV_EXCL="$MSYS2_ARG_CONV_EXCL;/p:"
     else
-      export MSYS2_ARG_CONV_EXCL="/p:;https://;http://"
+      export MSYS2_ARG_CONV_EXCL="/p:"
     fi
     if [[ -n "${MSYS2_ENV_CONV_EXCL:-}" ]]; then
       export MSYS2_ENV_CONV_EXCL="$MSYS2_ENV_CONV_EXCL;NUGET_PACKAGES"
@@ -143,6 +143,19 @@ if [[ -z "${NECRONOMIDOM_SDK_FEED+x}" ]]; then
   cp "$PATCH" "$FEED/$(basename "$PATCH")"
 fi
 FEED_NATIVE="$(native_path "$FEED")"
+RESTORE_CONFIG_NATIVE="$(native_path "$SDK_ROOT/nuget.config")"
+# Keep source URIs in NuGet's own format rather than transporting a mixed path/URI CLI list.
+python - "$FEED_NATIVE" "$RESTORE_CONFIG_NATIVE" <<'PY'
+import sys
+from xml.etree import ElementTree as ET
+
+configuration = ET.Element("configuration")
+sources = ET.SubElement(configuration, "packageSources")
+ET.SubElement(sources, "clear")
+ET.SubElement(sources, "add", key="pinned-sdk", value=sys.argv[1])
+ET.SubElement(sources, "add", key="nuget.org", value="https://api.nuget.org/v3/index.json")
+ET.ElementTree(configuration).write(sys.argv[2], encoding="utf-8", xml_declaration=True)
+PY
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   printf 'sdk-feed=%s\n' "$FEED_NATIVE" >> "$GITHUB_OUTPUT"
 fi
@@ -152,10 +165,10 @@ for rid in "$@"; do
     linux-*) lib="libnecronomidom.so" ;; osx-*) lib="libnecronomidom.dylib" ;; win-*) lib="necronomidom.dll" ;;
     *) echo "Unsupported RID $rid" >&2; exit 2 ;;
   esac
-  # Every filesystem argument is already native; MSYS must not rewrite restore URLs or MSBuild properties.
+  # Every filesystem argument is already native; MSYS must not rewrite MSBuild properties.
   MSYS2_ARG_CONV_EXCL='*' dotnet publish "$PROJECT_NATIVE" -c Release -r "$rid" -nologo -v q \
     /p:GodotBindingsVersion="$BINDINGS_VERSION" \
-    --source "$FEED_NATIVE" --source https://api.nuget.org/v3/index.json
+    /p:RestoreConfigFile="$RESTORE_CONFIG_NATIVE"
   built="$(find "$HERE/bin/Release/net10.0/$rid/publish" -maxdepth 1 -name 'NecronomiDom.Native.*' \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) | head -1)"
   mkdir -p "$ADDON/bin/$rid"
   cp "$built" "$ADDON/bin/$rid/$lib"
