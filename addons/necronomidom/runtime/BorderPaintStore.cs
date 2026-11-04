@@ -16,7 +16,9 @@ public sealed class BorderPaintStore : IDisposable
         _top = new("top_color"), _right = new("right_color"), _bottom = new("bottom_color"), _left = new("left_color");
     private int _borderCursor, _contextCursor;
     private bool _disposed;
-    private sealed record BorderItem(MeshInstance2D Node, QuadMesh Mesh, ShaderMaterial Material);
+    private sealed record BorderItem(NativeBorderPaint Node, QuadMesh Mesh, ShaderMaterial Material);
+    internal bool Owns(int slot, CanvasItem? item) => (uint)slot < (uint)_borders.Count
+        && ReferenceEquals(_borders[slot].Node, item);
     public void DetachBeforeClear()
     {
         foreach (var item in _borders) Detach(item.Node);
@@ -29,24 +31,31 @@ public sealed class BorderPaintStore : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         _borderCursor = _contextCursor = 0;
     }
-    public CanvasItem Create(BorderBoxRun run)
+    public CanvasItem Create(BorderBoxRun run, out int slot)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        Validate(run.Borders.Top); Validate(run.Borders.Right); Validate(run.Borders.Bottom); Validate(run.Borders.Left);
         BorderItem item;
         if (_borderCursor == _borders.Count)
         {
-            var mesh = new QuadMesh();
+            var mesh = new QuadMesh { Size = Vector2.One };
             var material = new ShaderMaterial { Shader = WebPaintShaders.AsymmetricBorder };
-            item = new(new MeshInstance2D { Mesh = mesh, Material = material }, mesh, material);
+            item = new(new NativeBorderPaint { Mesh = mesh, Material = material }, mesh, material);
             _borders.Add(item);
         }
         else item = _borders[_borderCursor];
-        _borderCursor++;
+        slot = _borderCursor++;
+        Update(slot, run);
+        return item.Node;
+    }
+    internal void Update(int slot, BorderBoxRun run)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        Validate(run.Borders.Top); Validate(run.Borders.Right); Validate(run.Borders.Bottom); Validate(run.Borders.Left);
+        var item = _borders[slot];
         var bounds = run.Bounds;
         item.Node.Position = new((float)(bounds.X + bounds.Width / 2), (float)(bounds.Y + bounds.Height / 2));
         item.Node.Visible = bounds.Width > 0 && bounds.Height > 0;
-        item.Mesh.Size = new((float)Math.Max(0, bounds.Width), (float)Math.Max(0, bounds.Height));
+        item.Node.Scale = new((float)Math.Max(0, bounds.Width), (float)Math.Max(0, bounds.Height));
         var material2 = item.Material;
         material2.SetShaderParameter(_boxSize, new Vector2((float)bounds.Width, (float)bounds.Height));
         var b = run.Borders;
@@ -59,7 +68,6 @@ public sealed class BorderPaintStore : IDisposable
         material2.SetShaderParameter(_right, Color(b.Right.Color));
         material2.SetShaderParameter(_bottom, Color(b.Bottom.Color));
         material2.SetShaderParameter(_left, Color(b.Left.Color));
-        return item.Node;
     }
     public CanvasItem CreateContext(BeginTransformRun run)
     {

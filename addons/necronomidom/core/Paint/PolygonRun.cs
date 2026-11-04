@@ -6,7 +6,7 @@ namespace NecronomiDom.Paint;
 public readonly record struct PaintPoint(double X, double Y);
 
 /// <summary>Immutable local CSS-pixel vertices. Both windings and empty, collapsed convex shapes are valid.</summary>
-public sealed class ConvexPolygon
+public sealed class ConvexPolygon : IEquatable<ConvexPolygon>
 {
     private readonly PaintPoint[] _points;
     public int Count => _points.Length;
@@ -54,6 +54,17 @@ public sealed class ConvexPolygon
         for (int i = 0; i < Count; i++)
             if (Cross(_points[i], _points[(i + 1) % Count], p) * Winding < 0) return false;
         return true;
+    }
+
+    // A fresh layout's identical vertices do not change captured pixels or native clip parameters.
+    public bool Equals(ConvexPolygon? other) => ReferenceEquals(this, other)
+        || other is not null && _points.AsSpan().SequenceEqual(other._points);
+    public override bool Equals(object? other) => other is ConvexPolygon polygon && Equals(polygon);
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (PaintPoint point in _points) hash.Add(point);
+        return hash.ToHashCode();
     }
 
     private static double Cross(PaintPoint a, PaintPoint b, PaintPoint c) =>

@@ -7,26 +7,30 @@ using NecronomiDom.Paint;
 namespace NecronomiDom.Runtime;
 
 /// <summary>
-/// One store per DocumentPaint. Retains ordered polygon/context native nodes and GPU buffers across dirty rebuilds;
-/// detached nodes remain owned here until their slot disappears or the document painter is disposed.
+/// One store per DocumentPaint. Retains polygon/context nodes by concrete paint kind across dirty rebuilds;
+/// a different-kind insertion cannot evict unrelated targets. Unused slots still retire at the end of each rebuild.
 /// </summary>
 public sealed class PolygonPaintStore : IDisposable
 {
-    private readonly record struct Slot(Type Kind, CanvasItem Item);
-    private readonly List<Slot> _slots = new();
-    private int _cursor;
+    private enum SlotKind { Polygon, PolygonClip, RectClip, RoundedRectClip, Opacity, Count }
+    private readonly List<CanvasItem>?[] _slots = new List<CanvasItem>?[(int)SlotKind.Count];
+    private readonly int[] _cursors = new int[(int)SlotKind.Count];
 
     /// <summary>Must precede normal-item cleanup, including DocumentHost's separate Clear calls.</summary>
     public void DetachBeforeClear()
     {
-        for (int i = _slots.Count - 1; i >= 0; i--)
+        foreach (var slots in _slots)
         {
-            CanvasItem item = _slots[i].Item;
-            item.GetParent()?.RemoveChild(item);
+            if (slots == null) continue;
+            for (int i = slots.Count - 1; i >= 0; i--)
+            {
+                CanvasItem item = slots[i];
+                item.GetParent()?.RemoveChild(item);
+            }
         }
     }
 
-    public void BeginRebuild() => _cursor = 0;
+    public void BeginRebuild() => Array.Clear(_cursors);
     public CanvasItem Create(PolygonRun run) => Acquire(run);
     public CanvasItem CreateContext(PaintRun begin)
     {
@@ -40,17 +44,27 @@ public sealed class PolygonPaintStore : IDisposable
     private CanvasItem Acquire(PaintRun run)
     {
         CanvasItem item;
-        Type kind = run.GetType();
-        if (_cursor < _slots.Count && _slots[_cursor].Kind == kind)
+        int kind = (int)(run switch
         {
-            item = _slots[_cursor].Item;
+            PolygonRun => SlotKind.Polygon,
+            BeginPolygonClipRun => SlotKind.PolygonClip,
+            BeginRectClipRun => SlotKind.RectClip,
+            BeginRoundedRectClipRun => SlotKind.RoundedRectClip,
+            BeginOpacityRun => SlotKind.Opacity,
+            _ => throw new NotSupportedException("Unknown native polygon store run: " + run.GetType().FullName)
+        });
+        var slots = _slots[kind] ??= new List<CanvasItem>();
+        ref int cursor = ref _cursors[kind];
+        if (cursor < slots.Count)
+        {
+            item = slots[cursor];
             switch (run, item)
             {
                 case (PolygonRun polygon, PolygonPaint paint): paint.Update(polygon); break;
                 case (BeginPolygonClipRun clip, PolygonClipGroup group): group.Update(clip); break;
                 case (BeginRectClipRun clip, RoundedRectClipGroup group): group.Update(clip.Bounds, 0); break;
                 case (BeginRoundedRectClipRun clip, RoundedRectClipGroup group): group.Update(clip.Bounds, clip.Radius); break;
-                case (BeginOpacityRun opacity, PolygonOpacityGroup group): group.Update(opacity.Opacity); break;
+                case (BeginOpacityRun opacity, PolygonOpacityGroup group): group.Update(opacity.Opacity, false); break;
                 default: throw new InvalidOperationException("Native polygon store slot does not match its declared paint kind.");
             }
         }
@@ -63,28 +77,36 @@ public sealed class PolygonPaintStore : IDisposable
                 BeginRectClipRun clip => new RoundedRectClipGroup(clip.Bounds, 0),
                 BeginRoundedRectClipRun clip => new RoundedRectClipGroup(clip.Bounds, clip.Radius),
                 BeginOpacityRun opacity => new PolygonOpacityGroup(opacity.Opacity),
-                _ => throw new NotSupportedException("Unknown native polygon store run: " + kind.FullName)
+                _ => throw new InvalidOperationException("Native polygon store kind has no constructor.")
             };
-            var slot = new Slot(kind, item);
-            if (_cursor == _slots.Count) _slots.Add(slot);
-            else { _slots[_cursor].Item.Free(); _slots[_cursor] = slot; }
+            slots.Add(item);
         }
         if (item is PolygonComposite composite) composite.BeginRebuild();
-        _cursor++;
+        cursor++;
         return item;
     }
 
     public void EndRebuild()
     {
-        for (int i = _slots.Count - 1; i >= _cursor; i--) _slots[i].Item.Free();
-        if (_cursor < _slots.Count) _slots.RemoveRange(_cursor, _slots.Count - _cursor);
-
+        for (int kind = 0; kind < _slots.Length; kind++)
+        {
+            var slots = _slots[kind];
+            if (slots == null) continue;
+            int cursor = _cursors[kind];
+            for (int i = slots.Count - 1; i >= cursor; i--) slots[i].Free();
+            if (cursor < slots.Count) slots.RemoveRange(cursor, slots.Count - cursor);
+        }
     }
 
     public void Dispose()
     {
         DetachBeforeClear();
-        for (int i = _slots.Count - 1; i >= 0; i--) _slots[i].Item.Free();
-        _slots.Clear(); _cursor = 0;
+        foreach (var slots in _slots)
+        {
+            if (slots == null) continue;
+            for (int i = slots.Count - 1; i >= 0; i--) slots[i].Free();
+            slots.Clear();
+        }
+        Array.Clear(_cursors);
     }
 }

@@ -10,6 +10,8 @@ public partial class NativeGlyphBlurTarget : Node
 {
     private readonly World2D _world = new();
     private readonly SubViewport _target;
+    private readonly NativeGlyphBlurPass _pass;
+    private Vector2I _size;
     public ViewportTexture Texture { get; }
     internal NativeGlyphBlurTarget(ViewportTexture source, Vector2I size, float sigma)
     {
@@ -21,10 +23,19 @@ public partial class NativeGlyphBlurTarget : Node
             RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled
         };
         AddChild(_target);
-        _target.AddChild(new NativeGlyphBlurPass(source, size, sigma));
+        _size = size;
+        _pass = new NativeGlyphBlurPass(source, size, sigma);
+        _target.AddChild(_pass);
         Texture = _target.GetTexture();
     }
     public override void _Ready() => _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
+    internal void Update(Vector2I size, float sigma)
+    {
+        if (_size != size) { _size = size; _target.Size = size; }
+        _pass.Update(size, sigma);
+        _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
+    }
+    internal void Disable() => _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
     public override void _Notification(int what)
     {
         if (what != NotificationPredelete) return;
@@ -36,13 +47,29 @@ public partial class NativeGlyphBlurTarget : Node
 public partial class NativeGlyphBlurPass : Node2D
 {
     private readonly ViewportTexture _source;
-    private readonly Rect2 _rect;
+    private Rect2 _rect;
+    private float _sigma;
     private readonly ShaderMaterial _material;
     internal NativeGlyphBlurPass(ViewportTexture source, Vector2I size, float sigma)
     {
-        _source = source; _rect = new Rect2(Vector2.Zero, size);
+        _source = source; _rect = new Rect2(Vector2.Zero, size); _sigma = sigma;
         _material = GlyphBlurMaterial.Create(sigma, new Vector2(1f / size.X, 1f / size.Y), Vector2.Right, new Color(1, 1, 1, 1));
         Material = _material;
+    }
+    internal void Update(Vector2I size, float sigma)
+    {
+        var extent = new Vector2(size.X, size.Y);
+        if (_rect.Size != extent)
+        {
+            _rect.Size = extent;
+            _material.SetShaderParameter(GlyphBlurMaterial.TexelParameter, new Vector2(1f / size.X, 1f / size.Y));
+            QueueRedraw();
+        }
+        if (_sigma != sigma)
+        {
+            _sigma = sigma;
+            _material.SetShaderParameter(GlyphBlurMaterial.SigmaParameter, sigma);
+        }
     }
     public override void _Draw() => DrawTextureRect(_source, _rect, false);
     public override void _Notification(int what)
@@ -54,10 +81,10 @@ public partial class NativeGlyphBlurPass : Node2D
 
 internal static class GlyphBlurMaterial
 {
-    private static readonly StringName SigmaParameter = "shadow_sigma";
-    private static readonly StringName TexelParameter = "mask_texel_size";
+    internal static readonly StringName SigmaParameter = "shadow_sigma";
+    internal static readonly StringName TexelParameter = "mask_texel_size";
     private static readonly StringName AxisParameter = "blur_axis";
-    private static readonly StringName ColorParameter = "shadow_color";
+    internal static readonly StringName ColorParameter = "shadow_color";
     internal static ShaderMaterial Create(float sigma, Vector2 texel, Vector2 axis, Color color)
     {
         var material = new ShaderMaterial { Shader = WebPaintShaders.GlyphShadow };

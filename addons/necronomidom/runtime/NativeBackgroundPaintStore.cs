@@ -21,24 +21,28 @@ public sealed class NativeBackgroundPaintStore : IDisposable
     private int _cursor;
 
     public void BeginRebuild() => _cursor = 0;
-    public EllipticalClipGroup Create(BackgroundImageRun run, NativeImageSource images)
+    public EllipticalClipGroup Create(BackgroundImageRun run, NativeImageSource images, out int index)
     {
-        Slot slot;
-        if (_cursor < _slots.Count)
+        if (_cursor == _slots.Count)
         {
-            slot = _slots[_cursor];
-            if (slot.Clip.Geometry != run.Clip)
-            {
-                slot.Clip = new BeginEllipticalClipRun(run.Clip.Bounds, run.Clip.Radii);
-                slot.Group.Update(slot.Clip);
-            }
+            var added = new Slot(new BeginEllipticalClipRun(run.Clip.Bounds, run.Clip.Radii));
+            added.Group.Content.AddChild(added.Image); _slots.Add(added);
         }
-        else
+        index = _cursor++;
+        Update(index, run, images);
+        _slots[index].Group.BeginRebuild();
+        return _slots[index].Group;
+    }
+    internal bool Owns(int index, CanvasItem? item) => (uint)index < (uint)_slots.Count
+        && ReferenceEquals(_slots[index].Group, item);
+    internal void Update(int index, BackgroundImageRun run, NativeImageSource images)
+    {
+        var slot = _slots[index];
+        if (slot.Clip.Geometry != run.Clip)
         {
-            slot = new Slot(new BeginEllipticalClipRun(run.Clip.Bounds, run.Clip.Radii));
-            slot.Group.Content.AddChild(slot.Image); _slots.Add(slot);
+            slot.Clip = new BeginEllipticalClipRun(run.Clip.Bounds, run.Clip.Radii);
+            slot.Group.Update(slot.Clip);
         }
-        _cursor++; slot.Group.BeginRebuild();
         var texture = images.Texture(run.Image);
         bool nearest = run.Image.Sampling != ImageSampling.Linear;
         slot.Image.Run = run.Image;
@@ -51,7 +55,6 @@ public sealed class NativeBackgroundPaintStore : IDisposable
         slot.Image.SetInstanceShaderParameter("image_edge_fringe",
             run.Clip.Radii == default && run.Image.Destination == run.Clip.Bounds);
         slot.Image.ConfigureCoordinates(); slot.Image.QueueRedraw();
-        return slot.Group;
     }
     private ShaderMaterial Material(bool nearest)
     {

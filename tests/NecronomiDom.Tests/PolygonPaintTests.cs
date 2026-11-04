@@ -61,6 +61,40 @@ public sealed class PolygonPaintTests
         Assert.Throws<NotSupportedException>(() => new ConvexPolygon([new(0, 0), new(100, 100), new(0, 100), new(100, 0)]));
     }
 
+    [Test]
+    public void EqualImmutableVerticesKeepFillAndClipPaintRecordsEqual()
+    {
+        PaintPoint[] input = [new(0, 0), new(100, 0), new(0, 100)];
+        var first = new ConvexPolygon(input);
+        var equal = new ConvexPolygon([new(0, 0), new(100, 0), new(0, 100)]);
+        int hash = first.GetHashCode();
+        input[1] = new(20, 0);
+        Assert.That(first.Equals(first), Is.True);
+        Assert.That(first.Equals(equal), Is.True);
+        Assert.That(first.Equals((object)equal), Is.True);
+        Assert.That(equal.GetHashCode(), Is.EqualTo(hash));
+        Assert.That(first.GetHashCode(), Is.EqualTo(hash));
+        var bounds = new Rect(20, 40, 100, 100);
+        var color = new Rgba(1, 0, 0, .5f);
+        Assert.That(new PolygonRun(bounds, first, color), Is.EqualTo(new PolygonRun(bounds, equal, color)));
+        Assert.That(new BeginPolygonClipRun(bounds, first), Is.EqualTo(new BeginPolygonClipRun(bounds, equal)));
+        Assert.That(first.Equals(null), Is.False);
+    }
+
+    [Test]
+    public void ChangedVerticesCountWindingBoundsAndColorRemainPaintChanges()
+    {
+        var first = new ConvexPolygon([new(0, 0), new(100, 0), new(0, 100)]);
+        Assert.That(first, Is.Not.EqualTo(new ConvexPolygon([new(0, 0), new(90, 0), new(0, 100)])));
+        Assert.That(first, Is.Not.EqualTo(new ConvexPolygon([new(0, 0), new(100, 0), new(0, 100), new(0, 0)])));
+        Assert.That(first, Is.Not.EqualTo(new ConvexPolygon([new(0, 100), new(100, 0), new(0, 0)])));
+        var bounds = new Rect(20, 40, 100, 100);
+        var color = new Rgba(1, 0, 0, .5f);
+        var run = new PolygonRun(bounds, first, color);
+        Assert.That(run, Is.Not.EqualTo(new PolygonRun(bounds with { X = 21 }, first, color)));
+        Assert.That(run, Is.Not.EqualTo(new PolygonRun(bounds, first, new Rgba(0, 1, 0, .5f))));
+    }
+
     [TestCase("polygon(0 0, 100% 0, 0 100%) content-box")]
     [TestCase("circle(20px)")]
     public void UnimplementedClipGeometryFailsRatherThanDroppingMask(string css)

@@ -11,8 +11,8 @@ uniform vec4 bottom_color : source_color;
 uniform vec4 left_color : source_color;
 varying vec4 paint_modulate;
 varying vec2 box_position;
-// QuadMesh UVs inherit 3D orientation; native canvas vertices already use CSS positive-down coordinates.
-void vertex() { paint_modulate = COLOR; box_position = VERTEX + box_size * 0.5; }
+// The immutable unit quad is sized by its node transform. Keep CSS positive-down vertices, not flipped 3D UVs.
+void vertex() { paint_modulate = COLOR; box_position = (VERTEX + vec2(0.5)) * box_size; }
 
 float ellipse_edge(vec2 offset, vec2 radius) {
     if (min(radius.x, radius.y) <= 0.0) return -1e6;

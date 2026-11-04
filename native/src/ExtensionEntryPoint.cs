@@ -21,6 +21,7 @@ internal static class ExtensionEntryPoint
         GodotRegistry.RegisterInternalClass<ShapedTextPaint>(ShapedTextPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeImagePaint>(NativeImagePaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeGradientPaint>(NativeGradientPaint.BindMembers);
+        GodotRegistry.RegisterInternalClass<NativeBorderPaint>(NativeBorderPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeGlyphEffectsPaint>(NativeGlyphEffectsPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeGlyphMaskPaint>(NativeGlyphMaskPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeGlyphShadowPaint>(NativeGlyphShadowPaint.BindMembers);
