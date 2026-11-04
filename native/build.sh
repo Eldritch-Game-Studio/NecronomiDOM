@@ -152,7 +152,8 @@ for rid in "$@"; do
     linux-*) lib="libnecronomidom.so" ;; osx-*) lib="libnecronomidom.dylib" ;; win-*) lib="necronomidom.dll" ;;
     *) echo "Unsupported RID $rid" >&2; exit 2 ;;
   esac
-  dotnet publish "$PROJECT_NATIVE" -c Release -r "$rid" -nologo -v q \
+  # Every filesystem argument is already native; MSYS must not rewrite restore URLs or MSBuild properties.
+  MSYS2_ARG_CONV_EXCL='*' dotnet publish "$PROJECT_NATIVE" -c Release -r "$rid" -nologo -v q \
     /p:GodotBindingsVersion="$BINDINGS_VERSION" \
     --source "$FEED_NATIVE" --source https://api.nuget.org/v3/index.json
   built="$(find "$HERE/bin/Release/net10.0/$rid/publish" -maxdepth 1 -name 'NecronomiDom.Native.*' \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) | head -1)"

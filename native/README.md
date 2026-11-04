@@ -66,6 +66,8 @@ For local SDK preparation, the script validates the source commit, changed-file 
 
 Windows builds run under Git Bash with `cygpath` available. The script normalizes `NECRONOMIDOM_WORK` and any external feed path, passes Windows-native paths to Python/.NET and `NUGET_PACKAGES`, preserves `/p:` MSBuild arguments and HTTP(S) source URLs against MSYS conversion, and enables long-path support for a locally prepared dependency checkout. A short CI work root such as `${runner.temp}/nd` is recommended. Local SDK preparation invokes the pinned SDK's cross-platform `eng/common/build.py` entry point directly, avoiding its shell wrapper's argument re-splitting. No custom Godot binary or private API is required.
 
+The `dotnet publish` process disables MSYS argument conversion entirely: its project/feed paths are already native, and restore URLs must reach .NET unchanged. This exclusion is scoped to publication; it does not change how Git or ordinary Bash filesystem commands receive paths.
+
 ### Managed feed handoff between native hosts
 
 CI generates the platform-independent managed SDK packages once on Linux, then uses those exact packages for NativeAOT compilation on each real target host. This separates the build-time bindings generator's native dependency from the final addon's target ABI. The observed macOS Intel SDK-generation failure was a missing `libclang.dylib` in the ClangSharp generator dependency; sharing its already generated managed output does not skip native compilation or runtime acceptance.
