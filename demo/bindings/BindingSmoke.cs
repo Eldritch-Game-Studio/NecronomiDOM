@@ -45,6 +45,7 @@ public partial class BindingSmoke : Godot.Node
 
     public override async void _Ready()
     {
+        SmokeIsolation.IgnoreHostControllers();
         try { await Run(); }
         catch (Exception error) { _failures++; GD.PushError(error.ToString()); }
         finally

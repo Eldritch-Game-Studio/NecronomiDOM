@@ -132,7 +132,7 @@ public partial class DocumentHost : Control
     {
         if (!_entryActive) return;
         ProcessDeveloperReload(delta);
-        bool measureUpdate = UpdateMeasured != null || ObserveEntryUpdates;
+        bool measureUpdate = UpdateMeasured != null || ObserveEntryUpdates && !_updateTimingOutputFailed;
         UpdateTimer timer = measureUpdate ? new UpdateTimer() : default;
         ProcessDocumentInput(delta);
         double now = MonotonicSeconds();
@@ -159,15 +159,22 @@ public partial class DocumentHost : Control
         Document?.DispatchTextSelectionEvents();
         _documentInput?.DispatchScrollEvents();
         SynchronizeDocumentAccessibility();
-        if (measureUpdate) PublishUpdateTiming(timer.Finish());
+        if (measureUpdate) PublishUpdateTiming(timer.Finish(), "process");
     }
     /// <summary>Resolve late DOM changes before a caller measures or presents this frame's geometry.
     /// Does not advance clocks, repeat input, or dispatch events; clean documents do no work.</summary>
     public void FlushPendingLayout()
     {
         if (!_entryActive || _layout == null || Size.X <= 0 || (!_dirty && _inlineStyleChanges.Count == 0)) return;
-        UpdateTimer timer = default;
-        if (LayoutPendingChanges(MonotonicSeconds(), false, ref timer)) UpdateTextCaret(true);
+        bool measureUpdate = UpdateMeasured != null || ObserveEntryUpdates && !_updateTimingOutputFailed;
+        UpdateTimer timer = measureUpdate ? new UpdateTimer() : default;
+        if (LayoutPendingChanges(MonotonicSeconds(), measureUpdate, ref timer))
+        {
+            if (measureUpdate) timer.Mark();
+            UpdateTextCaret(true);
+            if (measureUpdate) timer.PaintMs = timer.Mark();
+        }
+        if (measureUpdate) PublishUpdateTiming(timer.Finish(), "flush");
     }
     private bool LayoutPendingChanges(double now, bool measureUpdate, ref UpdateTimer timer)
     {
@@ -210,6 +217,7 @@ public partial class DocumentHost : Control
     public override void _ExitTree()
     {
         StopDeveloperReloadWatch();
+        CloseUpdateTimingOutput();
         if (!_entryActive) return;
         _entryActive = false;
         WithdrawDocumentAccessibility();

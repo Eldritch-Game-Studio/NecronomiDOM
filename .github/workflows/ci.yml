@@ -198,6 +198,10 @@ jobs:
           command -v xvfb-run >/dev/null || (sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri)
           xvfb-run -a -s "-screen 0 1440x1000x24" "$GODOT_MONO" --path . --rendering-method gl_compatibility \
             --render-thread separate --audio-driver Dummy res://demo/paint/smoke.tscn -- --require-render-sync-check
+      - name: Opt-in document update timing file
+        env:
+          NECRONOMIDOM_UPDATE_TIMING: '1'
+        run: '"$GODOT_MONO" --headless --path . res://demo/paint/timing-smoke.tscn'
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]
