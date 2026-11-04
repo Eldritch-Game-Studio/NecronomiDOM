@@ -195,11 +195,11 @@ public partial class RoundedRectClipGroup : PolygonComposite
 public partial class PolygonOpacityGroup : PolygonComposite
 {
     private float _opacity = -1;
-    internal PolygonOpacityGroup(float opacity) => Update(opacity);
-    internal void Update(float opacity)
+    internal PolygonOpacityGroup(float opacity) => Update(opacity, false);
+    internal void Update(float opacity, bool invalidateAncestors)
     {
         if (_opacity == opacity) return;
         SelfModulate = new Color(1, 1, 1, opacity); _opacity = opacity;
-        InvalidateAncestorTargets();
+        if (invalidateAncestors) InvalidateAncestorTargets();
     }
 }

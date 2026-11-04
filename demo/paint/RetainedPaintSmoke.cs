@@ -143,6 +143,10 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(targets.Count > 0, "fixture owns native glyph mask/blur targets");
 
         int paint = _host.PaintRevision, layout = _host.LayoutRevision;
+        // Unmoved clip-path and opacity composites must not recapture because unrelated content moved.
+        var statics = _host.FindChildren("*", "", true, false).OfType<PolygonComposite>()
+            .Where(context => context is PolygonClipGroup or PolygonOpacityGroup).ToArray();
+        int staticCaptures = statics.Sum(context => context.TargetUpdateCount);
         var keycap = runs.OfType<BackgroundImageRun>().First().Clip.Bounds;
         bool moved = false;
         for (int frame = 0; frame < Frames; frame++)
@@ -153,6 +157,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(_host.LayoutRevision - layout >= Frames && moved, "geometry changed on every frame");
         Check(_host.PaintRevision == paint, "moving clips, borders, backgrounds and box styles update retained paint in place");
         Check(PaintTargets().SetEquals(targets), "moving content keeps the existing glyph and clip targets");
+        // A headless display never sizes isolation targets, so only a drawing display can observe recaptures.
+        bool staticsKept = statics.Length >= 3 && statics.Sum(context => context.TargetUpdateCount) == staticCaptures;
 
         paint = _host.PaintRevision;
         var field = (HTMLInputElement)_host.Document.GetElementById("field")!;
@@ -201,10 +207,11 @@ public partial class RetainedPaintSmoke : Godot.Node
             Check(observable, "a drawing display and separate render thread make synchronization observable");
         if (!observable)
         {
-            GD.Print("RETAINED_PAINT_SMOKE SKIP render-thread synchronization and pixels need a drawing display and --render-thread separate");
+            GD.Print("RETAINED_PAINT_SMOKE SKIP render-thread synchronization, capture counts and pixels need a drawing display and --render-thread separate");
             return;
         }
         Check(warnings.Length == 0, "no RenderingServer synchronization on every frame");
+        Check(staticsKept, "unmoved clip-path and opacity targets are not recaptured while other content moves");
         using var image = GetViewport().GetTexture().GetImage();
         Color a = image.GetPixel(460, 370), b = image.GetPixel(560, 370);
         Check(Near(a, Twin) && Near(b, Restyled), $"independently restyled boxes keep separate styles (a={a}, b={b})");

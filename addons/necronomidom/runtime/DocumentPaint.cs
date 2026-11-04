@@ -177,7 +177,7 @@ public partial class DocumentPaint : Node2D
         // Stores have independent slot order. Fit the actual combined subtree only after
         // every live context is measured, so each child sees its final parent canvas once.
         foreach (var context in _isolatedContexts) context.MeasurePaint();
-        foreach (var context in _isolatedContexts) context.FitTarget();
+        foreach (var context in _isolatedContexts) context.FitTarget(true);
     }
     private void EndStoreRebuild()
     {
@@ -221,12 +221,13 @@ public partial class DocumentPaint : Node2D
             throw new ArgumentOutOfRangeException(nameof(alpha));
         if ((uint)groupOrdinal >= (uint)_opacityGroups.Count)
             throw new ArgumentOutOfRangeException(nameof(groupOrdinal));
-        _opacityGroups[groupOrdinal].Update(alpha);
+        _opacityGroups[groupOrdinal].Update(alpha, true);
     }
     public void Clear()
     {
         _contexts.Clear();
         _retainedBindings.Clear();
+        _dirtyTargets.Clear();
         _isolatedContexts.Clear();
         _opacityGroups.Clear();
         _glyphs.DetachBeforeClear();

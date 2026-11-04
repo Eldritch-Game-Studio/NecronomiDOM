@@ -64,7 +64,7 @@ public sealed class PolygonPaintStore : IDisposable
                 case (BeginPolygonClipRun clip, PolygonClipGroup group): group.Update(clip); break;
                 case (BeginRectClipRun clip, RoundedRectClipGroup group): group.Update(clip.Bounds, 0); break;
                 case (BeginRoundedRectClipRun clip, RoundedRectClipGroup group): group.Update(clip.Bounds, clip.Radius); break;
-                case (BeginOpacityRun opacity, PolygonOpacityGroup group): group.Update(opacity.Opacity); break;
+                case (BeginOpacityRun opacity, PolygonOpacityGroup group): group.Update(opacity.Opacity, false); break;
                 default: throw new InvalidOperationException("Native polygon store slot does not match its declared paint kind.");
             }
         }

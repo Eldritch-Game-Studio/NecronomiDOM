@@ -14,6 +14,7 @@ public partial class DocumentPaint
     private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot, int StyleRow = 0);
     private readonly List<RetainedBinding> _retainedBindings = new();
     private readonly HashSet<MultiMeshInstance2D> _changedBatches = new();
+    private readonly HashSet<PolygonComposite> _dirtyTargets = new();
     private void PrepareRetainedBindings(DisplayList list)
     {
         foreach (var run in list.Runs) _retainedBindings.Add(new(run, null, -1));
@@ -31,6 +32,8 @@ public partial class DocumentPaint
             if (binding.Item is not Node2D item) throw new InvalidOperationException("Missing retained transform carrier.");
             item.Transform = BorderPaintStore.ToNative(transform);
             _retainedBindings[i] = binding with { Run = run with { Transform = transform } };
+            _dirtyTargets.Clear();
+            MarkRetainedContentChanged(item, false);
             FitRetainedTargets();
             return;
         }
@@ -40,7 +43,19 @@ public partial class DocumentPaint
     {
         foreach (var context in _isolatedContexts) context.BeginRebuild();
         foreach (var context in _isolatedContexts) context.MeasurePaint();
-        foreach (var context in _isolatedContexts) context.FitTarget();
+        foreach (var context in _isolatedContexts) context.FitTarget(_dirtyTargets.Contains(context));
+        _dirtyTargets.Clear();
+    }
+    private void MarkRetainedContentChanged(CanvasItem? item, bool ownContent)
+    {
+        if (item == null) return;
+        if (ownContent && item is PolygonComposite composite) _dirtyTargets.Add(composite);
+        Viewport parent = item.GetViewport();
+        while (parent is SubViewport && parent.GetParent() is PolygonComposite owner)
+        {
+            _dirtyTargets.Add(owner);
+            parent = owner.GetViewport();
+        }
     }
 
     /// <summary>Validate the entire topology before touching native state. Unchanged glyph/mask/image
@@ -73,11 +88,14 @@ public partial class DocumentPaint
         }
         bool changed = false, stylesChanged = false;
         _changedBatches.Clear();
+        _dirtyTargets.Clear();
         for (int i = 0; i < list.Runs.Count; i++)
         {
             var binding = _retainedBindings[i]; var next = list.Runs[i];
             if (Equals(binding.Run, next)) continue;
             changed = true;
+            // Image slots change captured child pixels; clip/opacity proxies change only their ancestors.
+            MarkRetainedContentChanged(binding.Item, next is BackgroundImageRun);
             switch (next, binding.Item)
             {
                 case (PolygonRun run, PolygonPaint item): item.Update(run); break;
@@ -87,7 +105,7 @@ public partial class DocumentPaint
                 case (BeginEllipticalClipRun run, EllipticalClipGroup item): item.Update(run); break;
                 case (BackgroundImageRun run, EllipticalClipGroup): _backgrounds!.Update(binding.Slot, run, images); break;
                 case (BorderBoxRun run, MeshInstance2D): _borders!.Update(binding.Slot, run); break;
-                case (BeginOpacityRun run, PolygonOpacityGroup item): item.Update(run.Opacity); break;
+                case (BeginOpacityRun run, PolygonOpacityGroup item): item.Update(run.Opacity, false); break;
                 case (BeginTransformRun run, Node2D item): item.Transform = BorderPaintStore.ToNative(run.Transform); break;
                 case (TextRun, ShapedTextPaint):
                 case (TextEffectsRun, NativeGlyphEffectsPaint):

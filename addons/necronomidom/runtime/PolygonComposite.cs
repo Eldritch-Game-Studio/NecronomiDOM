@@ -36,6 +36,8 @@ public partial class PolygonComposite : Node2D
     private Vector2I _capacity = new(2, 2);
     private Rect2 _deviceBounds;
     private Transform2D _deviceTransform;
+    private Transform2D _captureTransform;
+    private bool _contentDirty = true, _targetHdr;
     protected ShaderMaterial CompositeMaterial { get; }
     protected bool LinearTarget { get; init; }
     protected virtual Rect2? ClipBounds => null;
@@ -118,13 +120,15 @@ public partial class PolygonComposite : Node2D
     }
 
     /// <summary>Called in outer-to-inner paint order after all actual child bounds are measured.</summary>
-    internal void FitTarget()
+    internal void FitTarget(bool contentChanged)
     {
+        if (contentChanged) _contentDirty = true;
         MeasurePaint();
         Visible = _hasPaint;
         if (!_hasPaint)
         {
             _deviceBounds = default;
+            _contentDirty = true;
             _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
             return;
         }
@@ -135,7 +139,11 @@ public partial class PolygonComposite : Node2D
             throw new NotSupportedException("Isolation context requires a finite invertible device transform.");
         ConfigureDeviceCoverage();
         Viewport parentViewport = GetViewport();
-        _target.UseHdr2D = LinearTarget || parentViewport.UseHdr2D;
+        bool hdr = LinearTarget || parentViewport.UseHdr2D;
+        if (_targetHdr != hdr)
+        {
+            _targetHdr = hdr; _target.UseHdr2D = hdr; _contentDirty = true;
+        }
         // The parent render target is an actual device clipping boundary. Do not
         // allocate offscreen textures for overflow pixels it cannot display.
         Vector2 physicalSize;
@@ -160,6 +168,7 @@ public partial class PolygonComposite : Node2D
         if (painted.Size.X <= 0 || painted.Size.Y <= 0)
         {
             Visible = false; _deviceBounds = default;
+            _contentDirty = true;
             _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled; return;
         }
         // One physical pixel covers raster/coverage fringe, independent of CSS scale or DPR.
@@ -171,12 +180,14 @@ public partial class PolygonComposite : Node2D
         {
             // Retain a small capacity quantum across subpixel vertex changes; never reallocate on shrink.
             _capacity = new Vector2I(Math.Max(_capacity.X, checked((required.X + 15) / 16 * 16)), Math.Max(_capacity.Y, checked((required.Y + 15) / 16 * 16)));
-            _target.Size = _capacity; TargetResizeCount++;
+            _target.Size = _capacity; TargetResizeCount++; _contentDirty = true;
         }
         Rect2 next = new(origin, end - origin);
         bool changed = _deviceBounds != next || _deviceTransform != device;
         _deviceBounds = next; _deviceTransform = device;
-        _target.CanvasTransform = new Transform2D(0, -origin) * device;
+        Transform2D capture = new Transform2D(0, -origin) * device;
+        bool captureChanged = _captureTransform != capture;
+        if (captureChanged) { _captureTransform = capture; _target.CanvasTransform = capture; }
         Transform2D inverse = device.AffineInverse();
         _quad[0] = inverse * origin;
         _quad[1] = inverse * new Vector2(end.X, origin.Y);
@@ -187,8 +198,15 @@ public partial class PolygonComposite : Node2D
         RenderingServer.CanvasItemSetCustomRect(GetCanvasItem(), true, inverse * next);
         // SubViewport render dependencies are child texture -> parent texture -> window.
         // Request only dirty rebuild frames, never a continuously redrawn isolation target.
-        _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Once; TargetUpdateCount++;
-        if (changed || TargetUpdateCount == 1) QueueRedraw();
+        bool captureNeeded = _contentDirty || captureChanged;
+        if (captureNeeded) RequestCapture();
+        if (changed || captureNeeded && TargetUpdateCount == 1) QueueRedraw();
+    }
+    private void RequestCapture()
+    {
+        // An unchanged later fit must not disable a still-pending Once request.
+        _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
+        TargetUpdateCount++; _contentDirty = false;
     }
     /// <summary>Changing this proxy's modulation leaves its own content intact,
     /// but its ancestors must recapture the changed draw into their textures.</summary>
@@ -198,11 +216,8 @@ public partial class PolygonComposite : Node2D
         Viewport parent = GetViewport();
         while (parent is SubViewport && parent.GetParent() is PolygonComposite owner)
         {
-            if (owner._hasPaint)
-            {
-                owner._target.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
-                owner.TargetUpdateCount++;
-            }
+            owner._contentDirty = true;
+            if (owner._hasPaint && owner.Visible) owner.RequestCapture();
             parent = owner.GetViewport();
         }
     }
