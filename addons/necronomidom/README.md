@@ -5,7 +5,7 @@ https://github.com/Eldritch-Game-Studio/NecronomiDOM
 
 ## Setup
 
-- **GDScript (standard or .NET Godot 4.7+)**: restart the editor after installing, then add a **DocumentHost** node
+- **GDScript (official Godot 4.7.2, standard or .NET)**: restart the editor after installing, then add a **DocumentHost** node
   under a `CanvasLayer` and set **Document Path** to your `.html` file. Connect its `clicked(element_id)` signal and
   change the page with `set_text`, `add_class`, `set_attribute` and friends.
 - **C# DOM API (.NET edition)**: also add this line to your project's `.csproj`, before `</Project>`, and build:
@@ -15,6 +15,28 @@ https://github.com/Eldritch-Game-Studio/NecronomiDOM
   ```
 
 Recommended: turn off **Project Settings → GUI → Common → Snap Controls to Pixels**.
+
+## Compatibility and qualification
+
+Native desktop distribution targets are Linux x64/ARM64, Windows x64 and macOS Apple silicon/Intel.
+The release gate requires all five libraries and fresh-installed-ZIP stock Godot 4.7.2 import/editor shutdown,
+native DOM output and mount/reload/withdrawal/final-shutdown checks on matching architectures.
+A configured matrix is not evidence of a pass: check the exact candidate's full workflow result.
+Local Linux x64 qualification passed fresh installed-ZIP import/shutdown, editor quit, native DOM output,
+and four host lifecycle cycles; that does not establish the other four targets.
+Stock Godot 4.7.2 .NET workbench, bindings, inspector and reload evidence is Linux x64 only.
+Other engine versions and exported games are not qualified; Web, Android and iOS native exports are unsupported.
+
+Native runtime success alone does not establish cold editor-import/shutdown safety. The earlier `v1.1.1`
+partial artifact reproduced an import/shutdown abort (repository issue #5). Asset Store submission and review are paused.
+CI requires clean fresh-installed-ZIP import and editor shutdown, a real native DOM action/output check, and the
+four-cycle host lifecycle regression on Linux x64 before uploading a candidate ZIP; all four other desktop
+architecture checks must also pass before a tag-driven GitHub release.
+Only explicit manual/local diagnostic runs can produce partial ZIPs; those are not all-platform distributions
+and advertise only included native libraries. Inclusion is not runtime verification.
+
+Text uses stock Godot's standard shaping precision, not guaranteed higher-precision unhinted metrics.
+Mixed checkbox and `aria-invalid` states are not reported to screen readers on stock Godot.
 
 MIT licensed (see `LICENSE`). Bundled third-party components: AngleSharp (MIT, `vendor/AngleSharp/LICENSE`),
 Noto Sans (SIL OFL 1.1, `fonts/OFL.txt`), W3C webref data (MIT), Unicode bidi data (Unicode License v3,

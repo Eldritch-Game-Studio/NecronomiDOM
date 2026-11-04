@@ -198,6 +198,14 @@ public partial class DocumentInspector : CanvasLayer
         _shield.Draw += DrawHighlight;
         _shield.GuiInput += _ => _shield.AcceptEvent();
         _dock = new PanelContainer { Name = "DOMInspectorDock" };
+        _dock.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color(0.055f, 0.075f, 0.065f, 1),
+            BorderColor = new Color(0.22f, 0.29f, 0.25f, 1),
+            BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
+            CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6,
+            CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
+        });
         _shield.AddChild(_dock);
         _dock.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.RightWide);
         _dock.OffsetLeft = -540; _dock.OffsetRight = -12; _dock.OffsetTop = 12; _dock.OffsetBottom = -12;

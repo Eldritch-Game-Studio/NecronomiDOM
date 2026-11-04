@@ -24,9 +24,10 @@
     <RuntimeSource Include="$(RuntimeSourceDir)**/*.cs" />
     <Compile Include="src/**/*.cs" />
   </ItemGroup>
-  <PropertyGroup>
-    <GodotBindingsVersion Condition="'$(GodotBindingsVersion)' == ''">4.7.0-dev</GodotBindingsVersion>
-  </PropertyGroup>
+  <Target Name="RequirePinnedBindings" BeforeTargets="CollectPackageReferences;PrepareForBuild">
+    <Error Condition="'$(GodotBindingsVersion)' == ''"
+           Text="Build the NativeAOT extension with native/build.sh, which selects the pinned corrected SDK and its isolated package cache." />
+  </Target>
 
   <!-- GodotSharp declares engine virtuals public; the bindings declare them protected. The shared runtime sources use
        GodotSharp's form, so this build compiles adapted copies: virtual overrides re-declared protected, and static
