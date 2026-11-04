@@ -8,7 +8,7 @@ namespace NecronomiDom.Runtime;
 
 public partial class DocumentPaint
 {
-    // Slot is a MultiMesh instance index, or the owned _items index for a glyph node; store-owned contexts use -1.
+    // Slot is a MultiMesh instance, owned _items glyph, or BorderPaintStore index; other contexts use -1.
     // StyleRow is a box instance's custom-data style row, kept here so retained updates never read the
     // MultiMesh back from the RenderingServer (that read synchronizes with the render thread every call).
     private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot, int StyleRow = 0);
@@ -56,17 +56,20 @@ public partial class DocumentPaint
             bool supported = (next, before.Item) switch {
                 (PolygonRun, PolygonPaint) => true,
                 (BeginPolygonClipRun, PolygonClipGroup) => true,
+                (BeginRectClipRun, RoundedRectClipGroup) or (BeginRoundedRectClipRun, RoundedRectClipGroup) => true,
+                (BeginEllipticalClipRun, EllipticalClipGroup) => true,
+                (BorderBoxRun, MeshInstance2D) => _borders?.Owns(before.Slot, before.Item) == true,
                 (BeginOpacityRun, PolygonOpacityGroup) => true,
                 (BeginTransformRun, Node2D) => true,
-                (BoxRun box, MultiMeshInstance2D) => before.Run is BoxRun prior && box.Style == prior.Style,
+                (BoxRun, MultiMeshInstance2D) => (uint)before.StyleRow < (uint)_styleRowCount,
                 (TextRun, ShapedTextPaint) or (TextEffectsRun, NativeGlyphEffectsPaint) =>
                     (uint)before.Slot < (uint)_items.Count && ReferenceEquals(_items[before.Slot], before.Item),
-                (EndTransformRun, null) => true,
+                (EndTransformRun, null) or (EndEllipticalClipRun, null) => true,
                 _ => false
             };
             if (!supported) return false;
         }
-        bool changed = false;
+        bool changed = false, stylesChanged = false;
         _changedBatches.Clear();
         for (int i = 0; i < list.Runs.Count; i++)
         {
@@ -77,18 +80,28 @@ public partial class DocumentPaint
             {
                 case (PolygonRun run, PolygonPaint item): item.Update(run); break;
                 case (BeginPolygonClipRun run, PolygonClipGroup item): item.Update(run); break;
+                case (BeginRectClipRun run, RoundedRectClipGroup item): item.Update(run.Bounds, 0); break;
+                case (BeginRoundedRectClipRun run, RoundedRectClipGroup item): item.Update(run.Bounds, run.Radius); break;
+                case (BeginEllipticalClipRun run, EllipticalClipGroup item): item.Update(run); break;
+                case (BorderBoxRun run, MeshInstance2D): _borders!.Update(binding.Slot, run); break;
                 case (BeginOpacityRun run, PolygonOpacityGroup item): item.Update(run.Opacity); break;
                 case (BeginTransformRun run, Node2D item): item.Transform = BorderPaintStore.ToNative(run.Transform); break;
                 case (TextRun, ShapedTextPaint):
                 case (TextEffectsRun, NativeGlyphEffectsPaint):
                     binding = ReplaceRetainedText(binding, next, fonts); break;
                 case (BoxRun run, MultiMeshInstance2D item):
-                    var b = run.Bounds;
-                    var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
-                    item.Multimesh.SetInstanceTransform2D(binding.Slot, new Transform2D(
-                        new Vector2((float)b.Width, 0), new Vector2(0, (float)b.Height), rect.GetCenter()));
-                    item.Multimesh.SetInstanceCustomData(binding.Slot, BoxCustomData(binding.StyleRow, b.Width, b.Height));
-                    _changedBatches.Add(item); break;
+                    var prior = (BoxRun)binding.Run;
+                    if (prior.Style != run.Style) { WriteBoxStyle(binding.StyleRow, run.Style); stylesChanged = true; }
+                    if (prior.Bounds != run.Bounds)
+                    {
+                        var b = run.Bounds;
+                        var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
+                        item.Multimesh.SetInstanceTransform2D(binding.Slot, new Transform2D(
+                            new Vector2((float)b.Width, 0), new Vector2(0, (float)b.Height), rect.GetCenter()));
+                        item.Multimesh.SetInstanceCustomData(binding.Slot, BoxCustomData(binding.StyleRow, b.Width, b.Height));
+                        _changedBatches.Add(item);
+                    }
+                    break;
             }
             _retainedBindings[i] = binding with { Run = next };
         }
@@ -106,6 +119,7 @@ public partial class DocumentPaint
                 new Vector3(bounds.Size.X, bounds.Size.Y, 0));
         }
         _changedBatches.Clear();
+        if (stylesChanged) _styleTexture!.Update(_stylePixels!);
         if (changed) FitRetainedTargets();
         return true;
     }
