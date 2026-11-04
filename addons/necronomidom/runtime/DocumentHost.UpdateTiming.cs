@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace NecronomiDom.Runtime;
 
@@ -13,16 +14,43 @@ public partial class DocumentHost
 {
     internal event Action<DocumentUpdateTiming>? UpdateMeasured;
     private static readonly bool ObserveEntryUpdates = Environment.GetEnvironmentVariable("NECRONOMIDOM_UPDATE_TIMING") == "1";
+    private StreamWriter? _updateTimingOutput;
+    private bool _updateTimingOutputFailed;
 
-    private void PublishUpdateTiming(DocumentUpdateTiming update)
+    private void PublishUpdateTiming(DocumentUpdateTiming update, string entry)
     {
         UpdateMeasured?.Invoke(update);
-        // Measure every active document, emit only costly updates. This is diagnostic coverage,
-        // never a whole-frame qualification filter; logging/subscribers are outside this span.
-        if (ObserveEntryUpdates && (update.TotalMs >= 10 || update.AllocatedBytes >= 1_000_000))
-            // Emitted at >=10 ms or >=1 MB caller-thread allocation; nested allocations/GC are inclusive.
-            Godot.GD.Print($"NecronomiDOM document-update {DocumentPath} node={GetPath()} frame={Godot.Engine.GetProcessFrames()} " +
+        // File output cannot feed a captured game console back into another document update.
+        // These are thresholded inclusive phase records, never whole-frame/FPS qualification.
+        if (!ObserveEntryUpdates || _updateTimingOutputFailed ||
+            update.TotalMs < 10 && update.AllocatedBytes < 1_000_000) return;
+        try
+        {
+            _updateTimingOutput ??= new StreamWriter(Path.Combine(Godot.OS.GetUserDataDir(),
+                $"necronomidom-document-updates-{Environment.ProcessId}-{GetInstanceId()}.log"), append: true)
+                { AutoFlush = true };
+            _updateTimingOutput.WriteLine($"NecronomiDOM document-update {DocumentPath} node={GetPath()} frame={Godot.Engine.GetProcessFrames()} entry={entry} " +
                 $"layout={LayoutRevision} {update}");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            _updateTimingOutputFailed = true;
+            CloseUpdateTimingOutput();
+            Godot.GD.PushError($"NecronomiDOM timing file output disabled for {DocumentPath}: {error.Message}");
+        }
+    }
+
+    private void CloseUpdateTimingOutput()
+    {
+        var output = _updateTimingOutput;
+        _updateTimingOutput = null;
+        if (output == null) return;
+        try { output.Dispose(); }
+        catch (IOException error)
+        {
+            _updateTimingOutputFailed = true;
+            Godot.GD.PushError($"NecronomiDOM timing file close failed for {DocumentPath}: {error.Message}");
+        }
     }
 
     private struct UpdateTimer
