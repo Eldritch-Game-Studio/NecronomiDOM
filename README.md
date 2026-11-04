@@ -511,6 +511,11 @@ Two repository variables (Settings → Secrets and variables → Actions → Var
 | `LINUX_RUNNER=self-hosted` | Linux x64 jobs (tests, Linux build, smoke runs, packaging) run on a self-hosted runner labelled `necronomidom` instead of GitHub-hosted Ubuntu. |
 | `HOSTED_PLATFORMS=false` | Skip the GitHub-hosted Windows, macOS and Linux ARM builds; the ZIP is then named `*-partial.zip`. |
 
+Partial ZIPs list only the native libraries actually included in their `.gdextension` descriptor.
+They support those platforms only; missing platforms are not advertised. Full packaging still fails
+if any required library is absent. This also satisfies the Asset Store requirement that every library
+named in the descriptor is present in the downloaded asset.
+
 On a self-hosted runner, intermediate native binaries pass between jobs through the runner's local cache. The finished
 ZIP is still uploaded to the workflow run's **Artifacts** section and retained in
 `~/.cache/necronomidom-ci/dist/`. Version-tag runs also attach it to a GitHub release.

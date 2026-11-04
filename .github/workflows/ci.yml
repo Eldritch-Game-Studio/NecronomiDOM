@@ -180,6 +180,25 @@ jobs:
               if [ "$PARTIAL" = "true" ]; then echo "partial: no $lib"; partial=1; else echo "missing $lib"; exit 1; fi
             fi
           done
+          if [ "${partial:-}" = "1" ]; then
+            python3 - <<'PY'
+          import configparser
+          from pathlib import Path
+
+          descriptor = Path("addons/necronomidom/necronomidom.gdextension")
+          config = configparser.ConfigParser(interpolation=None)
+          config.optionxform = str
+          config.read(descriptor, encoding="utf-8")
+          for platform, library in list(config["libraries"].items()):
+              path = Path(library.strip('"').removeprefix("res://"))
+              if not path.is_file() or path.stat().st_size == 0:
+                  config.remove_option("libraries", platform)
+          if not config["libraries"]:
+              raise SystemExit("Cannot package an addon without a native library")
+          with descriptor.open("w", encoding="utf-8") as output:
+              config.write(output)
+          PY
+          fi
           name="$name${partial:+-partial}.zip"
           rm -rf dist && mkdir -p dist
           python3 -c "import shutil; shutil.make_archive('dist/archive', 'zip', '.', 'addons/necronomidom')"
