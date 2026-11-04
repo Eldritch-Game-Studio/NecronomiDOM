@@ -1,6 +1,6 @@
 # NativeAOT GDExtension build
 
-This directory compiles the shared addon runtime against the Godot .NET GDExtension SDK. The resulting native library runs in standard, non-.NET Godot; consumers do not need a .NET installation. Building it requires the .NET 10 SDK, Python 3 available as `python`, Git, Bash, SHA-256 tooling (`sha256sum` or `shasum`) and the platform's NativeAOT C toolchain.
+This directory compiles the shared addon runtime against the Godot .NET GDExtension SDK. The resulting native library runs in standard, non-.NET Godot; consumers do not need a .NET installation. Native compilation requires the .NET 10 SDK, Git, Bash, SHA-256 tooling (`sha256sum` or `shasum`) and the platform's NativeAOT C toolchain. Preparing the managed SDK feed from source additionally requires Python 3 available as `python` and the SDK generator's host-native ClangSharp dependencies.
 
 ```sh
 native/build.sh linux-x64
@@ -54,7 +54,7 @@ The engine's unguarded, queued static documentation callback is independently un
 
 ## Reproducible dependency and cache identity
 
-`build.sh` checks the patch SHA-256 against the lock, then prepares a dedicated checkout at:
+`build.sh` always checks the patch SHA-256 against the lock and derives the bindings version from that lock. Without an external feed it prepares the SDK source locally, with Linux used as the CI producer. Its private cache is:
 
 ```text
 ${NECRONOMIDOM_WORK:-native/.work}/sdk/<upstream-prefix12>-<patch-prefix16>/
@@ -62,9 +62,38 @@ ${NECRONOMIDOM_WORK:-native/.work}/sdk/<upstream-prefix12>-<patch-prefix16>/
 
 Short physical names bound Windows compiler/package paths. A `.source-identity` file retains the **full** upstream commit and patch SHA-256; a missing/mismatched full identity refuses reuse before touching a colliding directory. That identity owns its source checkout, feed and `packages/` NuGet cache. The two consumed SDK packages use a distinct prerelease version with those prefixes (`4.7.0-dev.ndom.g<commit12>.p<patch16>`), never upstream `4.7.0-dev`. The script passes this version to `NecronomiDom.Native.csproj`; direct publication without the selected dependency version is rejected.
 
-The script validates the source commit, changed-file set and corrected bridge checksum before reuse, and preserves a copy of the lock and patch alongside a successfully prepared feed. Altered or partially prepared source is refused and retained for inspection. It never patches the old/shared `.work/godot-dotnet` checkout, deletes old feeds or removes packages from the global NuGet cache. An existing `NECRONOMIDOM_WORK` root can continue to be used without reinterpreting its older SDK cache as patched.
+For local SDK preparation, the script validates the source commit, changed-file set and corrected bridge checksum before reuse, and preserves a copy of the lock and patch alongside a successfully prepared feed. Altered or partially prepared source is refused and retained for inspection. It never patches the old/shared `.work/godot-dotnet` checkout, deletes old feeds or removes packages from the global NuGet cache. An existing `NECRONOMIDOM_WORK` root can continue to be used without reinterpreting its older SDK cache as patched.
 
-Windows builds run under Git Bash with `cygpath` available. The script normalizes `NECRONOMIDOM_WORK`, passes Windows-native paths to Python/.NET and `NUGET_PACKAGES`, preserves `/p:` MSBuild arguments against MSYS conversion, and enables long-path support for the dependency checkout. A short CI work root such as `${runner.temp}/nd` is recommended. Python is invoked through the pinned SDK's cross-platform `eng/common/build.py` entry point directly, avoiding its shell wrapper's argument re-splitting. CI must provide Python 3, .NET 10 and the native host toolchain; no custom Godot binary or private API is required.
+Windows builds run under Git Bash with `cygpath` available. The script normalizes `NECRONOMIDOM_WORK` and any external feed path, passes Windows-native paths to Python/.NET and `NUGET_PACKAGES`, preserves `/p:` MSBuild arguments and HTTP(S) source URLs against MSYS conversion, and enables long-path support for a locally prepared dependency checkout. A short CI work root such as `${runner.temp}/nd` is recommended. Local SDK preparation invokes the pinned SDK's cross-platform `eng/common/build.py` entry point directly, avoiding its shell wrapper's argument re-splitting. No custom Godot binary or private API is required.
+
+### Managed feed handoff between native hosts
+
+CI generates the platform-independent managed SDK packages once on Linux, then uses those exact packages for NativeAOT compilation on each real target host. This separates the build-time bindings generator's native dependency from the final addon's target ABI. The observed macOS Intel SDK-generation failure was a missing `libclang.dylib` in the ClangSharp generator dependency; sharing its already generated managed output does not skip native compilation or runtime acceptance.
+
+To consume a trusted prebuilt feed instead of cloning/building the SDK:
+
+```sh
+NECRONOMIDOM_SDK_FEED="/path/to/sdk-managed-feed" native/build.sh osx-x64
+```
+
+The same interface accepts Windows paths under Git Bash and applies to all five desktop RIDs. The supplied directory must contain:
+
+- `.identity` equal to the **full** `$GODOT_DOTNET_COMMIT-$GODOT_DOTNET_PATCH_SHA256` from the checked-in lock.
+- Nonempty `Godot.Bindings.<bindings-version>.nupkg` and `Godot.SourceGeneration.<bindings-version>.nupkg`, using the version derived from that lock.
+
+An explicitly supplied empty/nonexistent path, wrong/missing identity, or missing required package fails immediately; there is no fallback to local SDK generation. The external feed is not modified. Its artifact transport is a trust boundary: the identity marker is provenance matching, not a cryptographic signature authenticating arbitrary third-party packages. Each consumer still checks the checked-in patch SHA-256 and keeps NuGet packages isolated under its full-identity-guarded work cache.
+
+After validation, `build.sh` emits `sdk-feed=<absolute active feed path>` to `GITHUB_OUTPUT` when that standard CI variable is present. A locally prepared feed also receives `godot-dotnet.lock` and the named patch. CI stages only the two required `.nupkg` files, `.identity`, lock and patch from that output path into the `sdk-managed-feed` artifact, including hidden files so `.identity` survives. It does not reconstruct the cache key/version independently or transfer other SDK/editor/tool packages.
+
+Payload evidence from the pinned corrected feed:
+
+| Package | Managed payload | Nuspec dependencies |
+| --- | --- | --- |
+| `Godot.Bindings` | `lib/net10.0/Godot.Bindings.dll` and XML documentation | Empty `net10.0` group |
+| `Godot.SourceGeneration` | `analyzers/dotnet/cs/Godot.SourceGeneration.dll` | Empty `.NETStandard2.0` group |
+
+Both DLLs have CLR flags `0x1` (`ILONLY`), with neither `32BITREQUIRED` nor `32BITPREFERRED` set. The inspected archives contain no RID-specific `runtimes/` or native-library payloads. Thus the shared inputs are architecture-independent managed assemblies, not Linux native libraries. `dotnet publish -r <rid>` and the host C toolchain still produce every final addon library on its matching operating system/architecture, followed by installed-package stock-Godot qualification there.
+
 
 ## Verification contract and regression inputs
 

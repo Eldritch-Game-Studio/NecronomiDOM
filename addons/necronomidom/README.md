@@ -27,6 +27,10 @@ and four host lifecycle cycles; that does not establish the other four targets.
 Stock Godot 4.7.2 .NET workbench, bindings, inspector and reload evidence is Linux x64 only.
 Other engine versions and exported games are not qualified; Web, Android and iOS native exports are unsupported.
 
+CI generates the portable AnyCPU managed SDK package feed once on Linux, validates the same pinned source/patch
+identity on every build host, and runs NativeAOT separately on each target OS/architecture. Sharing that managed
+feed is not native cross-compilation and does not replace any target's installed-package runtime checks.
+
 Native runtime success alone does not establish cold editor-import/shutdown safety. The earlier `v1.1.1`
 partial artifact reproduced an import/shutdown abort (repository issue #5). Asset Store submission and review are paused.
 CI requires clean fresh-installed-ZIP import and editor shutdown, a real native DOM action/output check, and the

@@ -58,10 +58,30 @@ jobs:
       - name: NativeAOT toolchain
         run: command -v clang >/dev/null || (sudo apt-get update -q && sudo apt-get install -yq clang zlib1g-dev)
       - name: Build
+        id: native-build
         env:
           # Keep the built bindings between runs on a persistent runner (checkout cleans the workspace).
           NECRONOMIDOM_WORK: ${{ runner.tool_cache }}/necronomidom-native
         run: native/build.sh linux-x64
+      - name: Stage current portable managed SDK feed
+        id: sdk-feed
+        env:
+          SDK_FEED: ${{ steps.native-build.outputs.sdk-feed }}
+        run: |
+          source native/godot-dotnet.lock
+          feed="$SDK_FEED"
+          test "$(cat "$feed/.identity")" = "$GODOT_DOTNET_COMMIT-$GODOT_DOTNET_PATCH_SHA256"
+          stage="$(mktemp -d "$RUNNER_TEMP/sdk-feed.XXXXXX")"
+          cp "$feed"/Godot.Bindings.*.nupkg "$feed"/Godot.SourceGeneration.*.nupkg "$feed/.identity" "$stage/"
+          cp "$feed/godot-dotnet.lock" "$feed/$(basename "$GODOT_DOTNET_PATCH")" "$stage/"
+          echo "path=$stage" >> "$GITHUB_OUTPUT"
+      - name: Upload portable managed SDK feed
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-managed-feed
+          path: ${{ steps.sdk-feed.outputs.path }}
+          include-hidden-files: true
+          if-no-files-found: error
       - name: Hand off locally
         if: vars.LINUX_RUNNER == 'self-hosted'
         run: |
@@ -75,6 +95,7 @@ jobs:
           if-no-files-found: error
 
   native-hosted:
+    needs: native-linux-x64
     if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.partial == true) }}
     strategy:
       fail-fast: false
@@ -103,10 +124,16 @@ jobs:
       - name: NativeAOT Linux toolchain
         if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -yq clang zlib1g-dev
+      - name: Receive portable managed SDK feed
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-managed-feed
+          path: ${{ runner.temp }}/sf
       - name: Build
         shell: bash
         env:
           NECRONOMIDOM_WORK: ${{ runner.temp }}/nd
+          NECRONOMIDOM_SDK_FEED: ${{ runner.temp }}/sf
         run: native/build.sh ${{ matrix.rid }}
       - uses: actions/upload-artifact@v4
         with:

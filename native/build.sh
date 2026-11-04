@@ -20,9 +20,9 @@ case "$HOST_OS" in
   MINGW*|MSYS*|CYGWIN*)
     WORK="$(cygpath -u "$WORK")"
     if [[ -n "${MSYS2_ARG_CONV_EXCL:-}" ]]; then
-      export MSYS2_ARG_CONV_EXCL="$MSYS2_ARG_CONV_EXCL;/p:"
+      export MSYS2_ARG_CONV_EXCL="$MSYS2_ARG_CONV_EXCL;/p:;https://;http://"
     else
-      export MSYS2_ARG_CONV_EXCL="/p:"
+      export MSYS2_ARG_CONV_EXCL="/p:;https://;http://"
     fi
     if [[ -n "${MSYS2_ENV_CONV_EXCL:-}" ]]; then
       export MSYS2_ENV_CONV_EXCL="$MSYS2_ENV_CONV_EXCL;NUGET_PACKAGES"
@@ -72,7 +72,6 @@ else
 fi
 SDK_SOURCE="$SDK_ROOT/godot-dotnet"
 FEED="$SDK_ROOT/feed"
-FEED_NATIVE="$(native_path "$FEED")"
 PROJECT_NATIVE="$(native_path "$HERE/NecronomiDom.Native.csproj")"
 # This is distinct from upstream 4.7.0-dev; the full source identity remains guarded above and in the lock.
 BINDINGS_VERSION="4.7.0-dev.ndom.g${GODOT_DOTNET_COMMIT:0:12}.p${GODOT_DOTNET_PATCH_SHA256:0:16}"
@@ -87,31 +86,65 @@ if [[ $# -eq 0 ]]; then
   esac
 fi
 
-if [[ ! -d "$SDK_SOURCE" ]]; then
-  git clone --quiet --config core.longpaths=true "$GODOT_DOTNET_REPOSITORY" "$SDK_SOURCE"
-  git -C "$SDK_SOURCE" checkout --quiet "$GODOT_DOTNET_COMMIT"
-  git -C "$SDK_SOURCE" apply --whitespace=error "$PATCH"
-fi
+if [[ "${NECRONOMIDOM_SDK_FEED+x}" == x ]]; then
+  # A supplied feed is authoritative: wrong/missing input must never fall back to SDK generation.
+  FEED="$NECRONOMIDOM_SDK_FEED"
+  case "$HOST_OS" in
+    MINGW*|MSYS*|CYGWIN*) FEED="$(cygpath -u "$FEED")" ;;
+  esac
+  if [[ -z "$FEED" || ! -d "$FEED" ]]; then
+    echo "NECRONOMIDOM_SDK_FEED must name an existing trusted managed SDK feed: $FEED" >&2
+    exit 1
+  fi
+  FEED="$(cd "$FEED" && pwd)"
+else
+  if [[ ! -d "$SDK_SOURCE" ]]; then
+    git clone --quiet --config core.longpaths=true "$GODOT_DOTNET_REPOSITORY" "$SDK_SOURCE"
+    git -C "$SDK_SOURCE" checkout --quiet "$GODOT_DOTNET_COMMIT"
+    git -C "$SDK_SOURCE" apply --whitespace=error "$PATCH"
+  fi
 
-# Refuse altered/partially prepared source instead of deleting it or relabeling it as this pin.
-if [[ "$(git -C "$SDK_SOURCE" rev-parse HEAD)" != "$GODOT_DOTNET_COMMIT" \
-   || "$(git -C "$SDK_SOURCE" diff --name-only HEAD)" != "$GODOT_DOTNET_PATCHED_FILE" \
-   || -n "$(git -C "$SDK_SOURCE" ls-files --others --exclude-standard)" \
-   || "$(sha256_file "$SDK_SOURCE/$GODOT_DOTNET_PATCHED_FILE")" != "$GODOT_DOTNET_PATCHED_FILE_SHA256" ]]; then
-  echo "SDK cache source differs from its pinned correction: $SDK_SOURCE" >&2
-  echo "Preserved it unchanged. Use another NECRONOMIDOM_WORK directory or inspect the retained source." >&2
-  exit 1
+  # Refuse altered/partially prepared source instead of deleting it or relabeling it as this pin.
+  if [[ "$(git -C "$SDK_SOURCE" rev-parse HEAD)" != "$GODOT_DOTNET_COMMIT" \
+     || "$(git -C "$SDK_SOURCE" diff --name-only HEAD)" != "$GODOT_DOTNET_PATCHED_FILE" \
+     || -n "$(git -C "$SDK_SOURCE" ls-files --others --exclude-standard)" \
+     || "$(sha256_file "$SDK_SOURCE/$GODOT_DOTNET_PATCHED_FILE")" != "$GODOT_DOTNET_PATCHED_FILE_SHA256" ]]; then
+    echo "SDK cache source differs from its pinned correction: $SDK_SOURCE" >&2
+    echo "Preserved it unchanged. Use another NECRONOMIDOM_WORK directory or inspect the retained source." >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$FEED/.identity" || "$(cat "$FEED/.identity")" != "$SDK_ID" ]]; then
+    # Bindings generation is opt-in upstream; audit and generated-doc warnings are not ours to fix.
+    # Upstream's cross-platform entry point avoids its shell wrapper's lossy argument re-splitting.
+    (cd "$SDK_SOURCE" && python "$(native_path "$SDK_SOURCE/eng/common/build.py")" \
+      --restore --build --productBuild --pushNupkgsLocal "$(native_path "$FEED")" \
+      /p:GenerateGodotBindings=true /p:NuGetAudit=false /p:PackageVersion="$BINDINGS_VERSION" --warnAsError false)
+    cp "$HERE/godot-dotnet.lock" "$SDK_ROOT/godot-dotnet.lock"
+    cp "$PATCH" "$SDK_ROOT/$(basename "$PATCH")"
+    printf '%s\n' "$SDK_ID" > "$FEED/.identity"
+  fi
 fi
 
 if [[ ! -f "$FEED/.identity" || "$(cat "$FEED/.identity")" != "$SDK_ID" ]]; then
-  # Bindings generation is opt-in upstream; audit and generated-doc warnings are not ours to fix.
-  # Upstream's cross-platform entry point avoids its shell wrapper's lossy argument re-splitting.
-  (cd "$SDK_SOURCE" && python "$(native_path "$SDK_SOURCE/eng/common/build.py")" \
-    --restore --build --productBuild --pushNupkgsLocal "$FEED_NATIVE" \
-    /p:GenerateGodotBindings=true /p:NuGetAudit=false /p:PackageVersion="$BINDINGS_VERSION" --warnAsError false)
-  cp "$HERE/godot-dotnet.lock" "$SDK_ROOT/godot-dotnet.lock"
-  cp "$PATCH" "$SDK_ROOT/$(basename "$PATCH")"
-  printf '%s\n' "$SDK_ID" > "$FEED/.identity"
+  echo "Managed SDK feed identity does not match native/godot-dotnet.lock: $FEED" >&2
+  exit 1
+fi
+for package in Godot.Bindings Godot.SourceGeneration; do
+  if [[ ! -s "$FEED/$package.$BINDINGS_VERSION.nupkg" ]]; then
+    echo "Managed SDK feed is missing the required package: $package.$BINDINGS_VERSION.nupkg" >&2
+    exit 1
+  fi
+done
+
+if [[ -z "${NECRONOMIDOM_SDK_FEED+x}" ]]; then
+  # Ship only these provenance files and the two consumed managed packages to other native hosts.
+  cp "$HERE/godot-dotnet.lock" "$FEED/godot-dotnet.lock"
+  cp "$PATCH" "$FEED/$(basename "$PATCH")"
+fi
+FEED_NATIVE="$(native_path "$FEED")"
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  printf 'sdk-feed=%s\n' "$FEED_NATIVE" >> "$GITHUB_OUTPUT"
 fi
 
 for rid in "$@"; do

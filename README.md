@@ -509,6 +509,13 @@ Linux, Xcode on macOS, Visual Studio build tools on Windows), and fetches and bu
 only compiles for the OS it runs on. Full CI builds all five desktop RIDs on matching host architectures:
 Linux x64/ARM64, Windows x64, macOS ARM64 and macOS x64 (the latter uses the `macos-15-intel` runner).
 
+CI generates the pinned SDK's portable **AnyCPU managed NuGet feed once on Linux x64** and hands off only
+that exact source/patch identity as `sdk-managed-feed`, including its identity marker and source provenance.
+Other native build hosts validate and consume it through `NECRONOMIDOM_SDK_FEED`, avoiding repeated SDK
+binding generation and its host-specific generator dependencies. This shares managed SDK packages, **not**
+cross-compiled native binaries: NativeAOT still runs separately on each matching target OS/architecture.
+All five installed-package runtime qualification jobs remain mandatory for a full release.
+
 ## CI qualification and publication status
 
 **Asset Store submission and review are paused.** Existing tag-driven GitHub release automation remains enabled:
