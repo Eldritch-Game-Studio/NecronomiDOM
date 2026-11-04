@@ -4,12 +4,14 @@ HTML and CSS user interfaces for Godot 4, from GDScript or C#. Author screens as
 parses them into a live DOM, runs the CSS cascade, lays the document out and paints it natively through Godot's
 `RenderingServer` and `TextServerAdvanced`, with pointer, keyboard, gamepad and screen-reader support.
 
+[Download the addon](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) · [Installation](#add-it-to-your-project) · [Examples](#try-the-demos) · [Supported HTML/CSS](docs/capabilities.md)
+
 | Default workbench | Live CSS edit, retained focus | Markup reload, rebound controls |
 |---|---|---|
 | ![Nightward Guild workbench](docs/images/workbench.png) | ![Accent edit with retained input selection](docs/images/workbench-css.png) | ![Model retained after markup replacement](docs/images/workbench-rebound.png) |
 
-The default C# demo (`demo/workbench.html` + `workbench.css`) rendered by stock Godot 4.7.2 .NET,
-Forward+, 1440×1000. The smaller GDScript Grimoire example remains in `demo/gdscript/`.
+The Nightward Guild workbench combines editable forms, typed state bindings and live HTML/CSS authoring.
+Run it from the source repository with Godot .NET, or try the smaller GDScript Grimoire in `demo/gdscript/`.
 
 ## Live interfaces, not just menus
 
@@ -23,7 +25,6 @@ HTML/CSS can drive continuously changing game interfaces—not just static scree
 - **State-driven feedback:** class changes restyle active elements and status text; numeric readouts and a progress bar update alongside them.
 - **Native Godot rendering:** every visible UI element is painted through NecronomiDOM, without a browser or native UI widgets.
 
-Captured in Godot 4.7.2 Forward+ using a standalone rhythm-interface adaptation from Kraken's Keg.
 Movement and feedback are driven by C# updating the DOM, not CSS keyframe animations.
 
 ### Addon capabilities
@@ -44,11 +45,11 @@ Movement and feedback are driven by C# updating the DOM, not CSS keyframe animat
 - **Accessibility**: the DOM's accessibility tree is exposed through Godot's `AccessibilityServer`, subject to the
   [text and accessibility limits](#text-and-accessibility-limits) below.
 
-## Why not Godot's built-in UI?
+## HTML/CSS or Godot's built-in UI?
 
-Godot's `Control` nodes and `Theme` resources work well for editor-style tools. Game interfaces built with them tend to
-end up as deep scene trees, `StyleBoxFlat` resources and theme overrides spread across the inspector, and layout code
-in `_Ready`. NecronomiDOM moves that work into the format most UI people already use.
+Use NecronomiDOM when you prefer to author and theme game interfaces in HTML/CSS. Use Godot's
+`Control` nodes and `Theme` resources when a scene-based workflow or built-in widgets fit your project.
+Both approaches render within Godot; NecronomiDOM changes how you author the interface.
 
 | | Godot `Control` + `Theme` | NecronomiDOM |
 |---|---|---|
@@ -74,47 +75,37 @@ button:focus { border-color: #96dcaa; }
 
 That rule then applies to every button in every document.
 
-**When to stay with built-in `Control`s:** editor plugins, UI that needs widgets outside the supported profile
-(trees, item lists, rich text, color pickers), or projects not using C#. NecronomiDOM supports a defined subset of
-HTML and CSS (see [Supported profile](#supported-profile)) and fails loudly on anything outside it, so you find gaps
-while authoring instead of in a shipped build.
+**When to stay with built-in `Control`s:** editor plugins or interfaces that need widgets outside the
+supported profile, such as trees, item lists, rich text and color pickers. NecronomiDOM supports a defined
+subset of HTML and CSS (see [Supported profile](#supported-profile)) and reports unsupported features while authoring.
 
 ## Requirements
 
-The engine qualification target is **official Godot 4.7.2**. Native desktop distribution targets are
-Linux x64/ARM64, Windows x64 and macOS Apple silicon/Intel. Other engine versions and exported games
-are not established by these checks.
+- **Godot 4.7.2**, standard or .NET edition.
+- Prebuilt native libraries for **Windows x64**, **Linux x64/ARM64**, and **macOS Intel/Apple silicon**.
+- **Godot .NET** if you want the full C# DOM API. GDScript projects do not need .NET.
 
-| | Standard Godot (GDScript) | Godot .NET edition |
+| | GDScript API | C# DOM API |
 |---|---|---|
-| Required native release gate / observed .NET scope | Fresh installed ZIP editor import/shutdown and native DOM action on all five desktop RIDs | Linux x64 stock 4.7.2 .NET workbench, bindings, inspector and reload |
-| API | `DocumentHost` node, selector methods, signals | The same, plus the full C# DOM, CSSOM and layout API |
-| Setup | Copy an addon ZIP containing the library for your desktop architecture | Copy the addon, add one line to the `.csproj` |
+| Godot edition | Standard or .NET | .NET |
+| Access | `DocumentHost` node, selector methods and signals | DOM, CSSOM, layout and typed state bindings |
+| Setup | Install the release ZIP and restart Godot | Also import `NecronomiDom.targets` into your project and build |
 
-The standard-edition build is a GDExtension: the same C# code compiled ahead of time into a native library,
-so consumers do not need the .NET runtime or SDK. CI requires all five desktop native libraries and runs the
-installed-package standard-Godot acceptance on each native architecture. A configured job is not a passing
-result: consult the exact candidate's workflow run before treating it as qualified. Local Linux x64 qualification
-passed fresh installed-ZIP import/shutdown, editor quit, the native DOM action and four host lifecycle cycles.
-That evidence does not establish the other four targets independently of their CI results.
-Web, Android and iOS native exports are unsupported; no desktop or mobile export-template acceptance is claimed
-for either API. Godot .NET's own export support is not evidence that this addon has passed those targets.
-
-Native runtime success does not establish editor-import safety. The earlier `v1.1.1` partial artifact reproduced
-a cold editor import/shutdown abort ([issue #5](https://github.com/Eldritch-Game-Studio/NecronomiDOM/issues/5)).
-Asset Store submission is paused; the fresh-installed-package gate described below must pass before a replacement
-is considered qualified.
+The native GDExtension is compiled ahead of time, so GDScript users do not need a .NET runtime or SDK.
+Android, iOS and Web native exports are not supported.
 
 ## Add it to your project
 
-### 1. Get the addon
+### 1. Download and install
 
-Use an addon ZIP from a fully passing workflow run (or its gated GitHub release), and copy its
-`addons/necronomidom/` folder into your project as `res://addons/necronomidom/`. Restart the editor to load the extension.
-Asset Store submission is paused; an existing release download is not evidence of passing the new gate.
+Download the **NecronomiDOM addon ZIP** from the [latest GitHub release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest).
+Choose the attached `NecronomiDOM-v….zip` file under **Assets**, not GitHub's automatic **Source code** archives.
 
-The addon ZIP contains the prebuilt native libraries. A plain clone or GitHub source ZIP does not; build them with
-`native/build.sh` (see [Building the native libraries](#building-the-native-libraries)).
+Extract its `addons/necronomidom/` folder into your project as `res://addons/necronomidom/`, then restart
+Godot to load the extension. The release ZIP includes the native libraries for all five desktop architectures.
+
+A repository clone or automatic source archive does not include those binaries. Use the release ZIP
+for installation; see [Building from source](#building-from-source) if you want to compile them yourself.
 
 ### 2. GDScript projects: done
 
@@ -288,16 +279,7 @@ can own that cleanup). See [`demo/Demo.cs`](demo/Demo.cs) and
 [`demo/WorkbenchViewModel.cs`](demo/WorkbenchViewModel.cs): input events explicitly edit the model;
 quest/loadout/save clicks remain ordinary handlers. Markup reload detaches/rebinds exactly once.
 
-Run the real-engine binding scenario with .NET Godot:
-
-```sh
-godot --headless --path . res://demo/bindings/smoke.tscn
-godot --path . res://demo/bindings/smoke.tscn -- --proof-out=/absolute/screenshot-directory
-```
-
-It exercises painted text/class/visibility transitions, actual disabled-button input, CSS scope
-survival, markup disposal/rebinding and retired-document isolation. The typed API is C# only;
-GDScript's existing selector/signal API is unchanged.
+Typed state bindings are available from C#. GDScript uses the selector and signal API shown above.
 
 ## Developer authoring tools
 
@@ -312,8 +294,8 @@ uses `-- --dev-ui` to enable its keyboard authoring controls and automatic sourc
 
 ![Nightward workbench with its bound quest tracker selected in the live inspector, showing inherited and resolved CSS variables](docs/images/authoring-inspector.png)
 
-The actual workbench's bound `#tracker` element is selected; the **Variables** tab exposes inherited and resolved
-custom properties such as `--accent`. Captured in stock Godot 4.7.2 .NET with Vulkan at 1920×1080.
+Select a live element to inspect its styles and state. The **Variables** tab shows inherited and resolved
+custom properties, making it easier to trace values such as `--accent` through the cascade.
 
 Call `host.OpenInspector()` from C#, or `host.open_inspector()` from GDScript. Use **Pick element**,
 the ancestry list, **Parent**, or a CSS selector to select a connected element. The tabs show:
@@ -412,194 +394,58 @@ Resource URLs resolve inside `res://` (and `user://ui/`); anything else is rejec
 
 ## Text and accessibility limits
 
-Text uses stock Godot's standard shaping precision; higher-precision, unhinted metrics are not promised.
-Screen-reader support is bounded by stock Godot: mixed checkbox states and `aria-invalid` states are not
-reported to assistive technology. General screen-reader support does not imply those two states are conveyed.
+Text uses Godot's standard shaping. Screen readers receive supported DOM roles, names and states
+through Godot's `AccessibilityServer`. Mixed checkbox and `aria-invalid` states are not exposed.
 
-## Demo and tests
+## Try the demos
 
-The repository root opens the .NET **Nightward Guild UI workbench**, `demo/demo.tscn`.
-The independent, minimal GDScript Grimoire remains at `demo/gdscript/demo.tscn` (any Godot edition,
-needs the native library) and retains its original `grimoire.html` / `grimoire.css` sources.
+The source repository includes two examples:
 
-```sh
-native/build.sh                                      # native library for this machine
-godot --path . res://demo/gdscript/demo.tscn        # GDScript demo (add `-- --smoke` for a check run)
-dotnet build NecronomiDOM.Demo.csproj
-godot --path .                                       # default C# workbench (.NET edition)
-godot --headless --path . -- --smoke                 # default-demo acceptance: exit 0 on success
-godot --headless --path . -- --workbench-smoke       # full workbench + reload/input regression
-dotnet test tests/NecronomiDom.Tests                 # core library tests (no engine required)
-```
+- **Nightward Guild** (`demo/demo.tscn`): a C# workbench with editable character/loadout controls,
+  a local quest board, a tracker and live authoring tools.
+- **The Grimoire** (`demo/gdscript/demo.tscn`): a smaller GDScript example with buttons and live DOM updates.
 
-### Guided workbench exercise
-
-1. Edit the adventurer name/motto and equip the lantern. The preview is typed `Text` binding;
-   the unsaved-card and equipped-loadout styles are `Class` bindings. The lantern hint is a
-   `Visible` binding and Save profile is `Enabled` only for a nonblank, changed profile.
-2. Accept a quest. Its tracker becomes visible, other accept buttons disable, and Record finding
-   advances the local model. After three findings, collection enables; collect 12 supplies once.
-   These are explicitly simulated, self-contained demo contracts, not game integration or persistence.
-3. Change `--accent: #b9e38c` to `--accent: #eebd78` in `demo/workbench.css` and save. With the
-   name field focused/selected, press **F7**. The toolbar reports **CSS applied**; value, selection,
-   focus, DOM identity and bindings stay live. Watching is optional, never automatic by default.
-4. Edit a guide heading in `demo/workbench.html`, retaining all control IDs, and press **F8**.
-   The toolbar reports **Markup replaced**. The C# model (including unsaved form drafts, lantern,
-   quest progress and earned supplies) survives; new inputs are restored and event handlers rebound.
-   Markup replacement does **not** promise focus/selection preservation. Continue typing/recording.
-5. Temporarily add `body { display: grid; }` to the CSS. **F7** rejects the unsupported layout,
-   shows the runtime error and recovery instruction, and leaves the old working UI intact. Remove
-   the rule and reload. Application binding callbacks are not transactional: deleting required
-   control IDs is an application error, not a supported way to redesign the presenter.
-6. **Inspect / F6** opens the real inspector; select `#tracker` to inspect bound content.
-   **Reference + editor setup** exposes the generated capability-reference opener and displays
-   VS Code `css.customData` / `html.customData` settings. File openers use the OS-associated editor;
-   open the displayed repository paths manually if no association is configured.
-
-The HTML uses admitted `div`/`section`/`p` elements with ARIA names/heading roles, not unsupported
-browser elements. There is no JavaScript runtime, template engine, automatic two-way binding or
-game-framework dependency. Inspector/reload stay guarded by a debug engine/template; their toolbar
-actions are disabled in release templates. Model state is session-local, not saved to disk.
-
-`--workbench-smoke` drives the **actual default document** through Godot mouse/keyboard input.
-It copies HTML/CSS into an isolated temporary `user://ui/` directory for edits and removes it on
-exit. It checks native paint, typed text/class/visibility/enabled state, CSS focus/selection retention,
-forced markup rebinding, failed reload survival, once-only rewards, explicit watcher opt-in/off,
-and inspector/reference access. The headless dummy window uses a 1440×1000 logical viewport;
-this is behavioral/layout coverage, not rendered screenshot evidence.
-
-For actual rendered evidence, run .NET Godot on an isolated display (or normally on your own desktop):
+Clone the repository to get the full demo project, then install the addon from the
+[latest release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) into that clone:
 
 ```sh
-godot --path . --rendering-method forward_plus --resolution 1440x1000 -- \\
-  --workbench-smoke --proof-out=/absolute/screenshot-directory
+git clone https://github.com/Eldritch-Game-Studio/NecronomiDOM.git
+cd NecronomiDOM
 ```
 
-Seven viewport captures cover initial UI, bound state, CSS focus retention, rebound markup, rejected
-reload, editor-reference access and the inspector. Verification for this workbench used stock Godot
-4.7.2 .NET, Vulkan/Forward+ on AMD RX 7900 XTX under isolated headless gamescope, with all seven
-screenshots inspected. No desktop window or software-rendering substitution was used.
-The negative CSS check intentionally logs a `display: grid` reload error; it must still finish
-`WORKBENCH_SMOKE_RESULT PASS`. OS external-editor launching and release-template export are not
-exercised by this regression.
-
-![Rejected CSS reload leaves the completed tracker and actions working](docs/images/workbench-rejected.png)
-
-
-Authoring-tool scenarios use isolated temporary `user://ui/` files and never modify the demo sources:
+For Nightward Guild, open the project with **Godot .NET**, build the C# project and run the main scene.
+For the GDScript example, open `demo/gdscript/demo.tscn` and run that scene, or launch it directly:
 
 ```sh
-godot --headless --path . res://demo/authoring/native-smoke.tscn  # standard Godot + built extension
-godot --headless --path . res://demo/authoring/smoke.tscn         # .NET Godot
-godot --path . res://demo/authoring/smoke.tscn -- --proof-out=/absolute/screenshot-directory
+godot --path . res://demo/gdscript/demo.tscn
 ```
 
-The .NET scenario intentionally attempts unsupported CSS and expects a failure diagnostic while the
-previous UI remains usable. It then exercises actual mouse picking, stylesheet/markup reload and
-rebinding. The native scenario additionally withdraws one of two hosts and updates the survivor.
+The installable ZIP contains the addon, not the complete demo project.
 
+### Explore the workbench
 
-## Building the native libraries
+1. Edit the adventurer's name and motto, then equip the lantern. Text and class bindings update the
+   preview; visibility controls the lantern hint, and Save profile enables only for valid, changed input.
+2. Accept a quest and record findings to advance its tracker. After three findings, collect the reward.
+   The quest board is a self-contained example; its state lasts for the current session.
+3. Change `--accent` in `demo/workbench.css`, keep an input focused, and press **F7**.
+   The new stylesheet applies without losing the input's text, selection or focus.
+4. Edit `demo/workbench.html`, keep its control IDs, and press **F8**. The document is replaced,
+   while the presenter restores form drafts, rebinds controls and keeps the C# model.
+5. Try an unsupported rule such as `body { display: grid; }`. The toolbar explains the error and keeps
+   the working interface. Remove the rule and reload to continue.
+6. Press **F6** to inspect the live DOM. **Reference + editor setup** opens the supported-feature
+   reference and shows the VS Code HTML/CSS completion settings.
 
-`native/build.sh [RID…]` builds the GDExtension library for this machine (or the given runtime identifiers:
-`linux-x64`, `linux-arm64`, `win-x64`, `osx-arm64`, `osx-x64`) into `addons/necronomidom/bin/` and writes
-`addons/necronomidom/necronomidom.gdextension`. It needs the .NET 10 SDK and the C toolchain NativeAOT uses (clang on
-Linux, Xcode on macOS, Visual Studio build tools on Windows), and fetches and builds the pinned
-[Godot GDExtension .NET bindings](https://github.com/godotengine/godot-dotnet), which are not on NuGet yet. NativeAOT
-only compiles for the OS it runs on. Full CI builds all five desktop RIDs on matching host architectures:
-Linux x64/ARM64, Windows x64, macOS ARM64 and macOS x64 (the latter uses the `macos-15-intel` runner).
+Source watching is optional and starts off. Inspector and reload controls are available in debug builds.
 
-CI generates the pinned SDK's portable **AnyCPU managed NuGet feed once on Linux x64** and hands off only
-that exact source/patch identity as `sdk-managed-feed`, including its identity marker and source provenance.
-Other native build hosts validate and consume it through `NECRONOMIDOM_SDK_FEED`, avoiding repeated SDK
-binding generation and its host-specific generator dependencies. This shares managed SDK packages, **not**
-cross-compiled native binaries: NativeAOT still runs separately on each matching target OS/architecture.
-All five installed-package runtime qualification jobs remain mandatory for a full release.
+![Unsupported CSS is explained without replacing the working interface](docs/images/workbench-rejected.png)
 
-## CI qualification and publication status
+## Building from source
 
-**Asset Store submission and review are paused.** Existing tag-driven GitHub release automation remains enabled:
-`v*` tag pushes run the same mandatory tests, source smoke and fresh-installed-package qualification before the
-qualified ZIP can be attached to a GitHub release. The workflow does not submit an Asset Store review.
-
-`.github/workflows/ci.yml` runs core tests and the generated capability-reference freshness/regression checks,
-builds all five desktop native targets, and requires the existing source smoke suite to succeed. Both standard
-and .NET editor imports are hard failures, including abnormal process shutdown. The .NET demo, full workbench,
-inspector/state-preserving reload and typed-binding smokes remain required.
-
-Only then does packaging assemble the full addon ZIP. Before retaining/uploading the candidate artifact, CI runs
-`scripts/qualify-stock-package.py` with official standard Godot 4.7.2 on Linux x64. This extracts the ZIP into a new
-temporary project, checks that every descriptor library exists, and copies only the existing GDScript Grimoire
-and `native/tests/lifecycle.gd` / `lifecycle.html` source fixtures (not the source addon, C# build outputs or import
-cache). A cold headless editor import must exit cleanly. A subsequent
-`--editor res://demo/gdscript/demo.tscn --quit` must also open the actual native-host scene and shut down cleanly,
-not merely open a blank editor.
-The native Grimoire runtime must execute the real Summon DOM click and report
-`count="One shape stirs beneath the page."`; a zero exit code alone is insufficient.
-The lifecycle script must also exit cleanly and print exactly
-`native-lifecycle: cycles=4 reloads=4 withdrawn=3 final-host-mounted=true`.
-It exercises real DOM actions, inspector opening, four document reloads and three host withdrawals, leaving
-the final host/inspector mounted so process shutdown must withdraw live resources.
-
-The hosted qualification matrix downloads that **same final ZIP** and repeats the fresh install/import/editor,
-DOM and lifecycle checks using standard Godot on Linux ARM64, Windows x64, macOS ARM64 and macOS Intel. Both macOS runners execute
-the universal engine natively. A separate release job requires the complete matrix to succeed; candidate artifact
-availability alone does not mean the workflow or all-platform qualification passed.
-
-Run the same installed-package acceptance locally, without rebuilding:
-
-```sh
-python3 scripts/qualify-stock-package.py \
-  --godot /path/to/Godot_v4.7.2-stable_linux.x86_64 \
-  --package /path/to/NecronomiDOM-candidate.zip
-```
-
-This headless import/runtime gate does not establish rendered screenshot, screen-reader or export-template
-acceptance. Those require their own evidence; the stock .NET workbench rendering evidence above has a separate scope.
-
-Repository variable `LINUX_RUNNER=self-hosted` selects a Linux x64 runner labelled `necronomidom` for tests,
-Linux x64 build, source smoke and packaging; otherwise those jobs use GitHub-hosted Ubuntu.
-
-Full-distribution builds cannot skip hosted platforms through a repository variable. `HOSTED_PLATFORMS` no longer
-controls the workflow. Only an explicit manual `workflow_dispatch` with `partial=true` skips the hosted builds
-and their qualification matrix to produce a Linux-only diagnostic ZIP. It cannot reach the tag-only release job.
-
-Diagnostic partial ZIPs list only native libraries actually included in their `.gdextension` descriptor and use
-the `-partial.zip` suffix. They are not all-platform distributions. Missing platforms are not advertised; library
-inclusion alone is not runtime evidence. Full packaging fails if any of the five required libraries is absent.
-Fresh-install qualification rejects descriptors referencing missing files in either full or partial ZIPs.
-
-On a self-hosted runner, intermediate Linux x64 binaries pass between jobs through the runner's local cache.
-The candidate ZIP is uploaded to the workflow run's **Artifacts** section and retained in
-`~/.cache/necronomidom-ci/dist/` after Linux x64 installed-package qualification; full qualification additionally
-requires the hosted matrix described above.
-
-To run the same workflow without GitHub (Docker and [act](https://nektosact.com) required):
-
-```sh
-scripts/ci-local.sh        # Linux x64 build, tests, source smoke and fresh-installed ZIP qualification
-```
-
-Local runs explicitly request the manual diagnostic partial mode: act has no Windows, macOS or ARM runners,
-so that ZIP holds only the Linux x64 library. They do not satisfy the all-platform release gate.
-
-Asset Store submissions remain manual and are currently paused. GitHub releases remain tag-driven and gated as above.
-
-The runtime sources are shared: `native/` compiles `addons/necronomidom/runtime/` against the bindings with
-`NECRONOMIDOM_GDEXTENSION` defined, and adds the GDScript API (`native/src/`).
-
-## Layout of this repository
-
-| Path | Contents |
-|---|---|
-| `addons/necronomidom/core/` | Engine-independent library: URL policy, DOM, HTML import, CSS, cascade, layout, display list. |
-| `addons/necronomidom/runtime/` | Godot glue: `DocumentHost`, text shaping, paint, input, accessibility. |
-| `addons/necronomidom/shaders/` | Canvas shaders used by the painter. |
-| `addons/necronomidom/fonts/` | Default font (Noto Sans). |
-| `addons/necronomidom/vendor/AngleSharp/` | Patched AngleSharp 1.8.4 HTML parser (see `patches/`). |
-| `demo/` | Example document with C# and GDScript scenes. |
-| `native/` | GDExtension build for standard Godot: project, GDScript API, build script. |
-| `tests/` | NUnit tests for the core library. |
+Prebuilt binaries are included in the [release downloads](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases).
+To build a native library yourself, see the [native build guide](native/README.md) for toolchain requirements
+and platform-specific instructions.
 
 ## License
 

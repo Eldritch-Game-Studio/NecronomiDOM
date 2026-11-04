@@ -1,48 +1,50 @@
 # NecronomiDOM
 
-HTML and CSS user interfaces for Godot 4, from GDScript or C#. Full documentation, screenshots and demos:
-https://github.com/Eldritch-Game-Studio/NecronomiDOM
+Build Godot interfaces with HTML and CSS, from GDScript or C#. NecronomiDOM renders natively through Godot—no browser or JavaScript runtime.
 
-## Setup
+[Download the latest release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) · [Documentation and examples](https://github.com/Eldritch-Game-Studio/NecronomiDOM#readme)
 
-- **GDScript (official Godot 4.7.2, standard or .NET)**: restart the editor after installing, then add a **DocumentHost** node
-  under a `CanvasLayer` and set **Document Path** to your `.html` file. Connect its `clicked(element_id)` signal and
-  change the page with `set_text`, `add_class`, `set_attribute` and friends.
-- **C# DOM API (.NET edition)**: also add this line to your project's `.csproj`, before `</Project>`, and build:
+## Installation
 
-  ```xml
-  <Import Project="addons/necronomidom/NecronomiDom.targets" />
-  ```
+1. Download the attached **NecronomiDOM addon ZIP** from the latest GitHub release. Use the addon ZIP under **Assets**, not the automatic **Source code** archives.
+2. Copy its `addons/necronomidom/` folder into your project.
+3. Restart Godot to load the native extension.
 
-Recommended: turn off **Project Settings → GUI → Common → Snap Controls to Pixels**.
+The release ZIP includes native libraries for Windows x64, Linux x64/ARM64, and macOS Intel/Apple silicon. GDScript projects do not need .NET.
 
-## Compatibility and qualification
+## GDScript
 
-Native desktop distribution targets are Linux x64/ARM64, Windows x64 and macOS Apple silicon/Intel.
-The release gate requires all five libraries and fresh-installed-ZIP stock Godot 4.7.2 import/editor shutdown,
-native DOM output and mount/reload/withdrawal/final-shutdown checks on matching architectures.
-A configured matrix is not evidence of a pass: check the exact candidate's full workflow result.
-Local Linux x64 qualification passed fresh installed-ZIP import/shutdown, editor quit, native DOM output,
-and four host lifecycle cycles; that does not establish the other four targets.
-Stock Godot 4.7.2 .NET workbench, bindings, inspector and reload evidence is Linux x64 only.
-Other engine versions and exported games are not qualified; Web, Android and iOS native exports are unsupported.
+Add a **DocumentHost** node under a `CanvasLayer` and set **Document Path** to your `.html` file. Connect its `clicked(element_id)` signal and update the document with `set_text`, `add_class`, `set_attribute` and the other selector-based methods.
 
-CI generates the portable AnyCPU managed SDK package feed once on Linux, validates the same pinned source/patch
-identity on every build host, and runs NativeAOT separately on each target OS/architecture. Sharing that managed
-feed is not native cross-compilation and does not replace any target's installed-package runtime checks.
+## C# DOM API
 
-Native runtime success alone does not establish cold editor-import/shutdown safety. The earlier `v1.1.1`
-partial artifact reproduced an import/shutdown abort (repository issue #5). Asset Store submission and review are paused.
-CI requires clean fresh-installed-ZIP import and editor shutdown, a real native DOM action/output check, and the
-four-cycle host lifecycle regression on Linux x64 before uploading a candidate ZIP; all four other desktop
-architecture checks must also pass before a tag-driven GitHub release.
-Only explicit manual/local diagnostic runs can produce partial ZIPs; those are not all-platform distributions
-and advertise only included native libraries. Inclusion is not runtime verification.
+Use Godot .NET. Add this line to your project's `.csproj`, before `</Project>`, and build:
 
-Text uses stock Godot's standard shaping precision, not guaranteed higher-precision unhinted metrics.
-Mixed checkbox and `aria-invalid` states are not reported to screen readers on stock Godot.
+```xml
+<Import Project="addons/necronomidom/NecronomiDom.targets" />
+```
 
-MIT licensed (see `LICENSE`). Bundled third-party components: AngleSharp (MIT, `vendor/AngleSharp/LICENSE`),
-Noto Sans (SIL OFL 1.1, `fonts/OFL.txt`), W3C webref data (MIT), Unicode bidi data (Unicode License v3,
-`core/Css/Data/Unicode/LICENSE.txt`). The native libraries in `bin/` are built with the Godot GDExtension .NET
-bindings (MIT) and the .NET runtime (MIT).
+Attach `res://addons/necronomidom/runtime/DocumentHost.cs` to a `Control` to use the full C# DOM API, CSSOM and typed state bindings.
+
+## Authoring
+
+- Write ordinary HTML and linked CSS files for your interface.
+- Use the live DOM inspector to inspect elements, styles and CSS custom properties.
+- Reload CSS without replacing the document or losing input state; rebind controls after markup replacement.
+- Enable source watching when you want automatic reload. Inspector and reload tools are debug-build features.
+
+Recommended: turn off **Project Settings → GUI → Common → Snap Controls to Pixels** for fractional layout and text positioning.
+
+## Compatibility
+
+Requires **Godot 4.7.2**, standard or .NET edition. The C# DOM API requires the .NET edition. Android, iOS and Web native exports are not supported.
+
+NecronomiDOM implements a defined HTML/CSS subset, not a browser. See the [supported capabilities](https://github.com/Eldritch-Game-Studio/NecronomiDOM/blob/main/docs/capabilities.md) for layout, input and accessibility details. Mixed checkbox and `aria-invalid` states are not exposed to screen readers.
+
+## Examples
+
+Clone the [source repository](https://github.com/Eldritch-Game-Studio/NecronomiDOM) for the Nightward Guild C# workbench and the smaller GDScript Grimoire demo. Install the release addon into that clone before running the examples. The installable ZIP contains the addon, not the full demo project.
+
+## License
+
+MIT licensed (see `LICENSE`). Bundled third-party components: AngleSharp (MIT, `vendor/AngleSharp/LICENSE`), Noto Sans (SIL OFL 1.1, `fonts/OFL.txt`), W3C webref data (MIT), Unicode bidi data (Unicode License v3, `core/Css/Data/Unicode/LICENSE.txt`). The native libraries in `bin/` are built with the Godot GDExtension .NET bindings (MIT) and the .NET runtime (MIT).
