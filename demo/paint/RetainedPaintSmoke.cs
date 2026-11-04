@@ -79,8 +79,15 @@ public partial class RetainedPaintSmoke : Godot.Node
         ".twin{position:absolute;top:340px;width:80px;height:60px;background-color:#336699} " +
         "#twin-a{left:420px} #twin-b{left:520px;transition:background-color .2s linear} " +
         "#spawned{position:absolute;left:620px;top:340px;width:40px;height:40px;background-color:#b46c39} " +
+        "#prefix{position:absolute;left:640px;top:40px;width:40px;height:40px;background-color:#00ffff;opacity:.5} " +
+        ".shard{position:absolute;top:440px;width:160px;height:110px;background-color:#d2501e;clip-path:polygon(0 15%,85% 0,100% 85%,20% 100%)} " +
+        "#shard-a{left:24px} #shard-b{left:200px} " +
+        "#fade{position:absolute;left:420px;top:440px;width:220px;height:120px;opacity:.6} " +
+        "#fade div{position:absolute;width:120px;height:100px} #fade-a{background-color:#ff0000} #fade-b{left:60px;top:20px;background-color:#0000ff} " +
         "@media (min-width:1281px){#card{left:25px} #keycap{left:96px;border-radius:16px} #frame{left:421px} #orb{left:421px} #twin-b{background-color:#996633}}" +
-        "</style></head><body><div id=\"card\"><p class=\"title\">Retained card</p><p>Moving clips keep their glyph targets.</p>" +
+        "</style></head><body><div id=\"prefix\" hidden></div><div class=\"shard\" id=\"shard-a\"></div><div class=\"shard\" id=\"shard-b\"></div>" +
+        "<div id=\"fade\"><div id=\"fade-a\"></div><div id=\"fade-b\"></div></div>" +
+        "<div id=\"card\"><p class=\"title\">Retained card</p><p>Moving clips keep their glyph targets.</p>" +
         "<p>Shadowed text is not repainted from scratch.</p></div><input id=\"field\" value=\"Retained glyphs\" aria-label=\"Glyph effects\">" +
         "<div id=\"keycap\"></div><div id=\"frame\"></div><div id=\"orb\"><p>Ellipse</p></div>" +
         "<div class=\"twin\" id=\"twin-a\"></div><div class=\"twin\" id=\"twin-b\"></div><div id=\"spawned\" hidden></div></body></html>";
@@ -127,6 +134,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(runs.OfType<BackgroundImageRun>().Any(), "fixture paints a clipped background image");
         Check(runs.OfType<BeginRoundedRectClipRun>().Any(), "fixture paints a rounded overflow clip");
         Check(runs.OfType<BeginEllipticalClipRun>().Any(), "fixture paints an elliptical overflow clip");
+        Check(runs.OfType<BeginPolygonClipRun>().Count() >= 2 && runs.OfType<BeginOpacityRun>().Any(),
+            "fixture paints polygon clip-paths and an opacity group");
         Check(runs.OfType<BoxRun>().Count() >= 2, "fixture paints styled boxes");
         Check(runs.OfType<TextEffectsRun>().Any(run => run.Effects.Shadows.Span.ToArray().Any(shadow => shadow.BlurRadius > 0)),
             "fixture paints blurred glyph shadows");
@@ -164,6 +173,22 @@ public partial class RetainedPaintSmoke : Godot.Node
         }
         Check(_host.PaintRevision - paint >= Frames / 2, "topology changes take the structural repaint path");
         Check(PaintTargets().SetEquals(targets), "structural repaint reuses existing glyph and clip targets");
+
+        // A different-kind context inserted before unchanged polygon clips, a rounded clip and an opacity group
+        // must not evict their composites: pooled targets are matched by kind, not by position.
+        paint = _host.PaintRevision;
+        var prefix = _host.Document.GetElementById("prefix")!;
+        bool kept = true, grew = false;
+        for (int frame = 0; frame < Frames / 2; frame++)
+        {
+            if (frame % 2 == 0) prefix.RemoveAttribute("hidden"); else prefix.SetAttribute("hidden", "");
+            await Settle(1280);
+            var current = PaintTargets();
+            kept &= current.IsSupersetOf(targets);
+            grew |= current.Count > targets.Count;
+        }
+        Check(_host.PaintRevision - paint >= Frames / 2 && grew, "inserting a different-kind context repaints structurally");
+        Check(kept && PaintTargets().SetEquals(targets), "mixed-kind insertion keeps every existing polygon, clip and opacity target");
 
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
