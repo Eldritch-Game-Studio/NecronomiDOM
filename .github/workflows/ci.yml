@@ -176,6 +176,8 @@ jobs:
           "$GODOT" --headless --path . res://demo/gdscript/demo.tscn -- --smoke
       - name: Native authoring tools and shared-resource lifetime
         run: '"$GODOT" --headless --path . res://demo/authoring/native-smoke.tscn'
+      - name: Native retained paint classes
+        run: '"$GODOT" --headless --path . res://demo/paint/native-smoke.tscn'
       - name: C# demo in .NET Godot
         run: |
           rm -rf .godot
@@ -187,6 +189,15 @@ jobs:
         run: '"$GODOT_MONO" --headless --path . res://demo/authoring/smoke.tscn'
       - name: Typed binding state, input and document lifetime
         run: '"$GODOT_MONO" --headless --path . res://demo/bindings/smoke.tscn'
+      - name: Retained paint updates and glyph target reuse
+        run: '"$GODOT_MONO" --headless --path . res://demo/paint/smoke.tscn'
+      - name: Retained paint without per-frame RenderingServer synchronization
+        # Godot reports per-frame render-thread synchronization only while a separate render thread draws real
+        # frames, so this run uses a virtual X display and Mesa's software OpenGL rather than --headless.
+        run: |
+          command -v xvfb-run >/dev/null || (sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri)
+          xvfb-run -a -s "-screen 0 1440x1000x24" "$GODOT_MONO" --path . --rendering-method gl_compatibility \
+            --render-thread separate --audio-driver Dummy res://demo/paint/smoke.tscn -- --require-render-sync-check
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]
