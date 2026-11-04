@@ -26,6 +26,17 @@ public readonly record struct TextEffectsStyle
         }
         StrokeWidth = strokeWidth; StrokeColor = strokeColor; Shadows = shadows;
     }
+    // Layout resolves a fresh shadow array; its storage identity is not a paint change.
+    public bool Equals(TextEffectsStyle other) => StrokeWidth.Equals(other.StrokeWidth)
+        && StrokeColor.Equals(other.StrokeColor)
+        && (Shadows.Equals(other.Shadows) || Shadows.Span.SequenceEqual(other.Shadows.Span));
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(StrokeWidth); hash.Add(StrokeColor);
+        foreach (var shadow in Shadows.Span) hash.Add(shadow);
+        return hash.ToHashCode();
+    }
     private static void Validate(Rgba color)
     {
         if (!float.IsFinite(color.R) || !float.IsFinite(color.G) || !float.IsFinite(color.B)

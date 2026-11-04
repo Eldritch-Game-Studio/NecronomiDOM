@@ -111,10 +111,14 @@ public partial class DocumentPaint
     }
     private RetainedBinding ReplaceRetainedText(RetainedBinding binding, PaintRun run, INativeFontFamilies fonts)
     {
+        if (run is TextEffectsRun effects && binding.Item is NativeGlyphEffectsPaint retained)
+        {
+            retained.Update(effects, fonts.Resolve(effects.Text).GetShapedRun(effects.Text));
+            return binding;
+        }
         Node2D replacement = run switch
         {
             TextRun text => new ShapedTextPaint(fonts.Resolve(text), text),
-            TextEffectsRun effects => new NativeGlyphEffectsPaint(effects, fonts.Resolve(effects.Text).GetShapedRun(effects.Text)),
             _ => throw new InvalidOperationException("Retained glyph replacement requires a text run.")
         };
         var previous = (Node2D)binding.Item!;

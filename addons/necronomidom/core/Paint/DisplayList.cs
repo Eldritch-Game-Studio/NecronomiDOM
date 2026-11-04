@@ -65,6 +65,22 @@ public sealed record InlineTextFragment(Text Node, int Start, int Length, Rect B
 {
     /// <summary>Blink ShapeResultView.SnappedWidth: ceil each DOM text item's advance to 1/64px.</summary>
     public static double LayoutWidth(double advance) => Math.Max(0, Math.Ceiling(advance * 64) / 64);
+    public bool Equals(InlineTextFragment? other)
+    {
+        if (ReferenceEquals(this, other)) return true;
+        if (other is null || !ReferenceEquals(Node, other.Node) || Start != other.Start
+            || Length != other.Length || Bounds != other.Bounds || SourceOffsets.Count != other.SourceOffsets.Count) return false;
+        for (int i = 0; i < SourceOffsets.Count; i++)
+            if (SourceOffsets[i] != other.SourceOffsets[i]) return false;
+        return true;
+    }
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Node); hash.Add(Start); hash.Add(Length); hash.Add(Bounds);
+        for (int i = 0; i < SourceOffsets.Count; i++) hash.Add(SourceOffsets[i]);
+        return hash.ToHashCode();
+    }
 }
 
 /// <summary>CSS paint order retained verbatim; adapters may batch only consecutive box runs.</summary>
