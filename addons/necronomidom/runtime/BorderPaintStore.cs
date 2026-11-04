@@ -16,7 +16,7 @@ public sealed class BorderPaintStore : IDisposable
         _top = new("top_color"), _right = new("right_color"), _bottom = new("bottom_color"), _left = new("left_color");
     private int _borderCursor, _contextCursor;
     private bool _disposed;
-    private sealed record BorderItem(MeshInstance2D Node, QuadMesh Mesh, ShaderMaterial Material);
+    private sealed record BorderItem(NativeBorderPaint Node, QuadMesh Mesh, ShaderMaterial Material);
     internal bool Owns(int slot, CanvasItem? item) => (uint)slot < (uint)_borders.Count
         && ReferenceEquals(_borders[slot].Node, item);
     public void DetachBeforeClear()
@@ -37,9 +37,9 @@ public sealed class BorderPaintStore : IDisposable
         BorderItem item;
         if (_borderCursor == _borders.Count)
         {
-            var mesh = new QuadMesh();
+            var mesh = new QuadMesh { Size = Vector2.One };
             var material = new ShaderMaterial { Shader = WebPaintShaders.AsymmetricBorder };
-            item = new(new MeshInstance2D { Mesh = mesh, Material = material }, mesh, material);
+            item = new(new NativeBorderPaint { Mesh = mesh, Material = material }, mesh, material);
             _borders.Add(item);
         }
         else item = _borders[_borderCursor];
@@ -55,7 +55,7 @@ public sealed class BorderPaintStore : IDisposable
         var bounds = run.Bounds;
         item.Node.Position = new((float)(bounds.X + bounds.Width / 2), (float)(bounds.Y + bounds.Height / 2));
         item.Node.Visible = bounds.Width > 0 && bounds.Height > 0;
-        item.Mesh.Size = new((float)Math.Max(0, bounds.Width), (float)Math.Max(0, bounds.Height));
+        item.Node.Scale = new((float)Math.Max(0, bounds.Width), (float)Math.Max(0, bounds.Height));
         var material2 = item.Material;
         material2.SetShaderParameter(_boxSize, new Vector2((float)bounds.Width, (float)bounds.Height));
         var b = run.Borders;

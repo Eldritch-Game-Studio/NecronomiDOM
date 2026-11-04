@@ -13,6 +13,7 @@ public partial class DocumentPaint : Node2D
     private readonly List<Node2D> _items = new();
     private readonly List<Resource> _resources = new();
     private readonly PolygonPaintStore _polygons = new();
+    private readonly NativeGlyphPaintStore _glyphs = new();
     private BorderPaintStore? _borders;
     private EllipticalClipStore? _ellipticalClips;
     private NativeBackgroundPaintStore? _backgrounds;
@@ -41,10 +42,11 @@ public partial class DocumentPaint : Node2D
     }
     public void Rebuild(DisplayList list, INativeFontFamilies fonts, NativeImageSource images)
     {
-        if (RetainedUpdates && TryUpdateRetained(list, fonts)) return;
+        if (RetainedUpdates && TryUpdateRetained(list, fonts, images)) return;
         RebuildRevision++;
         Clear();
         _polygons.BeginRebuild();
+        _glyphs.BeginRebuild();
         _borders?.BeginRebuild();
         _ellipticalClips?.BeginRebuild();
         _backgrounds?.BeginRebuild();
@@ -102,9 +104,9 @@ public partial class DocumentPaint : Node2D
             }
             if (run is BackgroundImageRun background)
             {
-                var context = BackgroundStore().Create(background, images);
+                var context = BackgroundStore().Create(background, images, out int backgroundSlot);
                 parent.AddChild(context); _isolatedContexts.Add(context);
-                BindRetained(i, context);
+                BindRetained(i, context, backgroundSlot);
                 BackgroundImageRunCount++; ImageRunCount++; i++; continue;
             }
             if (run is BorderBoxRun border)
@@ -121,9 +123,8 @@ public partial class DocumentPaint : Node2D
             }
             if (run is TextEffectsRun effects)
             {
-                var shaped = fonts.Resolve(effects.Text).GetShapedRun(effects.Text);
-                var item = new NativeGlyphEffectsPaint(effects, shaped);
-                parent.AddChild(item); _items.Add(item); BindRetained(i, item, _items.Count - 1); TextRunCount++; i++; continue;
+                var item = _glyphs.Create(effects, fonts, out int glyphSlot);
+                parent.AddChild(item); BindRetained(i, item, glyphSlot); TextRunCount++; i++; continue;
             }
             if (list.Runs[i] is TextRun text)
             {
@@ -181,6 +182,7 @@ public partial class DocumentPaint : Node2D
     private void EndStoreRebuild()
     {
         _polygons.EndRebuild();
+        _glyphs.EndRebuild();
         _borders?.EndRebuild();
         _ellipticalClips?.EndRebuild();
         _backgrounds?.EndRebuild();
@@ -227,6 +229,7 @@ public partial class DocumentPaint : Node2D
         _retainedBindings.Clear();
         _isolatedContexts.Clear();
         _opacityGroups.Clear();
+        _glyphs.DetachBeforeClear();
         _polygons.DetachBeforeClear();
         _borders?.DetachBeforeClear();
         _ellipticalClips?.DetachBeforeClear();
@@ -252,6 +255,7 @@ public partial class DocumentPaint : Node2D
     {
         Clear();
         _backgrounds?.Dispose(); _backgrounds = null;
+        _glyphs.Dispose();
     }
     public override void _ExitTree() => Clear();
     public override void _Notification(int what)
@@ -259,6 +263,7 @@ public partial class DocumentPaint : Node2D
         if (what != NotificationPredelete) return;
         Clear(); _polygons.Dispose(); _borders?.Dispose(); _ellipticalClips?.Dispose(); _backgrounds?.Dispose();
         _gradients?.Dispose();
+        _glyphs.Dispose();
     }
 }
 

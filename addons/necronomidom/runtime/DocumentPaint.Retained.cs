@@ -8,7 +8,7 @@ namespace NecronomiDom.Runtime;
 
 public partial class DocumentPaint
 {
-    // Slot is a MultiMesh instance, owned _items glyph, or BorderPaintStore index; other contexts use -1.
+    // Slot is a MultiMesh instance, owned _items text, or glyph/background/border-store index; other contexts use -1.
     // StyleRow is a box instance's custom-data style row, kept here so retained updates never read the
     // MultiMesh back from the RenderingServer (that read synchronizes with the render thread every call).
     private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot, int StyleRow = 0);
@@ -45,7 +45,7 @@ public partial class DocumentPaint
 
     /// <summary>Validate the entire topology before touching native state. Unchanged glyph/mask/image
     /// nodes and buffers stay borrowed and attached; only actual run deltas reach the compositor.</summary>
-    private bool TryUpdateRetained(DisplayList list, INativeFontFamilies fonts)
+    private bool TryUpdateRetained(DisplayList list, INativeFontFamilies fonts, NativeImageSource images)
     {
         if (_retainedBindings.Count == 0 || list.Runs.Count != _retainedBindings.Count) return false;
         for (int i = 0; i < list.Runs.Count; i++)
@@ -58,11 +58,13 @@ public partial class DocumentPaint
                 (BeginPolygonClipRun, PolygonClipGroup) => true,
                 (BeginRectClipRun, RoundedRectClipGroup) or (BeginRoundedRectClipRun, RoundedRectClipGroup) => true,
                 (BeginEllipticalClipRun, EllipticalClipGroup) => true,
+                (BackgroundImageRun, EllipticalClipGroup) => _backgrounds?.Owns(before.Slot, before.Item) == true,
                 (BorderBoxRun, MeshInstance2D) => _borders?.Owns(before.Slot, before.Item) == true,
                 (BeginOpacityRun, PolygonOpacityGroup) => true,
                 (BeginTransformRun, Node2D) => true,
                 (BoxRun, MultiMeshInstance2D) => (uint)before.StyleRow < (uint)_styleRowCount,
-                (TextRun, ShapedTextPaint) or (TextEffectsRun, NativeGlyphEffectsPaint) =>
+                (TextEffectsRun, NativeGlyphEffectsPaint) => _glyphs.Owns(before.Slot, before.Item),
+                (TextRun, ShapedTextPaint) =>
                     (uint)before.Slot < (uint)_items.Count && ReferenceEquals(_items[before.Slot], before.Item),
                 (EndTransformRun, null) or (EndEllipticalClipRun, null) => true,
                 _ => false
@@ -83,6 +85,7 @@ public partial class DocumentPaint
                 case (BeginRectClipRun run, RoundedRectClipGroup item): item.Update(run.Bounds, 0); break;
                 case (BeginRoundedRectClipRun run, RoundedRectClipGroup item): item.Update(run.Bounds, run.Radius); break;
                 case (BeginEllipticalClipRun run, EllipticalClipGroup item): item.Update(run); break;
+                case (BackgroundImageRun run, EllipticalClipGroup): _backgrounds!.Update(binding.Slot, run, images); break;
                 case (BorderBoxRun run, MeshInstance2D): _borders!.Update(binding.Slot, run); break;
                 case (BeginOpacityRun run, PolygonOpacityGroup item): item.Update(run.Opacity); break;
                 case (BeginTransformRun run, Node2D item): item.Transform = BorderPaintStore.ToNative(run.Transform); break;
@@ -125,9 +128,9 @@ public partial class DocumentPaint
     }
     private RetainedBinding ReplaceRetainedText(RetainedBinding binding, PaintRun run, INativeFontFamilies fonts)
     {
-        if (run is TextEffectsRun effects && binding.Item is NativeGlyphEffectsPaint retained)
+        if (run is TextEffectsRun effects && binding.Item is NativeGlyphEffectsPaint)
         {
-            retained.Update(effects, fonts.Resolve(effects.Text).GetShapedRun(effects.Text));
+            _glyphs.Update(binding.Slot, effects, fonts);
             return binding;
         }
         Node2D replacement = run switch

@@ -23,6 +23,11 @@ public partial class PolygonComposite : Node2D
     // This render-only World2D is a separate interpolation scope; UI poses advance per process frame.
     private readonly Node2D _content = new() { PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off };
     private readonly ViewportTexture _texture;
+#if !NECRONOMIDOM_GDEXTENSION
+    // Borrow the parent's texture wrapper once, not RenderingServer.viewport_get_texture per dirty frame.
+    private Viewport? _parentViewport;
+    private ViewportTexture? _parentTexture;
+#endif
     private readonly Vector2[] _quad = new Vector2[4];
     private readonly Vector2[] _uv = new Vector2[4];
     private readonly Color[] _colors = [new Color(1, 1, 1, 1)];
@@ -129,24 +134,27 @@ public partial class PolygonComposite : Node2D
         if (!float.IsFinite(device.Determinant()) || device.Determinant() == 0)
             throw new NotSupportedException("Isolation context requires a finite invertible device transform.");
         ConfigureDeviceCoverage();
-        _target.UseHdr2D = LinearTarget || GetViewport().UseHdr2D;
+        Viewport parentViewport = GetViewport();
+        _target.UseHdr2D = LinearTarget || parentViewport.UseHdr2D;
         // The parent render target is an actual device clipping boundary. Do not
         // allocate offscreen textures for overflow pixels it cannot display.
-        Viewport viewport = GetViewport();
         Vector2 physicalSize;
-        if (viewport is SubViewport && viewport.GetParent() is PolygonComposite owner)
+        if (parentViewport is SubViewport && parentViewport.GetParent() is PolygonComposite owner)
             physicalSize = owner._texture.GetSize();
         else
         {
 #if NECRONOMIDOM_GDEXTENSION
-            // This query needs no retained reference. Release the native binding's
-            // temporary wrapper before render-server teardown; never dispose an
-            // ancestor composite's owned texture (handled above).
-            using var texture = viewport.GetTexture();
-#else
-            var texture = viewport.GetTexture();
-#endif
+            // Release only this temporary native wrapper, never an ancestor's owned texture.
+            using var texture = parentViewport.GetTexture();
             physicalSize = texture.GetSize();
+#else
+            if (!ReferenceEquals(_parentViewport, parentViewport))
+            {
+                _parentViewport = parentViewport;
+                _parentTexture = parentViewport.GetTexture();
+            }
+            physicalSize = _parentTexture!.GetSize();
+#endif
         }
         Rect2 painted = (device * _logicalBounds).Intersection(new Rect2(Vector2.Zero, physicalSize));
         if (painted.Size.X <= 0 || painted.Size.Y <= 0)
