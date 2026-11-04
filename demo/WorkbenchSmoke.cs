@@ -76,6 +76,7 @@ public partial class Demo
     }
     private async void RunSmoke(bool full)
     {
+        SmokeIsolation.IgnoreHostControllers();
         try
         {
             // Godot's dummy headless window is 64x64 regardless of --resolution. Give the smoke a
