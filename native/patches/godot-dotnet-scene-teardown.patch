@@ -1,0 +1,93 @@
+diff --git a/src/Godot.Bindings/Bridge/GodotBridge.cs b/src/Godot.Bindings/Bridge/GodotBridge.cs
+--- a/src/Godot.Bindings/Bridge/GodotBridge.cs
++++ b/src/Godot.Bindings/Bridge/GodotBridge.cs
+@@ -49,6 +49,7 @@
+     internal static GDExtensionInterface GDExtensionInterface => _gdextensionInterface;
+ 
+     private static bool _initialized;
++    private static int _initializedLevels;
+ 
+     private static unsafe void Initialize(GetProcAddressFunction getProcAddress, void* library, GDExtensionInitialization* initialization, Action<GodotBridgeConfiguration> configure)
+     {
+@@ -130,12 +131,14 @@
+ 
+                 var mainLoopCallbacks = new GDExtensionMainLoopCallbacks()
+                 {
++                    shutdown_func = (nint)(delegate* unmanaged[Cdecl]<void>)(&Shutdown_Native),
+                     frame_func = (nint)(delegate* unmanaged[Cdecl]<void>)(&Frame_Native)
+                 };
+ 
+                 _gdextensionInterface.register_main_loop_callbacks(_libraryPtr, &mainLoopCallbacks);
+             }
+ 
++            _initializedLevels |= 1 << (int)level;
+             _initCallback?.Invoke((InitializationLevel)level);
+         }
+         catch (Exception exception) when (ExceptionHandling.IsHandled(exception)) { }
+@@ -146,21 +149,51 @@
+     {
+         try
+         {
+-            _terminateCallback?.Invoke((InitializationLevel)level);
+-
+-            // Only free everything once at the last level.
+-            if (level == 0)
+-            {
+-                _syncContext?.Dispose();
+-                _syncContext = null;
+-
+-                GodotRegistry.RemoveAllEditorPlugins();
+-                GodotRegistry.UnregisterAllClasses();
+-
+-                DisposablesTracker.DisposeAll();
+-            }
+-        }
+-        catch (Exception exception) when (ExceptionHandling.IsHandled(exception)) { }
++            DeinitializeLevel((InitializationLevel)level);
++        }
++        catch (Exception exception) when (ExceptionHandling.IsHandled(exception)) { }
++    }
++
++    // Main-loop shutdown runs after SceneTree.finalize(), but before Main::cleanup flushes
++    // deferred work. Waiting for Scene deinitialization is already too late for that flush.
++    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
++    private static void Shutdown_Native()
++    {
++        try
++        {
++            DeinitializeLevel(InitializationLevel.Editor);
++            DeinitializeLevel(InitializationLevel.Scene);
++        }
++        catch (Exception exception) when (ExceptionHandling.IsHandled(exception)) { }
++    }
++
++    private static void DeinitializeLevel(InitializationLevel level)
++    {
++        int levelMask = 1 << (int)level;
++        if ((_initializedLevels & levelMask) == 0)
++        {
++            return;
++        }
++
++        // The engine also sends level-deinitialization callbacks after shutdown, or when
++        // unloading a library. Both paths share ownership and must terminate each level once.
++        _initializedLevels &= ~levelMask;
++        _terminateCallback?.Invoke(level);
++
++        if (level == InitializationLevel.Editor)
++        {
++            GodotRegistry.RemoveAllEditorPlugins();
++        }
++        else if (level == InitializationLevel.Scene)
++        {
++            GodotRegistry.UnregisterAllClasses();
++            DisposablesTracker.DisposeAll();
++        }
++        else if (level == InitializationLevel.Core)
++        {
++            _syncContext?.Dispose();
++            _syncContext = null;
++        }
+     }
+ 
+     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]

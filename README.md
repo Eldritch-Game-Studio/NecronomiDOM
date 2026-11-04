@@ -41,7 +41,8 @@ Movement and feedback are driven by C# updating the DOM, not CSS keyframe animat
   and shadows, transitions of opacity, colors, width and scale.
 - **Input**: mouse and pointer capture, keyboard focus and Tab order, gamepad/arrow navigation between focusable
   elements, `<input>`/`<textarea>` editing with caret and selection.
-- **Accessibility**: the DOM's accessibility tree is exposed through Godot's `AccessibilityServer`.
+- **Accessibility**: the DOM's accessibility tree is exposed through Godot's `AccessibilityServer`, subject to the
+  [text and accessibility limits](#text-and-accessibility-limits) below.
 
 ## Why not Godot's built-in UI?
 
@@ -59,7 +60,7 @@ in `_Ready`. NecronomiDOM moves that work into the format most UI people already
 | Reviewing changes | Diffs of serialized resources with generated IDs | Readable markup and stylesheet diffs |
 | Dynamic content | Instance and free nodes, re-apply overrides | Change the DOM (`TextContent`, `SetAttribute`, `classList`) and the layout updates |
 | Gamepad and keyboard | Configure each control's focus neighbors | Tab order and directional navigation come from the document |
-| Accessibility | Per-control properties | Roles, names and states derived from HTML semantics and ARIA |
+| Accessibility | Per-control properties | Roles, names and supported states derived from HTML semantics and ARIA |
 
 Compare a styled, focus-aware button. With built-in nodes you create a `Button`, then a `StyleBoxFlat` for each of
 normal, hover, pressed and focus, set colors, borders and corner radii on each, and assign them as theme overrides.
@@ -80,26 +81,39 @@ while authoring instead of in a shipped build.
 
 ## Requirements
 
-Godot 4.7 or newer, standard or .NET edition.
+The engine qualification target is **official Godot 4.7.2**. Native desktop distribution targets are
+Linux x64/ARM64, Windows x64 and macOS Apple silicon/Intel. Other engine versions and exported games
+are not established by these checks.
 
 | | Standard Godot (GDScript) | Godot .NET edition |
 |---|---|---|
-| Runs on | Windows x64, Linux x64/arm64, macOS (Apple silicon and Intel) | Platforms Godot .NET exports to (desktop, Android, iOS) |
+| Required native release gate / observed .NET scope | Fresh installed ZIP editor import/shutdown and native DOM action on all five desktop RIDs | Linux x64 stock 4.7.2 .NET workbench, bindings, inspector and reload |
 | API | `DocumentHost` node, selector methods, signals | The same, plus the full C# DOM, CSSOM and layout API |
-| Setup | Copy the addon | Copy the addon, add one line to the `.csproj` |
+| Setup | Copy an addon ZIP containing the library for your desktop architecture | Copy the addon, add one line to the `.csproj` |
 
-The standard-edition build is a GDExtension: the same C# code compiled ahead of time into a native library, so
-no .NET runtime or SDK is needed. Web, Android and iOS exports are not supported by it yet.
+The standard-edition build is a GDExtension: the same C# code compiled ahead of time into a native library,
+so consumers do not need the .NET runtime or SDK. CI requires all five desktop native libraries and runs the
+installed-package standard-Godot acceptance on each native architecture. A configured job is not a passing
+result: consult the exact candidate's workflow run before treating it as qualified. Local Linux x64 qualification
+passed fresh installed-ZIP import/shutdown, editor quit, the native DOM action and four host lifecycle cycles.
+That evidence does not establish the other four targets independently of their CI results.
+Web, Android and iOS native exports are unsupported; no desktop or mobile export-template acceptance is claimed
+for either API. Godot .NET's own export support is not evidence that this addon has passed those targets.
+
+Native runtime success does not establish editor-import safety. The earlier `v1.1.1` partial artifact reproduced
+a cold editor import/shutdown abort ([issue #5](https://github.com/Eldritch-Game-Studio/NecronomiDOM/issues/5)).
+Asset Store submission is paused; the fresh-installed-package gate described below must pass before a replacement
+is considered qualified.
 
 ## Add it to your project
 
 ### 1. Get the addon
 
-Download `NecronomiDOM.zip` from the [releases page](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases)
-(or install from the Godot Asset Store) and copy its `addons/necronomidom/` folder into your project, so you have
-`res://addons/necronomidom/`. Restart the editor so it loads the extension.
+Use an addon ZIP from a fully passing workflow run (or its gated GitHub release), and copy its
+`addons/necronomidom/` folder into your project as `res://addons/necronomidom/`. Restart the editor to load the extension.
+Asset Store submission is paused; an existing release download is not evidence of passing the new gate.
 
-The release ZIP contains the prebuilt native libraries. A plain clone or GitHub source ZIP does not; build them with
+The addon ZIP contains the prebuilt native libraries. A plain clone or GitHub source ZIP does not; build them with
 `native/build.sh` (see [Building the native libraries](#building-the-native-libraries)).
 
 ### 2. GDScript projects: done
@@ -296,7 +310,10 @@ uses `-- --dev-ui` to enable its keyboard authoring controls and automatic sourc
 
 ### Live inspector
 
-![Picking a rendered button and inspecting its inherited custom property and computed color](docs/images/authoring-inspector.png)
+![Nightward workbench with its bound quest tracker selected in the live inspector, showing inherited and resolved CSS variables](docs/images/authoring-inspector.png)
+
+The actual workbench's bound `#tracker` element is selected; the **Variables** tab exposes inherited and resolved
+custom properties such as `--accent`. Captured in stock Godot 4.7.2 .NET with Vulkan at 1920×1080.
 
 Call `host.OpenInspector()` from C#, or `host.open_inspector()` from GDScript. Use **Pick element**,
 the ancestry list, **Parent**, or a CSS selector to select a connected element. The tabs show:
@@ -393,14 +410,11 @@ html, body, main, section, div, p, button, input, textarea { margin: 0; box-sizi
 
 Resource URLs resolve inside `res://` (and `user://ui/`); anything else is rejected.
 
-## Engine extensions
+## Text and accessibility limits
 
-Two capabilities use engine APIs that stock Godot 4.7 does not expose. NecronomiDOM detects them at runtime:
-
-- `FontFile.high_precision_shaping` (unhinted high-precision metrics). Without it, text metrics use Godot's standard
-  shaping precision.
-- `AccessibilityServer.update_set_checked_mixed` / `update_set_invalid_state`. Without them, mixed checkbox and
-  `aria-invalid` states are not reported to screen readers.
+Text uses stock Godot's standard shaping precision; higher-precision, unhinted metrics are not promised.
+Screen-reader support is bounded by stock Godot: mixed checkbox states and `aria-invalid` states are not
+reported to assistive technology. General screen-reader support does not imply those two states are conveyed.
 
 ## Demo and tests
 
@@ -454,7 +468,7 @@ forced markup rebinding, failed reload survival, once-only rewards, explicit wat
 and inspector/reference access. The headless dummy window uses a 1440×1000 logical viewport;
 this is behavioral/layout coverage, not rendered screenshot evidence.
 
-For actual rendered evidence, run .NET Godot on a private display (or normally on your own desktop):
+For actual rendered evidence, run .NET Godot on an isolated display (or normally on your own desktop):
 
 ```sh
 godot --path . --rendering-method forward_plus --resolution 1440x1000 -- \\
@@ -463,8 +477,8 @@ godot --path . --rendering-method forward_plus --resolution 1440x1000 -- \\
 
 Seven viewport captures cover initial UI, bound state, CSS focus retention, rebound markup, rejected
 reload, editor-reference access and the inspector. Verification for this workbench used stock Godot
-4.7.2 .NET, Vulkan/Forward+ on AMD RX 7900 XTX under private headless gamescope, with all seven
-screenshots inspected. No desktop window, engine patch or software-rendering substitution was used.
+4.7.2 .NET, Vulkan/Forward+ on AMD RX 7900 XTX under isolated headless gamescope, with all seven
+screenshots inspected. No desktop window or software-rendering substitution was used.
 The negative CSS check intentionally logs a `display: grid` reload error; it must still finish
 `WORKBENCH_SMOKE_RESULT PASS`. OS external-editor launching and release-template export are not
 exercised by this regression.
@@ -492,45 +506,84 @@ rebinding. The native scenario additionally withdraws one of two hosts and updat
 `addons/necronomidom/necronomidom.gdextension`. It needs the .NET 10 SDK and the C toolchain NativeAOT uses (clang on
 Linux, Xcode on macOS, Visual Studio build tools on Windows), and fetches and builds the pinned
 [Godot GDExtension .NET bindings](https://github.com/godotengine/godot-dotnet), which are not on NuGet yet. NativeAOT
-only compiles for the OS it runs on; the CI/CD workflow builds every platform and assembles the release ZIP.
+only compiles for the OS it runs on. Full CI builds all five desktop RIDs on matching host architectures:
+Linux x64/ARM64, Windows x64, macOS ARM64 and macOS x64 (the latter uses the `macos-15-intel` runner).
 
-## Releasing
+CI generates the pinned SDK's portable **AnyCPU managed NuGet feed once on Linux x64** and hands off only
+that exact source/patch identity as `sdk-managed-feed`, including its identity marker and source provenance.
+Other native build hosts validate and consume it through `NECRONOMIDOM_SDK_FEED`, avoiding repeated SDK
+binding generation and its host-specific generator dependencies. This shares managed SDK packages, **not**
+cross-compiled native binaries: NativeAOT still runs separately on each matching target OS/architecture.
+All five installed-package runtime qualification jobs remain mandatory for a full release.
 
-`.github/workflows/ci.yml` runs on every push and pull request: core tests, native libraries for every platform,
-smoke runs of both demos (GDScript in standard Godot, C# in .NET Godot) and the addon ZIP as a build artifact.
-Pushing a tag publishes a release:
+## CI qualification and publication status
+
+**Asset Store submission and review are paused.** Existing tag-driven GitHub release automation remains enabled:
+`v*` tag pushes run the same mandatory tests, source smoke and fresh-installed-package qualification before the
+qualified ZIP can be attached to a GitHub release. The workflow does not submit an Asset Store review.
+
+`.github/workflows/ci.yml` runs core tests and the generated capability-reference freshness/regression checks,
+builds all five desktop native targets, and requires the existing source smoke suite to succeed. Both standard
+and .NET editor imports are hard failures, including abnormal process shutdown. The .NET demo, full workbench,
+inspector/state-preserving reload and typed-binding smokes remain required.
+
+Only then does packaging assemble the full addon ZIP. Before retaining/uploading the candidate artifact, CI runs
+`scripts/qualify-stock-package.py` with official standard Godot 4.7.2 on Linux x64. This extracts the ZIP into a new
+temporary project, checks that every descriptor library exists, and copies only the existing GDScript Grimoire
+and `native/tests/lifecycle.gd` / `lifecycle.html` source fixtures (not the source addon, C# build outputs or import
+cache). A cold headless editor import must exit cleanly. A subsequent
+`--editor res://demo/gdscript/demo.tscn --quit` must also open the actual native-host scene and shut down cleanly,
+not merely open a blank editor.
+The native Grimoire runtime must execute the real Summon DOM click and report
+`count="One shape stirs beneath the page."`; a zero exit code alone is insufficient.
+The lifecycle script must also exit cleanly and print exactly
+`native-lifecycle: cycles=4 reloads=4 withdrawn=3 final-host-mounted=true`.
+It exercises real DOM actions, inspector opening, four document reloads and three host withdrawals, leaving
+the final host/inspector mounted so process shutdown must withdraw live resources.
+
+The hosted qualification matrix downloads that **same final ZIP** and repeats the fresh install/import/editor,
+DOM and lifecycle checks using standard Godot on Linux ARM64, Windows x64, macOS ARM64 and macOS Intel. Both macOS runners execute
+the universal engine natively. A separate release job requires the complete matrix to succeed; candidate artifact
+availability alone does not mean the workflow or all-platform qualification passed.
+
+Run the same installed-package acceptance locally, without rebuilding:
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0     # → GitHub release with NecronomiDOM-v0.1.0.zip
+python3 scripts/qualify-stock-package.py \
+  --godot /path/to/Godot_v4.7.2-stable_linux.x86_64 \
+  --package /path/to/NecronomiDOM-candidate.zip
 ```
 
-Two repository variables (Settings → Secrets and variables → Actions → Variables) choose where jobs run:
+This headless import/runtime gate does not establish rendered screenshot, screen-reader or export-template
+acceptance. Those require their own evidence; the stock .NET workbench rendering evidence above has a separate scope.
 
-| Variable | Effect |
-|---|---|
-| `LINUX_RUNNER=self-hosted` | Linux x64 jobs (tests, Linux build, smoke runs, packaging) run on a self-hosted runner labelled `necronomidom` instead of GitHub-hosted Ubuntu. |
-| `HOSTED_PLATFORMS=false` | Skip the GitHub-hosted Windows, macOS and Linux ARM builds; the ZIP is then named `*-partial.zip`. |
+Repository variable `LINUX_RUNNER=self-hosted` selects a Linux x64 runner labelled `necronomidom` for tests,
+Linux x64 build, source smoke and packaging; otherwise those jobs use GitHub-hosted Ubuntu.
 
-Partial ZIPs list only the native libraries actually included in their `.gdextension` descriptor.
-They support those platforms only; missing platforms are not advertised. Full packaging still fails
-if any required library is absent. This also satisfies the Asset Store requirement that every library
-named in the descriptor is present in the downloaded asset.
+Full-distribution builds cannot skip hosted platforms through a repository variable. `HOSTED_PLATFORMS` no longer
+controls the workflow. Only an explicit manual `workflow_dispatch` with `partial=true` skips the hosted builds
+and their qualification matrix to produce a Linux-only diagnostic ZIP. It cannot reach the tag-only release job.
 
-On a self-hosted runner, intermediate native binaries pass between jobs through the runner's local cache. The finished
-ZIP is still uploaded to the workflow run's **Artifacts** section and retained in
-`~/.cache/necronomidom-ci/dist/`. Version-tag runs also attach it to a GitHub release.
+Diagnostic partial ZIPs list only native libraries actually included in their `.gdextension` descriptor and use
+the `-partial.zip` suffix. They are not all-platform distributions. Missing platforms are not advertised; library
+inclusion alone is not runtime evidence. Full packaging fails if any of the five required libraries is absent.
+Fresh-install qualification rejects descriptors referencing missing files in either full or partial ZIPs.
+
+On a self-hosted runner, intermediate Linux x64 binaries pass between jobs through the runner's local cache.
+The candidate ZIP is uploaded to the workflow run's **Artifacts** section and retained in
+`~/.cache/necronomidom-ci/dist/` after Linux x64 installed-package qualification; full qualification additionally
+requires the hosted matrix described above.
 
 To run the same workflow without GitHub (Docker and [act](https://nektosact.com) required):
 
 ```sh
-scripts/ci-local.sh        # tests, Linux x64 build, both smoke runs → dist/NecronomiDOM-<branch>-partial.zip
+scripts/ci-local.sh        # Linux x64 build, tests, source smoke and fresh-installed ZIP qualification
 ```
 
-Local runs cover the Linux x64 jobs only (act has no Windows, macOS or ARM runners), so that ZIP holds only the
-Linux x64 library.
+Local runs explicitly request the manual diagnostic partial mode: act has no Windows, macOS or ARM runners,
+so that ZIP holds only the Linux x64 library. They do not satisfy the all-platform release gate.
 
-Upload the release ZIP as a new version on the Godot Asset Store. The store has no upload API yet (its CLI for CI uploads is
-on the [roadmap](https://store.godotengine.org/roadmap/)), so this last step is manual.
+Asset Store submissions remain manual and are currently paused. GitHub releases remain tag-driven and gated as above.
 
 The runtime sources are shared: `native/` compiles `addons/necronomidom/runtime/` against the bindings with
 `NECRONOMIDOM_GDEXTENSION` defined, and adds the GDScript API (`native/src/`).

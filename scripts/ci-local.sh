@@ -16,7 +16,7 @@ rm -rf "$ARTIFACTS" && mkdir -p "$ARTIFACTS" dist
 
 "$ACT" workflow_dispatch \
   --workflows .github/workflows/ci.yml \
-  --var HOSTED_PLATFORMS=false \
+  --input partial=true \
   -P ubuntu-24.04=catthehacker/ubuntu:act-24.04 \
   --artifact-server-path "$ARTIFACTS" \
   "$@"

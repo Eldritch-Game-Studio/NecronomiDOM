@@ -1,0 +1,8 @@
+# Source and local correction used only by the NativeAOT GDExtension build.
+# See README.md for the stock-engine failure, ownership rationale and upstream proposal.
+GODOT_DOTNET_REPOSITORY=https://github.com/godotengine/godot-dotnet.git
+GODOT_DOTNET_COMMIT=965a09db8b42f79d7987270063eb19abb985ceb6
+GODOT_DOTNET_PATCH=patches/godot-dotnet-scene-teardown.patch
+GODOT_DOTNET_PATCH_SHA256=9ca846be939502714579e63f5079532341d0116bcf9e906e693ad5ba22e6f614
+GODOT_DOTNET_PATCHED_FILE=src/Godot.Bindings/Bridge/GodotBridge.cs
+GODOT_DOTNET_PATCHED_FILE_SHA256=65a76343232942f90204214120ca097d1e0ff9a031b31045340208826874c154

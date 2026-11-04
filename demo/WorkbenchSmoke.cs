@@ -196,8 +196,15 @@ public partial class Demo
         Check(!_host.InspectorOpen, "F6 closes the developer inspector");
         await Click("inspect");
         _host.SelectInspectorElement("#tracker");
+        var inspector = _host.AttachInspector();
+        foreach (var control in inspector.FindChildren("*", nameof(TabContainer), recursive: true, owned: false))
+        {
+            if (control is not TabContainer tabs) continue;
+            for (int index = 0; index < tabs.GetTabCount(); index++)
+                if (tabs.GetTabTitle(index) == "Variables") { tabs.CurrentTab = index; break; }
+        }
         await Frames();
-        Check(_host.InspectorOpen && _host.GetInspectorReport().Length > 0, "visible toolbar opens actual developer inspector for bound tracker");
+        Check(_host.InspectorOpen && ReferenceEquals(inspector.SelectedElement, Element("tracker")), "visible toolbar inspects the actual bound tracker");
         await Capture("06-live-inspector");
     }
 }

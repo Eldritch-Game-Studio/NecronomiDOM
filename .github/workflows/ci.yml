@@ -1,13 +1,13 @@
 name: CI/CD
 
-# Every push and pull request: core tests, native libraries for every platform (NativeAOT compiles only for its host
-# OS), smoke runs in standard and .NET Godot, and the addon ZIP as a build artifact.
-# Tags named v*: the same, then a GitHub release with NecronomiDOM-<tag>.zip attached.
+# Every push and pull request: core tests, all five desktop NativeAOT targets, source smoke runs,
+# then fresh-installed ZIP qualification on each target architecture before GitHub release.
+# Tags named v*: publish the qualified ZIP as a GitHub release. Asset Store submission remains paused/manual.
 #
 # Repository variables choose where jobs run:
 #   LINUX_RUNNER=self-hosted Linux x64 jobs run on a self-hosted Linux x64 runner;
 #                             otherwise on GitHub-hosted ubuntu-24.04.
-#   HOSTED_PLATFORMS=false    skip the GitHub-hosted Windows/macOS/Linux ARM builds; the ZIP is then *-partial.
+# Only an explicit workflow_dispatch partial=true skips hosted builds for a Linux-only diagnostic ZIP.
 # On a self-hosted runner, jobs hand files to each other through ~/.cache/necronomidom-ci instead of GitHub artifact
 # storage, and finished ZIPs are kept in ~/.cache/necronomidom-ci/dist.
 # scripts/ci-local.sh runs this workflow locally with act (Linux x64 jobs only).
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       partial:
-        description: Package whichever platforms were built
+        description: Linux-only diagnostic ZIP (never a release)
         type: boolean
         default: false
 
@@ -51,13 +51,37 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        if: vars.LINUX_RUNNER != 'self-hosted'
+        with:
+          python-version: '3.12'
       - name: NativeAOT toolchain
         run: command -v clang >/dev/null || (sudo apt-get update -q && sudo apt-get install -yq clang zlib1g-dev)
       - name: Build
+        id: native-build
         env:
           # Keep the built bindings between runs on a persistent runner (checkout cleans the workspace).
           NECRONOMIDOM_WORK: ${{ runner.tool_cache }}/necronomidom-native
         run: native/build.sh linux-x64
+      - name: Stage current portable managed SDK feed
+        id: sdk-feed
+        env:
+          SDK_FEED: ${{ steps.native-build.outputs.sdk-feed }}
+        run: |
+          source native/godot-dotnet.lock
+          feed="$SDK_FEED"
+          test "$(cat "$feed/.identity")" = "$GODOT_DOTNET_COMMIT-$GODOT_DOTNET_PATCH_SHA256"
+          stage="$(mktemp -d "$RUNNER_TEMP/sdk-feed.XXXXXX")"
+          cp "$feed"/Godot.Bindings.*.nupkg "$feed"/Godot.SourceGeneration.*.nupkg "$feed/.identity" "$stage/"
+          cp "$feed/godot-dotnet.lock" "$feed/$(basename "$GODOT_DOTNET_PATCH")" "$stage/"
+          echo "path=$stage" >> "$GITHUB_OUTPUT"
+      - name: Upload portable managed SDK feed
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-managed-feed
+          path: ${{ steps.sdk-feed.outputs.path }}
+          include-hidden-files: true
+          if-no-files-found: error
       - name: Hand off locally
         if: vars.LINUX_RUNNER == 'self-hosted'
         run: |
@@ -71,29 +95,46 @@ jobs:
           if-no-files-found: error
 
   native-hosted:
-    if: vars.HOSTED_PLATFORMS != 'false'
+    needs: native-linux-x64
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.partial == true) }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-24.04-arm
-            rids: linux-arm64
+            rid: linux-arm64
           - os: windows-2025
-            rids: win-x64
+            rid: win-x64
           - os: macos-15
-            rids: osx-arm64 osx-x64
+            rid: osx-arm64
+          - os: macos-15-intel
+            rid: osx-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Enable Windows long paths
+        if: runner.os == 'Windows'
+        run: git config --global core.longpaths true
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: NativeAOT Linux toolchain
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -yq clang zlib1g-dev
+      - name: Receive portable managed SDK feed
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-managed-feed
+          path: ${{ runner.temp }}/sf
       - name: Build
         shell: bash
-        run: native/build.sh ${{ matrix.rids }}
+        env:
+          NECRONOMIDOM_WORK: ${{ runner.temp }}/nd
+          NECRONOMIDOM_SDK_FEED: ${{ runner.temp }}/sf
+        run: native/build.sh ${{ matrix.rid }}
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
@@ -131,14 +172,14 @@ jobs:
       - name: GDScript demo in standard Godot
         run: |
           cp native/necronomidom.gdextension addons/necronomidom/
-          "$GODOT" --headless --path . --import || true
+          "$GODOT" --headless --audio-driver Dummy --path . --import res://demo/gdscript/demo.tscn
           "$GODOT" --headless --path . res://demo/gdscript/demo.tscn -- --smoke
       - name: Native authoring tools and shared-resource lifetime
         run: '"$GODOT" --headless --path . res://demo/authoring/native-smoke.tscn'
       - name: C# demo in .NET Godot
         run: |
           rm -rf .godot
-          "$GODOT_MONO" --headless --path . --import || true
+          "$GODOT_MONO" --headless --audio-driver Dummy --path . --import
           dotnet build NecronomiDOM.Demo.csproj -nologo
           "$GODOT_MONO" --headless --path . -- --smoke
           "$GODOT_MONO" --headless --path . -- --workbench-smoke
@@ -149,20 +190,24 @@ jobs:
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]
-    # native-hosted may be skipped (HOSTED_PLATFORMS=false); everything that ran must have succeeded.
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    # Hosted builds may be skipped only for an explicit manual diagnostic run, never a release.
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.native-linux-x64.result == 'success' && needs.smoke.result == 'success' && (needs.native-hosted.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.partial == true && needs.native-hosted.result == 'skipped')) }}
     runs-on: ${{ vars.LINUX_RUNNER == 'self-hosted' && fromJSON('["self-hosted","Linux","X64","necronomidom"]') || 'ubuntu-24.04' }}
-    permissions:
-      contents: write
+    outputs:
+      name: ${{ steps.zip.outputs.name }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: vars.LINUX_RUNNER != 'self-hosted'
+        with:
+          python-version: '3.12'
       - name: Receive local binaries
         if: vars.LINUX_RUNNER == 'self-hosted'
         run: |
           mkdir -p addons/necronomidom/bin
           cp -r "$HOME/.cache/necronomidom-ci/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/bin/." addons/necronomidom/bin/
       - uses: actions/download-artifact@v4
-        if: vars.LINUX_RUNNER != 'self-hosted' || vars.HOSTED_PLATFORMS != 'false'
+        if: vars.LINUX_RUNNER != 'self-hosted' || !(github.event_name == 'workflow_dispatch' && inputs.partial == true)
         with:
           pattern: native-*
           path: addons/necronomidom/bin/
@@ -170,7 +215,7 @@ jobs:
       - name: Assemble addon
         id: zip
         env:
-          PARTIAL: ${{ inputs.partial == true || vars.HOSTED_PLATFORMS == 'false' }}
+          PARTIAL: ${{ github.event_name == 'workflow_dispatch' && inputs.partial == true }}
         run: |
           name="NecronomiDOM-${GITHUB_REF_NAME//\//-}"
           cp native/necronomidom.gdextension addons/necronomidom/
@@ -204,6 +249,18 @@ jobs:
           python3 -c "import shutil; shutil.make_archive('dist/archive', 'zip', '.', 'addons/necronomidom')"
           mv dist/archive.zip "dist/$name"
           echo "name=$name" >> "$GITHUB_OUTPUT"
+      - name: Install official standard Godot for package qualification
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          archive="$RUNNER_TEMP/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl --fail --location --silent --show-error "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o "$archive"
+          unzip -oq "$archive" -d "$RUNNER_TEMP/godot-package"
+          echo "GODOT_PACKAGE=$RUNNER_TEMP/godot-package/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Qualify freshly installed ZIP in stock Godot
+        run: |
+          python3 scripts/qualify-stock-package.py \
+            --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
+            --package "dist/${{ steps.zip.outputs.name }}"
       - name: Keep ZIP locally
         if: vars.LINUX_RUNNER == 'self-hosted'
         run: |
@@ -217,10 +274,70 @@ jobs:
           name: NecronomiDOM
           path: dist/${{ steps.zip.outputs.name }}
           if-no-files-found: error
+
+  qualify-hosted:
+    needs: package
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.partial == true) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04-arm
+            archive: linux.arm64
+            executable: Godot_vVERSION-stable_linux.arm64
+          - os: windows-2025
+            archive: win64.exe
+            executable: Godot_vVERSION-stable_win64_console.exe
+          - os: macos-15
+            archive: macos.universal
+            executable: Godot.app/Contents/MacOS/Godot
+          - os: macos-15-intel
+            archive: macos.universal
+            executable: Godot.app/Contents/MacOS/Godot
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: NecronomiDOM
+          path: dist
+      - name: Install official standard Godot
+        shell: bash
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+          EXECUTABLE: ${{ matrix.executable }}
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          curl --fail --location --silent --show-error \
+            "$base/Godot_v${GODOT_VERSION}-stable_${ARCHIVE}.zip" -o "$RUNNER_TEMP/godot.zip"
+          python -m zipfile -e "$RUNNER_TEMP/godot.zip" "$RUNNER_TEMP/godot-stock"
+          binary="$RUNNER_TEMP/godot-stock/${EXECUTABLE//VERSION/$GODOT_VERSION}"
+          chmod +x "$binary"
+          echo "GODOT_PACKAGE=$binary" >> "$GITHUB_ENV"
+      - name: Qualify final installed ZIP on target architecture
+        shell: bash
+        run: |
+          python scripts/qualify-stock-package.py \
+            --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
+            --package "dist/${{ needs.package.outputs.name }}"
+
+  release:
+    needs: [package, qualify-hosted]
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.package.result == 'success' && needs.qualify-hosted.result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: NecronomiDOM
+          path: dist
       - name: GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ steps.zip.outputs.name }}
+          files: dist/${{ needs.package.outputs.name }}
           fail_on_unmatched_files: true
           generate_release_notes: true
