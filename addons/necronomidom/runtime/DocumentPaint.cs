@@ -154,14 +154,13 @@ public partial class DocumentPaint : Node2D
                 var box = (BoxRun)list.Runs[j]; var b = box.Bounds;
                 var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
                 multi.SetInstanceTransform2D(j - i, new Transform2D(new Vector2((float)b.Width, 0), new Vector2(0, (float)b.Height), rect.GetCenter()));
-                // x=style row, y=empty clip chain, zw=local box dimensions. Never use modulate for indices.
-                multi.SetInstanceCustomData(j - i, new Color(styleIndices[box.Style], 0, (float)b.Width, (float)b.Height));
+                multi.SetInstanceCustomData(j - i, BoxCustomData(styleIndices[box.Style], b.Width, b.Height));
                 bounds = j == i ? rect : bounds.Merge(rect); BoxInstanceCount++;
             }
             multi.CustomAabb = new Aabb(new Vector3(bounds.Position.X, bounds.Position.Y, 0), new Vector3(bounds.Size.X, bounds.Size.Y, 0));
             var item2 = new MultiMeshInstance2D { Multimesh = multi, Material = material };
             parent.AddChild(item2); _items.Add(item2); _resources.Add(multi); _resources.Add(mesh);
-            for (int j = i; j < end; j++) BindRetained(j, item2, j - i);
+            for (int j = i; j < end; j++) BindRetained(j, item2, j - i, styleIndices[((BoxRun)list.Runs[j]).Style]);
             i = end;
         }
         if (_contexts.Count != 0) throw new InvalidOperationException("Unclosed native paint context.");
@@ -179,6 +178,8 @@ public partial class DocumentPaint : Node2D
         _backgrounds?.EndRebuild();
         _gradients?.EndRebuild();
     }
+    // x=style row, y=empty clip chain, zw=local box dimensions. Never use modulate for indices.
+    private static Color BoxCustomData(int styleRow, double width, double height) => new(styleRow, 0, (float)width, (float)height);
     private static bool MatchingContext(PaintRun begin, PaintRun end) => (begin, end) is
         (BeginRectClipRun, EndRectClipRun) or (BeginRoundedRectClipRun, EndRoundedRectClipRun) or
         (BeginPolygonClipRun, EndPolygonClipRun) or (BeginOpacityRun, EndOpacityRun) or

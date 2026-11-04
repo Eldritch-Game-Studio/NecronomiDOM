@@ -9,15 +9,17 @@ namespace NecronomiDom.Runtime;
 public partial class DocumentPaint
 {
     // Slot is a MultiMesh instance index, or the owned _items index for a glyph node; store-owned contexts use -1.
-    private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot);
+    // StyleRow is a box instance's custom-data style row, kept here so retained updates never read the
+    // MultiMesh back from the RenderingServer (that read synchronizes with the render thread every call).
+    private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot, int StyleRow = 0);
     private readonly List<RetainedBinding> _retainedBindings = new();
     private readonly HashSet<MultiMeshInstance2D> _changedBatches = new();
     private void PrepareRetainedBindings(DisplayList list)
     {
         foreach (var run in list.Runs) _retainedBindings.Add(new(run, null, -1));
     }
-    private void BindRetained(int index, CanvasItem item, int slot = -1) =>
-        _retainedBindings[index] = _retainedBindings[index] with { Item = item, Slot = slot };
+    private void BindRetained(int index, CanvasItem item, int slot = -1, int styleRow = 0) =>
+        _retainedBindings[index] = _retainedBindings[index] with { Item = item, Slot = slot, StyleRow = styleRow };
     public void UpdateTransform(int ordinal, Affine2D transform)
     {
         int current = 0;
@@ -85,9 +87,7 @@ public partial class DocumentPaint
                     var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
                     item.Multimesh.SetInstanceTransform2D(binding.Slot, new Transform2D(
                         new Vector2((float)b.Width, 0), new Vector2(0, (float)b.Height), rect.GetCenter()));
-                    var custom = item.Multimesh.GetInstanceCustomData(binding.Slot);
-                    custom.B = (float)b.Width; custom.A = (float)b.Height;
-                    item.Multimesh.SetInstanceCustomData(binding.Slot, custom);
+                    item.Multimesh.SetInstanceCustomData(binding.Slot, BoxCustomData(binding.StyleRow, b.Width, b.Height));
                     _changedBatches.Add(item); break;
             }
             _retainedBindings[i] = binding with { Run = next };
