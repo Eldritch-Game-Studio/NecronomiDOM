@@ -20,7 +20,8 @@ def path_kind(path):
         return "docs"
     if (path.startswith(("native/", ".github/", "scripts/", "addons/necronomidom/runtime/"))
             or name.suffix.lower() in BUILD_SUFFIXES
-            or name.name in {"global.json", "NuGet.Config", "nuget.config", "packages.lock.json"}
+            or name.name in {"global.json", "NuGet.Config", "nuget.config", "packages.lock.json",
+                             ".gitattributes", ".gitignore"}
             or name.name.startswith(("Dockerfile", "Makefile"))
             or name.suffix.lower() in {".sh", ".ps1", ".cmd", ".bat"}):
         return "full"

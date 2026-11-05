@@ -25,7 +25,8 @@ Deleted and renamed files count under both old and new paths. Markdown, `LICENSE
 and allowlisted media under `docs/images/` are documentation; unknown paths get code
 checks, never a silent skip. Mixed changes use the stronger gate. Native inputs
 include `native/`, shared `addons/necronomidom/runtime/` bindings, workflow/helper
-scripts, project/build properties, SDK/NuGet pins and extension descriptors. Shared
+scripts, project/build properties, SDK/NuGet pins, extension descriptors, and
+`.gitattributes`/`.gitignore` packaging controls at any directory depth. Shared
 runtime changes conservatively take the full PR gate because that code is adapted
 and compiled into the native extension; core-only changes take the fast gate.
 

@@ -16,6 +16,9 @@ class PolicyTests(unittest.TestCase):
         cases = [
             ("pull_request", "refs/pull/1/merge", ["README.md"], False, "docs"),
             ("push", "refs/heads/main", ["docs/images/ui.gif", "native/README.md"], False, "docs"),
+            ("pull_request", "refs/pull/1/merge", ["native/README.md"], False, "docs"),
+            ("pull_request", "refs/pull/1/merge", ["README.md", ".gitattributes"], False, "full"),
+            ("push", "refs/heads/main", [".gitignore"], False, "fast"),
             ("pull_request", "refs/pull/1/merge", ["addons/necronomidom/core/Layout/FlowLayout.cs"], False, "fast"),
             ("push", "refs/heads/main", ["native/build.sh"], False, "fast"),
             ("push", "refs/heads/main", ["README.md", "unknown/new.code"], False, "fast"),
@@ -39,7 +42,9 @@ class PolicyTests(unittest.TestCase):
                  "addons/necronomidom/runtime/DocumentHost.cs", ".github/workflows/ci.yml",
                  "Directory.Build.props", "Directory.Packages.props", "global.json", "NuGet.Config",
                  "packages.lock.json", "Some.csproj", "test.targets", "NecronomiDOM.slnx",
-                 "scripts/qualify-stock-package.py", "future/build.sh", "extension.gdextension"]
+                 "scripts/qualify-stock-package.py", "future/build.sh", "extension.gdextension",
+                 ".gitattributes", ".gitignore", "addons/necronomidom/.gitattributes",
+                 "addons/necronomidom/.gitignore"]
         for path in paths:
             with self.subTest(path=path):
                 self.assertEqual(ci.policy("pull_request", "refs/pull/1/merge", [path])["mode"], "full")
@@ -62,20 +67,22 @@ class PolicyTests(unittest.TestCase):
         return self.git(root, "rev-parse", "HEAD")
 
     def test_first_push_deletion_and_rename_preserve_both_policy_inputs(self):
-        root = self.fixture()
-        (root / "native").mkdir()
-        original = root / "native/bridge.cs"
-        original.write_text("native source", encoding="utf-8")
-        first = self.commit(root)
-        self.assertEqual(ci.changed_paths("push", {"before": "0" * 40, "after": first}, root), ["native/bridge.cs"])
-        original.rename(root / "README.md")
-        renamed = self.commit(root)
-        paths = ci.changed_paths("push", {"before": first, "after": renamed}, root)
-        self.assertEqual(set(paths), {"native/bridge.cs", "README.md"})
-        self.assertEqual(ci.policy("pull_request", "refs/pull/1/merge", paths)["mode"], "full")
-        (root / "README.md").unlink()
-        deleted = self.commit(root)
-        self.assertEqual(ci.changed_paths("push", {"before": renamed, "after": deleted}, root), ["README.md"])
+        for relative in ("native/bridge.cs", ".gitattributes", ".gitignore", "addons/necronomidom/.gitignore"):
+            with self.subTest(original=relative):
+                root = self.fixture()
+                original = root / relative
+                original.parent.mkdir(parents=True, exist_ok=True)
+                original.write_text("native or packaging source", encoding="utf-8")
+                first = self.commit(root)
+                self.assertEqual(ci.changed_paths("push", {"before": "0" * 40, "after": first}, root), [relative])
+                original.rename(root / "README.md")
+                renamed = self.commit(root)
+                paths = ci.changed_paths("push", {"before": first, "after": renamed}, root)
+                self.assertEqual(set(paths), {relative, "README.md"})
+                self.assertEqual(ci.policy("pull_request", "refs/pull/1/merge", paths)["mode"], "full")
+                (root / "README.md").unlink()
+                deleted = self.commit(root)
+                self.assertEqual(ci.changed_paths("push", {"before": renamed, "after": deleted}, root), ["README.md"])
 
     def test_pr_diff_uses_merge_base_not_unrelated_base_changes(self):
         root = self.fixture()
