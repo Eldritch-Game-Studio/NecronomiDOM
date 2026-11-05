@@ -2,6 +2,8 @@
 
 Build Godot interfaces with HTML and CSS, from GDScript or C#. NecronomiDOM renders natively through Godot—no browser or JavaScript runtime.
 
+NecronomiDOM is inspired by Valve's [Panorama](https://developer.valvesoftware.com/wiki/Panorama/Overview) UI framework. It is an independent project and is not affiliated with or endorsed by Valve.
+
 [Download the latest release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) · [Documentation and examples](https://github.com/Eldritch-Game-Studio/NecronomiDOM#readme)
 
 ## Installation

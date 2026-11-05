@@ -4,6 +4,8 @@ HTML and CSS user interfaces for Godot 4, from GDScript or C#. Author screens as
 parses them into a live DOM, runs the CSS cascade, lays the document out and paints it natively through Godot's
 `RenderingServer` and `TextServerAdvanced`, with pointer, keyboard, gamepad and screen-reader support.
 
+NecronomiDOM is inspired by Valve's [Panorama](https://developer.valvesoftware.com/wiki/Panorama/Overview) UI framework. It is an independent project and is not affiliated with or endorsed by Valve.
+
 [Download the addon](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) · [Installation](#add-it-to-your-project) · [Examples](#try-the-demos) · [Supported HTML/CSS](docs/capabilities.md)
 
 | Default workbench | Live CSS edit, retained focus | Markup reload, rebound controls |
