@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Css.Om;
+using NecronomiDom.Css.TypedOm;
 using NecronomiDom.Dom;
 using NecronomiDom.Html;
 using NecronomiDom.Url;
@@ -167,6 +168,89 @@ public sealed class StyleGeometryRefreshTests
         styles.GetComputedValues(doc.GetElementById("c")!);
         element.Style.SetProperty("height", "160px");
         control.Style.SetProperty("height", "160px");
+        reference.Invalidate();
+        Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+        Compare(styles.GetComputedValues(doc.GetElementById("c")!), reference.GetComputedValues(controlDoc.GetElementById("c")!));
+        Assert.That(styles.GeometryRefreshCount, Is.Zero);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void MovingNumericPolygonsAndAbsolutePaintMatchTheFullCascadeWithoutRestylingChildren(bool typedPaint)
+    {
+        const string inline = "clip-path:polygon(0% 0%,80% 0%,80% 90%);background-color:rgba(20,40,60,.7)";
+        var (doc, styles, element) = Load(inline: inline);
+        var (controlDoc, reference, control) = Load(inline: inline);
+        var live = styles.GetComputedStyle(element);
+        var typed = styles.GetComputedValues(element);
+        var child = doc.GetElementById("c")!;
+        var controlChild = controlDoc.GetElementById("c")!;
+        styles.GetComputedValues(child);
+        for (int i = 0; i < 40; i++)
+        {
+            string clip = FormattableString.Invariant($"polygon(0px 0px,{20 + i}% 2px,80% 90%)");
+            string color = FormattableString.Invariant($"rgba({30 + i},70,120,0.73)");
+            element.Style.SetProperty("clip-path", clip);
+            control.Style.SetProperty("clip-path", clip);
+            if (typedPaint)
+            {
+                var sample = CSSStyleValue.Parse("background-color", color);
+                element.AttributeStyleMap.Set("background-color", sample);
+                control.AttributeStyleMap.Set("background-color", sample);
+            }
+            else
+            {
+                element.Style.SetProperty("background-color", color);
+                control.Style.SetProperty("background-color", color);
+            }
+            reference.Invalidate();
+            Compare(live, reference.GetComputedStyle(control));
+            Compare(typed, reference.GetComputedValues(control));
+            long entries = styles.ComputedEntryCount;
+            Compare(styles.GetComputedValues(child), reference.GetComputedValues(controlChild));
+            Assert.That(styles.ComputedEntryCount, Is.EqualTo(entries), "Independent paint must not invalidate a child's cascade.");
+        }
+        Assert.That(styles.GeometryRefreshCount, Is.EqualTo(40), "Exercise local paint refresh, not equivalent full recomputation.");
+    }
+
+    [TestCase("", "clip-path", "polygon(0px 0px,2em 0px,30px 40px)", "")]
+    [TestCase("", "clip-path", "polygon(0px 0px,calc(10px + 2em) 0px,30px 40px)", "")]
+    [TestCase("", "clip-path", "circle(20%)", "")]
+    [TestCase("", "clip-path", "inherit", "")]
+    [TestCase("", "background-color", "currentcolor", "")]
+    [TestCase("", "background-color", "CanvasText", "")]
+    [TestCase("", "background-color", "var(--tone)", "")]
+    [TestCase("", "background-color", "rgb(from currentcolor r g b)", "")]
+    [TestCase("", "background-color", "rgb(calc(30) 70 120)", "")]
+    [TestCase("#p{background-color:blue!important}", "background-color", "rgba(50,60,70,.4)", "")]
+    [TestCase("", "background-color", "rgba(50,60,70,.4)", "important")]
+    public void ContextDependentShapesColorsAndCascadePriorityRetainFullResolution(string css, string property, string value, string priority)
+    {
+        const string inline = "--tone:green;clip-path:polygon(0px 0px,80px 0px,80px 90px);background-color:rgba(20,40,60,.7)";
+        var (_, styles, element) = Load(css, inline);
+        var (_, reference, control) = Load(css, inline);
+        element.Style.SetProperty(property, value, priority);
+        control.Style.SetProperty(property, value, priority);
+        reference.Invalidate();
+        Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+        Compare(styles.GetComputedValues(element), reference.GetComputedValues(control));
+        Assert.That(styles.GeometryRefreshCount, Is.Zero);
+    }
+
+    [TestCase("#c{clip-path:inherit}")]
+    [TestCase("#c{background-color:inherit}")]
+    [TestCase("#p[style*='50'] span{color:blue}")]
+    [TestCase("#p::before{content:attr(style)}")]
+    public void DescendantInheritanceAndObservableStyleAttributesStillReconcilePaintSubtrees(string css)
+    {
+        const string inline = "clip-path:polygon(0px 0px,80px 0px,80px 90px);background-color:rgba(20,40,60,.7)";
+        var (doc, styles, element) = Load(css, inline);
+        var (controlDoc, reference, control) = Load(css, inline);
+        styles.GetComputedValues(doc.GetElementById("c")!);
+        element.Style.SetProperty("clip-path", "polygon(0px 0px,50px 0px,80px 90px)");
+        control.Style.SetProperty("clip-path", "polygon(0px 0px,50px 0px,80px 90px)");
+        element.Style.SetProperty("background-color", "rgba(50,60,70,.4)");
+        control.Style.SetProperty("background-color", "rgba(50,60,70,.4)");
         reference.Invalidate();
         Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
         Compare(styles.GetComputedValues(doc.GetElementById("c")!), reference.GetComputedValues(controlDoc.GetElementById("c")!));
