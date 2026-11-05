@@ -4,6 +4,8 @@ HTML and CSS user interfaces for Godot 4, from GDScript or C#. Author screens as
 parses them into a live DOM, runs the CSS cascade, lays the document out and paints it natively through Godot's
 `RenderingServer` and `TextServerAdvanced`, with pointer, keyboard, gamepad and screen-reader support.
 
+**Inspired by [Valve’s Panorama UI framework](https://developer.valvesoftware.com/wiki/Panorama/Overview), built independently for Godot.**
+
 [Download the addon](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest) · [Installation](#add-it-to-your-project) · [Examples](#try-the-demos) · [Supported HTML/CSS](docs/capabilities.md)
 
 | Default workbench | Live CSS edit, retained focus | Markup reload, rebound controls |
@@ -14,6 +16,28 @@ The Nightward Guild workbench combines editable forms, typed state bindings and 
 Run it from the source repository with Godot .NET, or try the smaller GDScript Grimoire in `demo/gdscript/`.
 
 ## Live interfaces, not just menus
+
+### Live CSS reload, without losing your place
+
+![A live stylesheet accent change preserves the selected name and input focus, then typing continues without refocusing](docs/images/workbench-live-css.gif)
+
+Change the linked stylesheet and press **F7**: the accent updates while the same document, input value, selection and focus remain intact. Keep typing without clicking back into the field.
+
+### Pick and inspect the running DOM
+
+![The live DOM inspector picks the loadout panel, highlights its bounds and displays matched CSS rules and computed styles](docs/images/workbench-inspector.gif)
+
+Open the debug inspector with **F6**, pick an element in the running interface, and inspect its ancestry, matched CSS rules and computed values alongside the highlighted element.
+
+### Typed C# state, visible in the interface
+
+![Typing updates a character preview, equipment and profile state change, and a quest tracker progresses through completion and reward collection](docs/images/workbench-typed-state.gif)
+
+Ordinary input and click handlers update a C# model. Typed one-way bindings refresh text, classes, visibility and enabled states as you edit a profile, equip a lantern and complete a local demo quest.
+
+These three recordings use the actual Nightward Guild workbench in Godot 4.7.2 .NET with Forward+ rendering. Captions are outside the interface; the quest board uses self-contained demo state, not a game service.
+
+### Continuously updating interfaces
 
 ![NecronomiDOM rendering scrolling HTML elements, CSS arrow shapes, state feedback and live text updates in Godot](docs/images/rhythmchart.gif)
 
