@@ -12,11 +12,14 @@ public sealed class DocumentInvalidation : IDomChangeSink, IDisposable
     private readonly IDomChangeSink? _previous;
     private readonly Action _changed;
     private readonly Action<Element>? _inlineStyleChanged;
+    private readonly Action<Element>? _numericTextChanged;
     private readonly List<(CSSStyleSheet Sheet, long Revision)> _sheets = new();
-    public DocumentInvalidation(Document document, Action changed, Action<Element>? inlineStyleChanged = null)
+    public DocumentInvalidation(Document document, Action changed, Action<Element>? inlineStyleChanged = null,
+        Action<Element>? numericTextChanged = null)
     {
         _document = document; _previous = document.ChangeSink; _changed = changed;
         _inlineStyleChanged = inlineStyleChanged; document.ChangeSink = this;
+        _numericTextChanged = numericTextChanged;
     }
     public void CaptureStyleSheets()
     {
@@ -30,15 +33,32 @@ public sealed class DocumentInvalidation : IDomChangeSink, IDisposable
         return false;
     }
     bool IDomChangeSink.RequiresAttributeOldValue => _previous?.RequiresAttributeOldValue == true;
-    void IDomChangeSink.ChildrenChanged(Node parent) { _previous?.ChildrenChanged(parent); _changed(); }
+    void IDomChangeSink.ChildrenChanged(Node parent) { _previous?.ChildrenChanged(parent); TextChanged(parent); }
     void IDomChangeSink.AttributeChanged(Element e, string name, string? oldValue)
     {
         _previous?.AttributeChanged(e, name, oldValue);
         if (name == "style" && _inlineStyleChanged != null) _inlineStyleChanged(e);
         else _changed();
     }
-    void IDomChangeSink.CharacterDataChanged(CharacterData n) { _previous?.CharacterDataChanged(n); _changed(); }
-    void IDomChangeSink.NodeInserted(Node n) { _previous?.NodeInserted(n); _changed(); }
-    void IDomChangeSink.NodeRemoved(Node n, Node parent) { _previous?.NodeRemoved(n, parent); _changed(); }
+    void IDomChangeSink.CharacterDataChanged(CharacterData n)
+    {
+        _previous?.CharacterDataChanged(n);
+        if (n is Text) TextChanged(n.ParentNode); else _changed();
+    }
+    void IDomChangeSink.NodeInserted(Node n)
+    {
+        _previous?.NodeInserted(n);
+        if (n is Text) TextChanged(n.ParentNode); else _changed();
+    }
+    void IDomChangeSink.NodeRemoved(Node n, Node parent)
+    {
+        _previous?.NodeRemoved(n, parent);
+        if (n is Text) TextChanged(parent); else _changed();
+    }
+    private void TextChanged(Node? parent)
+    {
+        if (_numericTextChanged != null && parent is Element element) _numericTextChanged(element);
+        else _changed();
+    }
     public void Dispose() { if (ReferenceEquals(_document.ChangeSink, this)) _document.ChangeSink = _previous; }
 }

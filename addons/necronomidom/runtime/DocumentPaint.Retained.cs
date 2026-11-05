@@ -133,7 +133,7 @@ public partial class DocumentPaint
                 case (BeginTransformRun run, Node2D item): item.Transform = BorderPaintStore.ToNative(run.Transform); break;
                 case (TextRun, ShapedTextPaint):
                 case (TextEffectsRun, NativeGlyphEffectsPaint):
-                    binding = ReplaceRetainedText(binding, next, fonts); break;
+                    binding = UpdateRetainedText(binding, next, fonts); break;
                 case (BoxRun run, MultiMeshInstance2D item):
                     var prior = (BoxRun)binding.Run;
                     if (prior.Style != run.Style) { WriteBoxStyle(binding.StyleRow, run.Style); stylesChanged = true; }
@@ -168,24 +168,18 @@ public partial class DocumentPaint
         if (changed) FitRetainedTargets();
         return true;
     }
-    private RetainedBinding ReplaceRetainedText(RetainedBinding binding, PaintRun run, INativeFontFamilies fonts)
+    private RetainedBinding UpdateRetainedText(RetainedBinding binding, PaintRun run, INativeFontFamilies fonts)
     {
         if (run is TextEffectsRun effects && binding.Item is NativeGlyphEffectsPaint)
         {
             _glyphs.Update(binding.Slot, effects, fonts);
             return binding;
         }
-        Node2D replacement = run switch
+        if (run is TextRun text && binding.Item is ShapedTextPaint plain)
         {
-            TextRun text => new ShapedTextPaint(fonts.Resolve(text), text),
-            _ => throw new InvalidOperationException("Retained glyph replacement requires a text run.")
-        };
-        var previous = (Node2D)binding.Item!;
-        Node parent = previous.GetParent();
-        int sibling = previous.GetIndex();
-        parent.AddChild(replacement); parent.MoveChild(replacement, sibling);
-        parent.RemoveChild(previous); previous.Free();
-        _items[binding.Slot] = replacement;
-        return binding with { Item = replacement };
+            plain.Update(fonts.Resolve(text), text);
+            return binding;
+        }
+        throw new InvalidOperationException("Retained glyph update requires an existing text carrier.");
     }
 }

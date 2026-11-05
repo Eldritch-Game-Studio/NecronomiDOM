@@ -91,6 +91,7 @@ public sealed partial class FlowLayout
         _transformOwners.Clear();
         ResetPolygonPaint();
         ResetAbsolutePositions();
+        ResetNumericText();
         _foregroundPaint?.Clear();
         var initial = new PositionedContainingBlock(_viewport, _viewport, true);
         _containing.Add(new ContainingContext(null, initial));
@@ -106,6 +107,7 @@ public sealed partial class FlowLayout
             CompletePaintHitOrder();
             CapturePolygonPaintSlots();
             CaptureAbsolutePositionIndices();
+            CaptureNumericTextSlots();
             CompleteHitGeometry();
             return _result;
         }

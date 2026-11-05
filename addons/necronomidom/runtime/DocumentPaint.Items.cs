@@ -6,12 +6,17 @@ namespace NecronomiDom.Runtime;
 [GodotClass]
 public partial class ShapedTextPaint : Node2D, INativePaintBounds
 {
-    public AdvancedTextShaper Shaper { get; }
-    public TextRun Run { get; }
-    public Rect2 PaintBounds { get; }
+    public AdvancedTextShaper Shaper { get; private set; }
+    public TextRun Run { get; private set; }
+    public Rect2 PaintBounds { get; private set; }
     internal ShapedTextPaint(AdvancedTextShaper shaper, TextRun run)
     {
         Shaper = shaper; Run = run; PaintBounds = shaper.InkBounds(run);
+    }
+    internal void Update(AdvancedTextShaper shaper, TextRun run)
+    {
+        Shaper = shaper; Run = run; PaintBounds = shaper.InkBounds(run);
+        QueueRedraw();
     }
     public override void _Draw() => Shaper.Draw(GetCanvasItem(), Run);
 }

@@ -113,6 +113,7 @@ namespace NecronomiDom.Css.Cascade
         public void Invalidate() { RestyleAll(); _sourcesDirty = true; }
         /// <summary>Number of element style recomputations so far (diagnostics and invalidation tests).</summary>
         internal long ComputedEntryCount { get; private set; }
+        internal long RestyleGeneration => _generation;
         /// <summary>Context-free substituted declaration parses, excluding immutable-token cache hits.</summary>
         internal long SubstitutionParseCount { get; private set; }
         public CSSStyleDeclaration GetComputedStyle(Element element, string? pseudoElement = null)

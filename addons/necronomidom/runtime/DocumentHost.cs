@@ -97,7 +97,8 @@ public partial class DocumentHost : Control
         _layout = new FlowLayout(Styles, _shaper.Metrics, _images, _opacityController, _backgroundColorController,
             _widthController, _scaleController, _foregroundColorController);
         _documentInput = new DocumentInput(Document, Styles) { TextHitTest = HitTextControl, ScrollChanged = MarkDirty };
-        _invalidation = new DocumentInvalidation(Document, MarkDirty, element => _inlineStyleChanges.Add(element));
+        _invalidation = new DocumentInvalidation(Document, MarkDirty, element => _inlineStyleChanges.Add(element),
+            element => _numericTextChanges.Add(element));
         _dirty = true;
         MountDocumentAccessibility();
         PublishLiveDocument();
@@ -165,7 +166,8 @@ public partial class DocumentHost : Control
     /// Does not advance clocks, repeat input, or dispatch events; clean documents do no work.</summary>
     public void FlushPendingLayout()
     {
-        if (!_entryActive || _layout == null || Size.X <= 0 || (!_dirty && _inlineStyleChanges.Count == 0)) return;
+        if (!_entryActive || _layout == null || Size.X <= 0 ||
+            (!_dirty && _inlineStyleChanges.Count == 0 && _numericTextChanges.Count == 0)) return;
         bool measureUpdate = UpdateMeasured != null || ObserveEntryUpdates && !_updateTimingOutputFailed;
         UpdateTimer timer = measureUpdate ? new UpdateTimer() : default;
         if (LayoutPendingChanges(MonotonicSeconds(), measureUpdate, ref timer))
@@ -178,10 +180,10 @@ public partial class DocumentHost : Control
     }
     private bool LayoutPendingChanges(double now, bool measureUpdate, ref UpdateTimer timer)
     {
-        if (!_dirty && _inlineStyleChanges.Count == 0) return false;
+        if (!_dirty && _inlineStyleChanges.Count == 0 && _numericTextChanges.Count == 0) return false;
         if (!_dirty && RetainedUpdates && TryUpdateInlineCompositor())
-        { _inlineStyleChanges.Clear(); return false; }
-        _inlineStyleChanges.Clear();
+        { _inlineStyleChanges.Clear(); _numericTextChanges.Clear(); return false; }
+        _inlineStyleChanges.Clear(); _numericTextChanges.Clear();
         _dirty = false;
         RuntimeStyleProfile.Validate(Document);
         // Layout follows the new dimensions; cached cascade/computed values need not depend on them.
