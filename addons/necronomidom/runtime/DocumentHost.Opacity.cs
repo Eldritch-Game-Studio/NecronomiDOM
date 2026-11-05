@@ -84,5 +84,6 @@ public partial class DocumentHost
         _opacityController.Clear(now);
         _opacityBefore.Clear(); _opacitySeen.Clear(); _opacityRemoved.Clear(); _opacityGroups.Clear();
         _inlineStyleChanges.Clear(); _inlineOpacityUpdates.Clear(); _inlineTransformUpdates.Clear();
+        _numericTextChanges.Clear(); _numericTextUpdates.Clear();
     }
 }

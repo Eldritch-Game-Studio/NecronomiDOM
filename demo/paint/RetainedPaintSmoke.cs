@@ -208,6 +208,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         await RetainedPolygonPaint(path);
         // Moving an absolutely positioned subtree through numeric insets translates its existing boxes and paint.
         await RetainedAbsolutePosition(path);
+        // A same-length digit change in a single-line text node replaces its glyph run without relayout.
+        await RetainedNumericText(path);
 
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
@@ -306,6 +308,44 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(host.LayoutRevision == layout && host.PaintRevision == paint && host.GeometryRevision - geometry >= Frames / 2,
             $"absolute inset moves translate the subtree without layout or repaint (layout +{host.LayoutRevision - layout}, paint +{host.PaintRevision - paint}, geometry +{host.GeometryRevision - geometry})");
         Check(moved, "translated descendants land where a fresh layout would place them");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(2);
+    }
+
+    private async Task RetainedNumericText(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "numbers.html"), "<!doctype html><html><head><style>" +
+            "html,body,div,p{display:block;margin:0;padding:0;border:0;box-sizing:border-box} html,body{width:100%;height:100%;background-color:#202c39;color:white} " +
+            "#hud{position:absolute;left:40px;top:40px;width:400px;height:120px;font-size:24px;line-height:32px} " +
+            "#speed{position:absolute;left:10px;top:10px;width:300px} #shadowed{position:absolute;left:10px;top:60px;width:300px;text-shadow:1px 1px 2px black}" +
+            "</style></head><body><div id=\"hud\"><p id=\"speed\">SPD 12.3</p><p id=\"shadowed\">18%</p></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/numbers.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        host.FlushPendingLayout();
+        await NextFrames(2);
+        int paint = host.PaintRevision, layout = host.LayoutRevision;
+        var targets = host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet();
+        var speed = host.Document.GetElementById("speed")!;
+        var shadowed = host.Document.GetElementById("shadowed")!;
+        bool painted = true;
+        for (int frame = 0; frame < Frames / 2; frame++)
+        {
+            string value = "SPD " + (10 + frame % 90).ToString("00") + "." + (frame % 10);
+            string percent = (10 + (frame * 7) % 90).ToString("00") + "%";
+            speed.TextContent = value;
+            shadowed.TextContent = percent;
+            host.FlushPendingLayout();
+            await NextFrames(1);
+            var texts = host.DisplayList.Runs.Select(run => run is TextEffectsRun effects ? effects.Text : run).OfType<TextRun>().Select(run => run.Text).ToArray();
+            painted &= texts.Contains(value) && texts.Contains(percent);
+        }
+        Check(host.LayoutRevision == layout && host.PaintRevision == paint,
+            $"same-length digit changes replace glyph runs without layout or repaint (layout +{host.LayoutRevision - layout}, paint +{host.PaintRevision - paint})");
+        Check(painted, "updated digit runs carry each new value");
+        Check(host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet().SetEquals(targets),
+            "digit changes keep shadowed text glyph targets");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(2);
     }

@@ -82,13 +82,8 @@ public sealed partial class FlowLayout
             Rect ink = group.Shaping.Shaper is IInlineTextShaper native
                 ? native.InlineInkBounds(group.Text, group.Size, group.Shaping.Weight, group.Shaping.Spacing, group.Shaping.Italic)
                 : new Rect(0, -group.Metrics.Ascent, group.Metrics.Width, group.Metrics.Ascent + group.Metrics.Descent);
-            double pad = effects.StrokeWidth;
-            foreach (var shadow in effects.Shadows.Span)
-                pad = Math.Max(pad, Math.Max(Math.Abs(shadow.OffsetX), Math.Abs(shadow.OffsetY)) + shadow.BlurRadius * 2 + effects.StrokeWidth);
-            double clipLeft = start == group.Start ? Math.Min(ink.X - pad, 0) : slice.RawLeft;
-            double clipRight = finish == group.End ? Math.Max(ink.X + ink.Width + pad, right) : right;
-            _result.Runs.Add(new BeginRectClipRun(new Rect(shapeX + clipLeft, baseline + ink.Y - pad,
-                Math.Max(0, clipRight - clipLeft), ink.Height + pad * 2)));
+            _result.Runs.Add(new BeginRectClipRun(InlineInkClipBounds(ink, effects, shapeX, baseline,
+                slice.RawLeft, right, start == group.Start, finish == group.End)));
             _result.Runs.Add(effects.HasEffects ? new TextEffectsRun(run, effects) : run);
             _result.Runs.Add(new EndRectClipRun());
         }
@@ -97,5 +92,17 @@ public sealed partial class FlowLayout
             var color = SampleForegroundColor(root, style);
             PaintTextGlyphs(root, "\u2026", x + markerX, baseline, TextFontSize(style), color, SampleForegroundEffects(root, color), markerShaping);
         }
+    }
+
+    private static Rect InlineInkClipBounds(Rect ink, TextEffectsStyle effects, double shapeX,
+        double baseline, double rawLeft, double right, bool first, bool last)
+    {
+        double pad = effects.StrokeWidth;
+        foreach (var shadow in effects.Shadows.Span)
+            pad = Math.Max(pad, Math.Max(Math.Abs(shadow.OffsetX), Math.Abs(shadow.OffsetY)) + shadow.BlurRadius * 2 + effects.StrokeWidth);
+        double clipLeft = first ? Math.Min(ink.X - pad, 0) : rawLeft;
+        double clipRight = last ? Math.Max(ink.X + ink.Width + pad, right) : right;
+        return new Rect(shapeX + clipLeft, baseline + ink.Y - pad,
+            Math.Max(0, clipRight - clipLeft), ink.Height + pad * 2);
     }
 }

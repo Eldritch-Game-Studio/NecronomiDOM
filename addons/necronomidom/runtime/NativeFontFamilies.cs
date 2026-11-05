@@ -82,6 +82,18 @@ public sealed partial class NativeFontFamilies : INativeFontFamilies, IDisposabl
     public AdvancedTextShaper Resolve(TextRun run) => _shapers.TryGetValue(run.FontFamily, out var shaper) ? shaper
         : throw new NotSupportedException("Runtime font-family is not authored/mapped: " + run.FontFamily + "; fallback is disabled.");
     public void BeginLayoutPass() { foreach (var shaper in _distinct) shaper.BeginLayoutPass(); }
+    /// <summary>After retained paint succeeds, age obsolete numeric shapes and touch every live
+    /// carrier in the new pass. Live runs were current in the preceding pass, so pruning cannot
+    /// free their borrowed RIDs; normal-layout fallback retains the same lifetime invariant.</summary>
+    public void BeginRetainedTextPass(DisplayList list)
+    {
+        BeginLayoutPass();
+        foreach (var run in list.Runs)
+        {
+            var text = run is TextRun plain ? plain : (run as TextEffectsRun)?.Text;
+            if (text != null) Resolve(text).GetShapedRun(text);
+        }
+    }
     internal NativeFontOwnership[] CaptureOwnership()
     {
         var result = new List<NativeFontOwnership>();

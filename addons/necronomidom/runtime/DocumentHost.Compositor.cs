@@ -15,6 +15,8 @@ public partial class DocumentHost
     private readonly List<(Element Element, int Ordinal, UsedBoxTransform Transform)> _inlineTransformUpdates = new();
     private readonly List<LeafPolygonPaintUpdate> _inlinePolygonPaintUpdates = new();
     private readonly List<AbsolutePositionUpdate> _inlinePositionUpdates = new();
+    private readonly HashSet<Element> _numericTextChanges = new();
+    private readonly List<NumericTextUpdate> _numericTextUpdates = new();
     public int GeometryRevision { get; private set; }
 
     private bool TryUpdateInlineCompositor()
@@ -23,8 +25,14 @@ public partial class DocumentHost
             return false;
         _inlineOpacityUpdates.Clear(); _inlineTransformUpdates.Clear(); _inlinePolygonPaintUpdates.Clear();
         _inlinePositionUpdates.Clear();
+        _numericTextUpdates.Clear();
         try
         {
+            foreach (var element in _numericTextChanges)
+            {
+                if (!_layout!.TryPrepareNumericTextUpdate(element, out var update)) return false;
+                _numericTextUpdates.Add(update);
+            }
             foreach (var element in _inlineStyleChanges)
             {
                 if (!element.IsConnected) return false;
@@ -78,7 +86,7 @@ public partial class DocumentHost
             // Prepared leaf paint uses the old absolute bounds. A mixed position/leaf-paint
             // transaction retains the full path rather than apply a stale prepared carrier.
             if (_inlinePositionUpdates.Count != 0 && _inlinePolygonPaintUpdates.Count != 0) return false;
-            if (_inlinePolygonPaintUpdates.Count != 0 || _inlinePositionUpdates.Count != 0)
+            if (_inlinePolygonPaintUpdates.Count != 0 || _inlinePositionUpdates.Count != 0 || _numericTextUpdates.Count != 0)
             {
                 // Text-control selection/caret runs are a separate projection of the layout list.
                 // Keep their existing full update path rather than overwrite that borrowed paint.
@@ -86,6 +94,7 @@ public partial class DocumentHost
                     if (run is TextRun { TextControl: not null } or
                         TextEffectsRun { Text: { TextControl: not null } }) return false;
             }
+            bool textChanged = _layout!.ApplyNumericTextUpdates(CollectionsMarshal.AsSpan(_numericTextUpdates));
             foreach (var update in _inlineTransformUpdates)
                 _layout!.ApplyTransformUpdate(update.Element, update.Transform);
             bool positionChanged = _inlinePositionUpdates.Count != 0 &&
@@ -100,7 +109,7 @@ public partial class DocumentHost
                 foreach (var update in _inlinePolygonPaintUpdates)
                     _backgroundColorBefore[update.Element] = update.Fill.Color;
             }
-            else if (_inlinePositionUpdates.Count != 0)
+            else if (_inlinePositionUpdates.Count != 0 || textChanged)
             {
                 if (!_paint.TryUpdateRetained(DisplayList, _shaper!, _images!)) return false;
             }
@@ -112,17 +121,19 @@ public partial class DocumentHost
                 _paint.UpdateOpacity(update.Ordinal, (float)update.Alpha);
                 _opacityBefore[update.Element] = update.Alpha;
             }
-            if (_inlineTransformUpdates.Count != 0 || clipChanged || positionChanged)
+            if (_inlineTransformUpdates.Count != 0 || clipChanged || positionChanged || textChanged)
             {
                 GeometryRevision++;
                 _documentInput!.UpdateGeometry(DisplayList, Size.X, Size.Y);
             }
+            if (textChanged) _shaper!.BeginRetainedTextPass(DisplayList);
             return true;
         }
         finally
         {
             _inlineOpacityUpdates.Clear(); _inlineTransformUpdates.Clear(); _inlinePolygonPaintUpdates.Clear();
             _inlinePositionUpdates.Clear();
+            _numericTextUpdates.Clear();
         }
     }
 }
