@@ -1,16 +1,11 @@
 name: CI/CD
 
-# Every push and pull request: core tests, all five desktop NativeAOT targets, source smoke runs,
-# then fresh-installed ZIP qualification on each target architecture before GitHub release.
-# Tags named v*: publish the qualified ZIP as a GitHub release. Asset Store submission remains paused/manual.
-#
-# Repository variables choose where jobs run:
-#   LINUX_RUNNER=self-hosted Linux x64 jobs run on a self-hosted Linux x64 runner;
-#                             otherwise on GitHub-hosted ubuntu-24.04.
-# Only an explicit workflow_dispatch partial=true skips hosted builds for a Linux-only diagnostic ZIP.
-# On a self-hosted runner, jobs hand files to each other through ~/.cache/necronomidom-ci instead of GitHub artifact
-# storage, and finished ZIPs are kept in ~/.cache/necronomidom-ci/dist.
-# scripts/ci-local.sh runs this workflow locally with act (Linux x64 jobs only).
+# Code PRs and main: unit/capability checks, Linux native build and real runtime smokes.
+# Native/bindings/tooling PRs, v* tags and full manual runs: five native builds and
+# fresh installed-final-ZIP qualification on every target. Docs/media: offline content/link checks only.
+# Only superseded PR runs are cancelled; tag releases never share a cancellation group.
+# LINUX_RUNNER=self-hosted selects [self-hosted,Linux,X64,necronomidom], otherwise ubuntu-24.04.
+# Manual partial=true is an explicitly non-release Linux diagnostic (also used by scripts/ci-local.sh).
 on:
   push:
     branches: [main]
@@ -23,11 +18,52 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   GODOT_VERSION: 4.7.2
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      mode: ${{ steps.policy.outputs.mode }}
+      code: ${{ steps.policy.outputs.code }}
+      full: ${{ steps.policy.outputs.full }}
+      package: ${{ steps.policy.outputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Classify event and complete changed paths
+        id: policy
+        run: python3 scripts/ci-policy.py
+
+  docs:
+    needs: changes
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check documentation content and offline link targets
+        run: |
+          python3 scripts/check-docs.py
+          python3 scripts/generate-capabilities.py --check
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ vars.LINUX_RUNNER == 'self-hosted' && fromJSON('["self-hosted","Linux","X64","necronomidom"]') || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +81,8 @@ jobs:
       - run: dotnet test tests/NecronomiDom.Tests -nologo
 
   native-linux-x64:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ vars.LINUX_RUNNER == 'self-hosted' && fromJSON('["self-hosted","Linux","X64","necronomidom"]') || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v4
@@ -57,14 +95,37 @@ jobs:
           python-version: '3.12'
       - name: NativeAOT toolchain
         run: command -v clang >/dev/null || (sudo apt-get update -q && sudo apt-get install -yq clang zlib1g-dev)
+      - name: Identify pinned SDK inputs and actual host toolchain
+        id: sdk-cache
+        env:
+          SOURCE_ID: ${{ hashFiles('native/godot-dotnet.lock', 'native/patches/**', 'native/build.sh', 'native/*.csproj', '.github/workflows/ci.yml', 'global.json', '**/Directory.*.props', '**/Directory.*.targets', '**/NuGet.Config', '**/nuget.config') }}
+        run: |
+          identity="$(
+            set -e
+            { printf '%s\n' "$SOURCE_ID" "${ImageOS:-}" "${ImageVersion:-}"; uname -sm; cat /etc/os-release;
+              dotnet --info; clang --version; ld --version; ldd --version; python3 --version; git --version;
+              if command -v dpkg-query >/dev/null; then dpkg-query -W;
+              elif command -v pacman >/dev/null; then pacman -Q;
+              elif command -v rpm >/dev/null; then rpm -qa | sort;
+              else echo "Cannot fingerprint installed toolchain dependencies" >&2; exit 1; fi
+              printf '%s\n' "${CFLAGS:-}" "${CXXFLAGS:-}" "${LDFLAGS:-}"; } | sha256sum
+          )"
+          identity="${identity%% *}"
+          echo "key=ndom-sdk-v1-Linux-X64-$identity" >> "$GITHUB_OUTPUT"
+          echo "work=$RUNNER_TOOL_CACHE/ndom-sdk-$identity" >> "$GITHUB_OUTPUT"
+      - name: Cache pinned SDK dependencies only (never addon binaries)
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.sdk-cache.outputs.work }}/sdk
+          key: ${{ steps.sdk-cache.outputs.key }}
       - name: Build
         id: native-build
         env:
-          # Keep the built bindings between runs on a persistent runner (checkout cleans the workspace).
-          NECRONOMIDOM_WORK: ${{ runner.tool_cache }}/necronomidom-native
+          NECRONOMIDOM_WORK: ${{ steps.sdk-cache.outputs.work }}
         run: native/build.sh linux-x64
       - name: Stage current portable managed SDK feed
         id: sdk-feed
+        if: needs.changes.outputs.full == 'true'
         env:
           SDK_FEED: ${{ steps.native-build.outputs.sdk-feed }}
         run: |
@@ -77,26 +138,22 @@ jobs:
           echo "path=$stage" >> "$GITHUB_OUTPUT"
       - name: Upload portable managed SDK feed
         uses: actions/upload-artifact@v4
+        if: needs.changes.outputs.full == 'true'
         with:
           name: sdk-managed-feed
           path: ${{ steps.sdk-feed.outputs.path }}
           include-hidden-files: true
           if-no-files-found: error
-      - name: Hand off locally
-        if: vars.LINUX_RUNNER == 'self-hosted'
-        run: |
-          handoff="$HOME/.cache/necronomidom-ci/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          mkdir -p "$handoff/bin" && cp -r addons/necronomidom/bin/. "$handoff/bin/"
-      - if: vars.LINUX_RUNNER != 'self-hosted'
-        uses: actions/upload-artifact@v4
+      # Artifacts survive failed-job-only reruns; attempt-local handoffs do not.
+      - uses: actions/upload-artifact@v4
         with:
           name: native-linux-x64
           path: addons/necronomidom/bin/
           if-no-files-found: error
 
   native-hosted:
-    needs: native-linux-x64
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.partial == true) }}
+    needs: [changes, native-linux-x64]
+    if: needs.changes.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -142,20 +199,14 @@ jobs:
           if-no-files-found: error
 
   smoke:
-    needs: native-linux-x64
+    needs: [changes, native-linux-x64]
     runs-on: ${{ vars.LINUX_RUNNER == 'self-hosted' && fromJSON('["self-hosted","Linux","X64","necronomidom"]') || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Receive local binaries
-        if: vars.LINUX_RUNNER == 'self-hosted'
-        run: |
-          mkdir -p addons/necronomidom/bin
-          cp -r "$HOME/.cache/necronomidom-ci/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/bin/." addons/necronomidom/bin/
-      - if: vars.LINUX_RUNNER != 'self-hosted'
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: native-linux-x64
           path: addons/necronomidom/bin/
@@ -209,9 +260,9 @@ jobs:
             --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
 
   package:
-    needs: [test, native-linux-x64, native-hosted, smoke]
-    # Hosted builds may be skipped only for an explicit manual diagnostic run, never a release.
-    if: ${{ !cancelled() && needs.test.result == 'success' && needs.native-linux-x64.result == 'success' && needs.smoke.result == 'success' && (needs.native-hosted.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.partial == true && needs.native-hosted.result == 'skipped')) }}
+    needs: [changes, docs, test, native-linux-x64, native-hosted, smoke]
+    # A skipped matrix is acceptable only for the explicitly requested manual diagnostic.
+    if: ${{ !cancelled() && needs.changes.outputs.package == 'true' && needs.docs.result == 'success' && needs.test.result == 'success' && needs.native-linux-x64.result == 'success' && needs.smoke.result == 'success' && (needs.native-hosted.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.partial == true && needs.native-hosted.result == 'skipped')) }}
     runs-on: ${{ vars.LINUX_RUNNER == 'self-hosted' && fromJSON('["self-hosted","Linux","X64","necronomidom"]') || 'ubuntu-24.04' }}
     outputs:
       name: ${{ steps.zip.outputs.name }}
@@ -221,13 +272,7 @@ jobs:
         if: vars.LINUX_RUNNER != 'self-hosted'
         with:
           python-version: '3.12'
-      - name: Receive local binaries
-        if: vars.LINUX_RUNNER == 'self-hosted'
-        run: |
-          mkdir -p addons/necronomidom/bin
-          cp -r "$HOME/.cache/necronomidom-ci/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/bin/." addons/necronomidom/bin/
       - uses: actions/download-artifact@v4
-        if: vars.LINUX_RUNNER != 'self-hosted' || !(github.event_name == 'workflow_dispatch' && inputs.partial == true)
         with:
           pattern: native-*
           path: addons/necronomidom/bin/
@@ -286,7 +331,6 @@ jobs:
         run: |
           mkdir -p "$HOME/.cache/necronomidom-ci/dist"
           cp "dist/${{ steps.zip.outputs.name }}" "$HOME/.cache/necronomidom-ci/dist/"
-          rm -rf "$HOME/.cache/necronomidom-ci/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           echo "ZIP: $HOME/.cache/necronomidom-ci/dist/${{ steps.zip.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload addon ZIP
         uses: actions/upload-artifact@v4
@@ -296,8 +340,8 @@ jobs:
           if-no-files-found: error
 
   qualify-hosted:
-    needs: package
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.partial == true) }}
+    needs: [changes, package]
+    if: needs.changes.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -346,7 +390,7 @@ jobs:
 
   release:
     needs: [package, qualify-hosted]
-    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.package.result == 'success' && needs.qualify-hosted.result == 'success' }}
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.package.result == 'success' && needs.qualify-hosted.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
