@@ -116,6 +116,12 @@ public partial class RetainedPaintSmoke : Godot.Node
 
     private async Task Run()
     {
+        // Godot's dummy headless window is 64x64; clip fences intersect it. Give headless runs the drawn size.
+        if (!Rendering)
+        {
+            GetTree().Root.ContentScaleSize = new Vector2I(1440, 1000);
+            GetTree().Root.ContentScaleMode = Godot.Window.ContentScaleModeEnum.Viewport;
+        }
         _warnings = new RenderSyncWarnings();
         OS.AddLogger(_warnings);
         string path = "user://ui/retained-paint-" + Guid.NewGuid().ToString("N");
@@ -200,6 +206,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         // directly: no layout pass, no structural repaint, and the painted run carries the new values. Documents
         // with text controls keep the full path, so this uses its own small document.
         await RetainedPolygonPaint(path);
+        // Moving an absolutely positioned subtree through numeric insets translates its existing boxes and paint.
+        await RetainedAbsolutePosition(path);
 
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
@@ -263,6 +271,41 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(painted, "retained polygon fill carries each new color");
         Check(host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet().SetEquals(targets),
             "retained polygon clip and fill changes keep every target");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(2);
+    }
+
+    private async Task RetainedAbsolutePosition(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "positions.html"), "<!doctype html><html><head><style>" +
+            "html,body,div{display:block;margin:0;padding:0;border:0;box-sizing:border-box} html,body{width:100%;height:100%;background-color:#202c39} " +
+            "#track{position:absolute;left:40px;top:40px;width:600px;height:200px;overflow:hidden;background-color:#1a2430} " +
+            "#marker{position:absolute;width:120px;height:80px;background-color:#c0a55c} " +
+            "#bar{display:flex;width:100px;height:20px;background-color:#3366aa} " +
+            "#dot{position:absolute;left:10px;top:40px;width:16px;height:16px;background-color:#aa3333}" +
+            "</style></head><body><div id=\"track\"><div id=\"marker\" style=\"left:20px;top:20px;right:auto;bottom:auto\">" +
+            "<div id=\"bar\"></div><div id=\"dot\"></div></div></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/positions.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        host.FlushPendingLayout();
+        await NextFrames(2);
+        int paint = host.PaintRevision, layout = host.LayoutRevision, geometry = host.GeometryRevision;
+        var marker = (HTMLElement)host.Document.GetElementById("marker")!;
+        bool moved = true;
+        for (int frame = 0; frame < Frames / 2; frame++)
+        {
+            int left = 27 + frame * 7;
+            marker.Style.SetProperty("left", left + "px");
+            host.FlushPendingLayout();
+            await NextFrames(1);
+            var dot = host.DisplayList.Boxes.First(box => box.Element.Id == "dot").Bounds;
+            moved &= Math.Abs(dot.X - (40 + left + 10)) < 0.01;
+        }
+        Check(host.LayoutRevision == layout && host.PaintRevision == paint && host.GeometryRevision - geometry >= Frames / 2,
+            $"absolute inset moves translate the subtree without layout or repaint (layout +{host.LayoutRevision - layout}, paint +{host.PaintRevision - paint}, geometry +{host.GeometryRevision - geometry})");
+        Check(moved, "translated descendants land where a fresh layout would place them");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(2);
     }

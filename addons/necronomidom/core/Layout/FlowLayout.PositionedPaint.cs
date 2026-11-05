@@ -100,6 +100,7 @@ public sealed partial class FlowLayout
         if (_opacityOwners.Remove(run, out var owner)) _opacityOwners.Add(translated, owner);
         if (_transformOwners.Remove(run, out var transformOwner)) _transformOwners.Add(translated, transformOwner);
         if (_polygonPaintOwners.Remove(run, out var polygonOwner)) _polygonPaintOwners.Add(translated, polygonOwner);
+        TranslateAbsoluteAnchor(run, translated);
         return translated;
     }
 }

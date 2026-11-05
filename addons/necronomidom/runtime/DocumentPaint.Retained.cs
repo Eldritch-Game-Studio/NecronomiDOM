@@ -124,7 +124,12 @@ public partial class DocumentPaint
                 case (BeginEllipticalClipRun run, EllipticalClipGroup item): item.Update(run); break;
                 case (BackgroundImageRun run, EllipticalClipGroup): _backgrounds!.Update(binding.Slot, run, images); break;
                 case (BorderBoxRun run, MeshInstance2D): _borders!.Update(binding.Slot, run); break;
-                case (BeginOpacityRun run, PolygonOpacityGroup item): item.Update(run.Opacity, false); break;
+                case (BeginOpacityRun run, PolygonOpacityGroup item):
+                    // A bounds-only move must not overwrite a newer compositor/controller
+                    // opacity that was applied without replacing the raw layout run.
+                    if (binding.Run is not BeginOpacityRun before || before.Opacity != run.Opacity)
+                        item.Update(run.Opacity, false);
+                    break;
                 case (BeginTransformRun run, Node2D item): item.Transform = BorderPaintStore.ToNative(run.Transform); break;
                 case (TextRun, ShapedTextPaint):
                 case (TextEffectsRun, NativeGlyphEffectsPaint):

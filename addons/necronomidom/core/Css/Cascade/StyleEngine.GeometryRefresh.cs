@@ -61,7 +61,19 @@ public sealed partial class StyleEngine
         return true;
     }
 
-    private enum InlineCompositorKind { None, Opacity, Transform, PolygonPaint }
+    /// <summary>Consumes an independent numeric inset delta. Layout must still prove that the
+    /// existing absolute subtree changes position only, not size, flow or containing-block topology.</summary>
+    public bool TryConsumeInlinePositionChange(Element element)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        if (!_entries.TryGetValue(element, out var entries) || entries.Normal is not { } entry) return false;
+        Refresh(entry);
+        if (!entry.InlinePositionChanged) return false;
+        entry.InlinePositionChanged = false;
+        return true;
+    }
+
+    private enum InlineCompositorKind { None, Opacity, Transform, PolygonPaint, AbsolutePosition }
 
     private static InlineCompositorKind InlineCompositorOnlyChange(Entry entry)
     {
@@ -77,7 +89,8 @@ public sealed partial class StyleEngine
             if (ReferenceEquals(next.Value, previous.Declaration.Value)) continue;
             var property = TransformProperty(next.Name) ? InlineCompositorKind.Transform :
                 next.Name == "opacity" ? InlineCompositorKind.Opacity :
-                next.Name is "clip-path" or "background-color" ? InlineCompositorKind.PolygonPaint : InlineCompositorKind.None;
+                next.Name is "clip-path" or "background-color" ? InlineCompositorKind.PolygonPaint :
+                next.Name is "left" or "right" or "top" or "bottom" ? InlineCompositorKind.AbsolutePosition : InlineCompositorKind.None;
             if (property == InlineCompositorKind.None || kind != InlineCompositorKind.None && kind != property ||
                 !previous.Won || !StableInlineValue(next.Value) || !IndependentGeometry(next.Name, next.Value))
                 return InlineCompositorKind.None;

@@ -90,6 +90,7 @@ public sealed partial class FlowLayout
         _opacityOwners.Clear();
         _transformOwners.Clear();
         ResetPolygonPaint();
+        ResetAbsolutePositions();
         _foregroundPaint?.Clear();
         var initial = new PositionedContainingBlock(_viewport, _viewport, true);
         _containing.Add(new ContainingContext(null, initial));
@@ -104,6 +105,7 @@ public sealed partial class FlowLayout
             Block(document.DocumentElement ?? throw new InvalidOperationException("Missing document root."), 0, 0, initial, 0);
             CompletePaintHitOrder();
             CapturePolygonPaintSlots();
+            CaptureAbsolutePositionIndices();
             CompleteHitGeometry();
             return _result;
         }
@@ -171,6 +173,8 @@ public sealed partial class FlowLayout
             _result.Runs.Insert(runStart, begin); _transformOwners.Add(begin, e);
             _result.Runs.Add(new EndTransformRun(box.BorderBox));
         }
+        if (image == null)
+            CaptureAbsolutePosition(e, s, plan, flow, absolute ?? flow, x, y, natural + gutters.Bottom, boxIndex, runStart);
         CompletePaintPhase(paintFrame, e, plan.Mode, _containing[containing].Element, context, paintBoundary);
         return box.FlowContribution;
     }

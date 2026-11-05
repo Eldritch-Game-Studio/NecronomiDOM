@@ -126,8 +126,9 @@ public static class FlexLineSolver
         }
         return remaining;
     }
-    // Blink LayoutUnit's floating constructors truncate toward zero; text intrinsic widths use ceiling.
-    internal static double Quantize(double value) => Math.Truncate(value * 64) / 64;
+    /// <summary>Blink LayoutUnit's floating constructors truncate toward zero to 1/64 CSSpx;
+    /// presentation transports must preserve this boundary when replacing flex-sized paint.</summary>
+    public static double Quantize(double value) => Math.Truncate(value * 64) / 64;
     internal static double CeilIntrinsic(double value) => Math.Ceiling(value * 64) / 64;
     private static double RoundShare(double value) => Math.Round(value * 64, MidpointRounding.AwayFromZero) / 64;
     private static double Free(ReadOnlySpan<FlexMainResult> results, double space)
