@@ -202,6 +202,11 @@ jobs:
         env:
           NECRONOMIDOM_UPDATE_TIMING: '1'
         run: '"$GODOT_MONO" --headless --path . res://demo/paint/timing-smoke.tscn'
+      - name: Fused single-fill polygon clips in linear composition
+        run: |
+          "$GODOT_MONO" --headless --path . res://demo/paint/single-fill-smoke.tscn
+          xvfb-run -a -s "-screen 0 1440x1000x24" "$GODOT_MONO" --path . --rendering-method gl_compatibility \
+            --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
 
   package:
     needs: [test, native-linux-x64, native-hosted, smoke]

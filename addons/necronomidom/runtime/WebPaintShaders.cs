@@ -15,11 +15,12 @@ namespace NecronomiDom.Runtime;
 internal static class WebPaintShaders
 {
     private const string Root = "res://addons/necronomidom/shaders/";
-    private static Shader? _box, _image, _polygonFill, _polygonClip, _ellipticalClip, _glyphShadow, _gradient, _asymmetricBorder, _linearDocument;
+    private static Shader? _box, _image, _polygonFill, _polygonSingleFill, _polygonClip, _ellipticalClip, _glyphShadow, _gradient, _asymmetricBorder, _linearDocument;
 
     internal static Shader Box => _box ??= Load("box");
     internal static Shader Image => _image ??= Load("image");
     internal static Shader PolygonFill => _polygonFill ??= Load("polygon-fill");
+    internal static Shader PolygonSingleFill => _polygonSingleFill ??= Load("polygon-single-fill");
     internal static Shader PolygonClip => _polygonClip ??= Load("polygon-clip");
     internal static Shader EllipticalClip => _ellipticalClip ??= Load("elliptical-clip");
     internal static Shader GlyphShadow => _glyphShadow ??= Load("glyph-shadow");
@@ -31,9 +32,9 @@ internal static class WebPaintShaders
     /// shaders. GodotSharp builds never call this.</summary>
     internal static void Release()
     {
-        foreach (var shader in new[] { _box, _image, _polygonFill, _polygonClip, _ellipticalClip, _glyphShadow, _gradient, _asymmetricBorder, _linearDocument })
+        foreach (var shader in new[] { _box, _image, _polygonFill, _polygonSingleFill, _polygonClip, _ellipticalClip, _glyphShadow, _gradient, _asymmetricBorder, _linearDocument })
             shader?.Dispose();
-        _box = _image = _polygonFill = _polygonClip = _ellipticalClip = _glyphShadow = _gradient = _asymmetricBorder = _linearDocument = null;
+        _box = _image = _polygonFill = _polygonSingleFill = _polygonClip = _ellipticalClip = _glyphShadow = _gradient = _asymmetricBorder = _linearDocument = null;
     }
 
     private static Shader Load(string name) => GD.Load<Shader>(Root + name + ".gdshader")

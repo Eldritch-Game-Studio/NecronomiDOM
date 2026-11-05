@@ -70,6 +70,15 @@ public partial class DocumentPaint : Node2D
         for (int i = 0; i < list.Runs.Count;)
         {
             var run = list.Runs[i];
+            if (TrySinglePolygon(list, i, parent, out var singlePolygon))
+            {
+                var singleItem = _polygons.CreateSingle(singlePolygon);
+                parent.AddChild(singleItem);
+                BindRetained(i, singleItem);
+                BindRetained(i + 1, singleItem);
+                BindRetained(i + 2, singleItem);
+                PolygonRunCount++; PaintContextCount++; i += 3; continue;
+            }
             if (run is BeginRectClipRun or BeginRoundedRectClipRun or BeginPolygonClipRun or BeginOpacityRun or BeginTransformRun or BeginEllipticalClipRun)
             {
                 var context = run switch

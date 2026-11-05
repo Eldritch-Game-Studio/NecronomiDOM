@@ -12,7 +12,7 @@ namespace NecronomiDom.Runtime;
 /// </summary>
 public sealed class PolygonPaintStore : IDisposable
 {
-    private enum SlotKind { Polygon, PolygonClip, RectClip, RoundedRectClip, Opacity, Count }
+    private enum SlotKind { Polygon, SinglePolygon, PolygonClip, RectClip, RoundedRectClip, Opacity, Count }
     private readonly List<CanvasItem>?[] _slots = new List<CanvasItem>?[(int)SlotKind.Count];
     private readonly int[] _cursors = new int[(int)SlotKind.Count];
 
@@ -31,20 +31,21 @@ public sealed class PolygonPaintStore : IDisposable
     }
 
     public void BeginRebuild() => Array.Clear(_cursors);
-    public CanvasItem Create(PolygonRun run) => Acquire(run);
+    public CanvasItem Create(PolygonRun run) => Acquire(run, false);
+    internal CanvasItem CreateSingle(PolygonRun run) => Acquire(run, true);
     public CanvasItem CreateContext(PaintRun begin)
     {
         if (begin is not (BeginRectClipRun or BeginRoundedRectClipRun or BeginOpacityRun or BeginPolygonClipRun))
             throw new NotSupportedException("Unknown native paint context: " + begin.GetType().FullName);
-        return Acquire(begin);
+        return Acquire(begin, false);
     }
     public CanvasItem Content(CanvasItem context) => context is PolygonComposite composite ? composite.Content :
         throw new NotSupportedException("Unknown isolated native context: " + context.GetType().FullName);
 
-    private CanvasItem Acquire(PaintRun run)
+    private CanvasItem Acquire(PaintRun run, bool singleFill)
     {
         CanvasItem item;
-        int kind = (int)(run switch
+        int kind = singleFill ? (int)SlotKind.SinglePolygon : (int)(run switch
         {
             PolygonRun => SlotKind.Polygon,
             BeginPolygonClipRun => SlotKind.PolygonClip,
@@ -72,7 +73,7 @@ public sealed class PolygonPaintStore : IDisposable
         {
             item = run switch
             {
-                PolygonRun polygon => new PolygonPaint(polygon),
+                PolygonRun polygon => new PolygonPaint(polygon, singleFill),
                 BeginPolygonClipRun clip => new PolygonClipGroup(clip),
                 BeginRectClipRun clip => new RoundedRectClipGroup(clip.Bounds, 0),
                 BeginRoundedRectClipRun clip => new RoundedRectClipGroup(clip.Bounds, clip.Radius),

@@ -24,7 +24,11 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
     private bool _empty;
     private Rect2 _paintBounds;
 
-    internal PolygonPaint(PolygonRun run) => Update(run);
+    internal PolygonPaint(PolygonRun run, bool singleFill)
+    {
+        _singleFill = singleFill;
+        Update(run);
+    }
     public int SurfaceBuildCount { get; private set; }
     public int VertexUploadCount { get; private set; }
     public Rect2 PaintBounds => _empty ? default : _paintBounds;
@@ -33,8 +37,9 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
     {
         if (_geometry == null || _color != run.Color)
         {
-            SelfModulate = new Color(run.Color.R, run.Color.G, run.Color.B, run.Color.A);
             _color = run.Color;
+            if (_singleFill) WriteSingleFillColor();
+            else SelfModulate = new Color(run.Color.R, run.Color.G, run.Color.B, run.Color.A);
         }
         bool empty = run.Geometry.IsEmpty || run.Bounds.Width == 0 || run.Bounds.Height == 0;
         if (_geometry == null || _empty != empty) { Visible = !empty; _empty = empty; }
@@ -43,8 +48,9 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
         bool newMaterial = _fill == null;
         if (newMaterial)
         {
-            _fill = new ShaderMaterial { Shader = WebPaintShaders.PolygonFill };
+            _fill = new ShaderMaterial { Shader = _singleFill ? WebPaintShaders.PolygonSingleFill : WebPaintShaders.PolygonFill };
             Material = _fill;
+            if (_singleFill) WriteSingleFillColor();
         }
         if (newMaterial || _bounds != run.Bounds)
             _fill!.SetShaderParameter("reference_bounds", new Vector4(FiniteFloat(run.Bounds.X), FiniteFloat(run.Bounds.Y), FiniteFloat(run.Bounds.Width), FiniteFloat(run.Bounds.Height)));
@@ -88,6 +94,7 @@ public partial class PolygonPaint : Node2D, INativePaintBounds
         _mesh!.CustomAabb = new Aabb(new Vector3(minX, minY, 0), new Vector3(maxX - minX, maxY - minY, 0));
         VertexUploadCount++;
         RenderingServer.CanvasItemSetCustomRect(GetCanvasItem(), true, new Rect2(minX, minY, maxX - minX, maxY - minY));
+        UpdateSingleFillEdges(run);
         _geometry = run.Geometry; _bounds = run.Bounds;
     }
 

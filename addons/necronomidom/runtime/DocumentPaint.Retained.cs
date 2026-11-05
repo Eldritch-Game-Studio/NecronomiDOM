@@ -66,8 +66,14 @@ public partial class DocumentPaint
         for (int i = 0; i < list.Runs.Count; i++)
         {
             var before = _retainedBindings[i]; var next = list.Runs[i];
-            if (Equals(before.Run, next)) continue;
             if (before.Run.GetType() != next.GetType()) return false;
+            if (next is BeginPolygonClipRun)
+            {
+                bool single = before.Item != null && TrySinglePolygon(list, i, before.Item, out _);
+                if (single != (before.Item is PolygonPaint { IsSingleFill: true })) return false;
+                if (single) { i += 2; continue; }
+            }
+            if (Equals(before.Run, next)) continue;
             bool supported = (next, before.Item) switch {
                 (PolygonRun, PolygonPaint) => true,
                 (BeginPolygonClipRun, PolygonClipGroup) => true,
@@ -92,6 +98,19 @@ public partial class DocumentPaint
         for (int i = 0; i < list.Runs.Count; i++)
         {
             var binding = _retainedBindings[i]; var next = list.Runs[i];
+            if (binding.Item is PolygonPaint { IsSingleFill: true } single && next is BeginPolygonClipRun)
+            {
+                var fill = list.Runs[i + 1];
+                if (!Equals(binding.Run, next) || !Equals(_retainedBindings[i + 1].Run, fill))
+                {
+                    changed = true;
+                    MarkRetainedContentChanged(single, false);
+                    single.Update((PolygonRun)fill);
+                    _retainedBindings[i] = binding with { Run = next };
+                    _retainedBindings[i + 1] = _retainedBindings[i + 1] with { Run = fill };
+                }
+                i += 2; continue;
+            }
             if (Equals(binding.Run, next)) continue;
             changed = true;
             // Image slots change captured child pixels; clip/opacity proxies change only their ancestors.
