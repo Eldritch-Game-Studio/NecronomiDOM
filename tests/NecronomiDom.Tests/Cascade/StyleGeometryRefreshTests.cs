@@ -12,11 +12,11 @@ namespace NecronomiDom.Tests.Cascade;
 [TestFixture]
 public sealed class StyleGeometryRefreshTests
 {
-    private static (Document Doc, StyleEngine Styles, HTMLElement Element) Load(string css = "")
+    private static (Document Doc, StyleEngine Styles, HTMLElement Element) Load(string css = "", string inline = "")
     {
         var doc = HtmlImporter.Import("<!doctype html><style>html{--size:20px}#p{background-color:red;" +
             "transform:translate(20%,30%);transform-origin:25% 75%;perspective-origin:10% 90%}" + css +
-            "</style><div id=p style='left:1px;top:2%;width:100px;height:80px;opacity:.5;rotate:1deg;display:flex'><span>text</span></div>",
+            "</style><div id=p style='left:1px;top:2%;width:100px;height:80px;opacity:.5;rotate:1deg;display:flex;" + inline + "'><span id=c>text</span></div>",
             "geometry-refresh", WebUrl.Parse("res:///geometry-refresh.html")!).Document;
         var styles = new StyleEngine(doc);
         var element = (HTMLElement)doc.GetElementById("p")!;
@@ -93,5 +93,83 @@ public sealed class StyleGeometryRefreshTests
         control.Style.RemoveProperty("width");
         Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
         Assert.That(doc.GetElementById("p"), Is.SameAs(element));
+    }
+
+    [TestCase("pointer-events:none")]
+    [TestCase("pointer-events:none;background-color:var(--tone);--tone:green")]
+    [TestCase("color:rgb(23 40 70 / .7);pointer-events:none")]
+    public void MovingNotesWithUnchangedPaintAndInputDeclarationsDoNotRestyleDescendants(string unchanged)
+    {
+        var (doc, styles, element) = Load(inline: "bottom:100%;" + unchanged);
+        var (controlDoc, reference, control) = Load(inline: "bottom:100%;" + unchanged);
+        var child = doc.GetElementById("c")!;
+        var controlChild = controlDoc.GetElementById("c")!;
+        styles.GetComputedValues(child);
+        for (int i = 0; i < 40; i++)
+        {
+            string property = i % 2 == 0 ? "bottom" : "height";
+            string value = (i + 1).ToString(CultureInfo.InvariantCulture) + (property == "bottom" ? "%" : "px");
+            element.Style.SetProperty(property, value);
+            control.Style.SetProperty(property, value);
+            reference.Invalidate();
+            Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+            Compare(styles.GetComputedValues(element), reference.GetComputedValues(control));
+            long afterParent = styles.ComputedEntryCount;
+            Compare(styles.GetComputedValues(child), reference.GetComputedValues(controlChild));
+            Assert.That(styles.ComputedEntryCount, Is.EqualTo(afterParent), "An independent note position must not invalidate its trail/glyph.");
+        }
+        Assert.That(styles.GeometryRefreshCount, Is.EqualTo(40), "Exercise the actual mixed-inline fast path, not just equivalent full recomputation.");
+    }
+
+    [TestCase("pointer-events", "auto", "")]
+    [TestCase("pointer-events", "none", "important")]
+    [TestCase("color", "blue", "")]
+    [TestCase("--tone", "blue", "")]
+    [TestCase("display", "none", "")]
+    public void BatchedGeometryAndChangedNongeometryOrPriorityStillRecascade(string property, string value, string priority)
+    {
+        const string inline = "pointer-events:none;color:red;--tone:red;background-color:var(--tone)";
+        var (doc, styles, element) = Load(inline: inline);
+        var (controlDoc, reference, control) = Load(inline: inline);
+        styles.GetComputedValues(doc.GetElementById("c")!);
+        element.Style.SetProperty("width", "200px");
+        control.Style.SetProperty("width", "200px");
+        element.Style.SetProperty(property, value, priority);
+        control.Style.SetProperty(property, value, priority);
+        reference.Invalidate();
+        Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+        Compare(styles.GetComputedValues(element), reference.GetComputedValues(control));
+        Compare(styles.GetComputedValues(doc.GetElementById("c")!), reference.GetComputedValues(controlDoc.GetElementById("c")!));
+        Assert.That(styles.GeometryRefreshCount, Is.Zero);
+    }
+
+    [TestCase("#p[style*='200px'] span{color:blue}")]
+    [TestCase("#p::before{content:attr(style)}")]
+    public void ObservableStyleAttributesCannotUseMixedInlineGeometryRefresh(string css)
+    {
+        var (doc, styles, element) = Load(css, "pointer-events:none");
+        var (controlDoc, reference, control) = Load(css, "pointer-events:none");
+        styles.GetComputedValues(doc.GetElementById("c")!);
+        element.Style.SetProperty("width", "200px");
+        control.Style.SetProperty("width", "200px");
+        reference.Invalidate();
+        Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+        Compare(styles.GetComputedValues(doc.GetElementById("c")!), reference.GetComputedValues(controlDoc.GetElementById("c")!));
+        Assert.That(styles.GeometryRefreshCount, Is.Zero);
+    }
+
+    [TestCase("#c{height:inherit}")]
+    [TestCase("#c{container-type:size}")]
+    public void InheritedGeometryAndNestedContainersRetainSubtreeReconciliation(string css)
+    {
+        var (doc, styles, element) = Load(css, "pointer-events:none");
+        var (controlDoc, reference, control) = Load(css, "pointer-events:none");
+        styles.GetComputedValues(doc.GetElementById("c")!);
+        element.Style.SetProperty("height", "160px");
+        control.Style.SetProperty("height", "160px");
+        reference.Invalidate();
+        Compare(styles.GetComputedStyle(element), reference.GetComputedStyle(control));
+        Compare(styles.GetComputedValues(doc.GetElementById("c")!), reference.GetComputedValues(controlDoc.GetElementById("c")!));
+        Assert.That(styles.GeometryRefreshCount, Is.Zero);
     }
 }

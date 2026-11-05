@@ -15,7 +15,8 @@ public sealed partial class StyleEngine
     private static void CaptureGeometryInline(Entry entry, Dictionary<string, List<Candidate>> groups)
     {
         entry.GeometryInline?.Clear();
-        if (!entry.InlineGeometryOnly || entry.Element is not HTMLElement html || html.Style.Length == 0) return;
+        if (entry.Pseudo != null || entry.Element is not HTMLElement html || html.Style.Length == 0 ||
+            !entry.InlineGeometryOnly && !HasInlineGeometry(entry.Element)) return;
         entry.GeometryInline ??= new();
         foreach (var declaration in html.Style.Declarations)
         {
@@ -80,8 +81,8 @@ public sealed partial class StyleEngine
             var prior = entry.GeometryInline[i];
             var next = current[i];
             if (next.Name != prior.Declaration.Name || next.Important != prior.Declaration.Important) return false;
-            if (!StableInlineValue(next.Value)) return false;
-            if (!ReferenceEquals(next.Value, prior.Declaration.Value) && (!prior.Won || !IndependentGeometry(next.Name, next.Value)))
+            if (ReferenceEquals(next.Value, prior.Declaration.Value)) continue;
+            if (!prior.Won || !StableInlineValue(next.Value) || !IndependentGeometry(next.Name, next.Value))
                 return false;
         }
         bool rtl = entry.Values.GetValueOrDefault("direction") is CssKeywordValue { Value: "rtl" };
