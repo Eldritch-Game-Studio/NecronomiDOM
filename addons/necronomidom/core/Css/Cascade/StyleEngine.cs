@@ -43,7 +43,7 @@ namespace NecronomiDom.Css.Cascade
             internal bool Refreshing;
             internal bool InlineGeometryOnly, ReadsParentGeometry;
             internal long GeometryRefreshGeneration = -1;
-            internal bool InlineOpacityChanged, InlineTransformChanged;
+            internal bool InlineOpacityChanged, InlineTransformChanged, InlinePolygonPaintChanged;
             internal bool ReuseRules;
             internal long RuleGeneration = -1;
             internal List<GeometryInlineValue>? GeometryInline;
@@ -69,6 +69,7 @@ namespace NecronomiDom.Css.Cascade
                     Normal.GeometryRefreshGeneration = -1;
                     Normal.InlineOpacityChanged = false;
                     Normal.InlineTransformChanged = false;
+                    Normal.InlinePolygonPaintChanged = false;
                 }
                 foreach (var pseudo in Pseudos.Values)
                 {
@@ -146,6 +147,7 @@ namespace NecronomiDom.Css.Cascade
                 entry.GeometryRefreshGeneration = -1;
                 entry.InlineOpacityChanged = false;
                 entry.InlineTransformChanged = false;
+                entry.InlinePolygonPaintChanged = false;
                 BeginComputedRefresh(entry);
                 entry.InheritedStrokeColor = null;
                 entry.InheritedTextShadow = null;

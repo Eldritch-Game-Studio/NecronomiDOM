@@ -89,6 +89,7 @@ public sealed partial class FlowLayout
         _containing.Clear(); _deferred.Clear();
         _opacityOwners.Clear();
         _transformOwners.Clear();
+        ResetPolygonPaint();
         _foregroundPaint?.Clear();
         var initial = new PositionedContainingBlock(_viewport, _viewport, true);
         _containing.Add(new ContainingContext(null, initial));
@@ -102,6 +103,7 @@ public sealed partial class FlowLayout
         {
             Block(document.DocumentElement ?? throw new InvalidOperationException("Missing document root."), 0, 0, initial, 0);
             CompletePaintHitOrder();
+            CapturePolygonPaintSlots();
             CompleteHitGeometry();
             return _result;
         }

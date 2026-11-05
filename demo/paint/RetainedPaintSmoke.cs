@@ -196,6 +196,11 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(_host.PaintRevision - paint >= Frames / 2 && grew, "inserting a different-kind context repaints structurally");
         Check(kept && PaintTargets().SetEquals(targets), "mixed-kind insertion keeps every existing polygon, clip and opacity target");
 
+        // Inline clip-path points and an absolute fill on a childless polygon update the retained clip and fill
+        // directly: no layout pass, no structural repaint, and the painted run carries the new values. Documents
+        // with text controls keep the full path, so this uses its own small document.
+        await RetainedPolygonPaint(path);
+
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
         await Settle(1281);
@@ -225,4 +230,40 @@ public partial class RetainedPaintSmoke : Godot.Node
 
     private static bool Near(Color actual, Color expected) => Math.Abs(actual.R - expected.R) < 0.03f
         && Math.Abs(actual.G - expected.G) < 0.03f && Math.Abs(actual.B - expected.B) < 0.03f;
+
+    private async Task RetainedPolygonPaint(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "polygons.html"), "<!doctype html><html><head><style>" +
+            "html,body,div{display:block;margin:0;padding:0;border:0;box-sizing:border-box} html,body{width:100%;height:100%;background-color:#202c39} " +
+            "#wrap{position:absolute;left:40px;top:40px;width:400px;height:300px;overflow:hidden;opacity:.8} " +
+            "#sector{position:absolute;left:20px;top:20px;width:200px;height:160px} #other{position:absolute;left:240px;top:20px;width:60px;height:60px;background-color:#3366aa}" +
+            "</style></head><body><div id=\"wrap\"><div id=\"sector\" style=\"clip-path:polygon(0% 0%, 90% 0%, 90% 90%);background-color:rgb(20, 120, 30)\"></div>" +
+            "<div id=\"other\"></div></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/polygons.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        host.FlushPendingLayout();
+        await NextFrames(2);
+        int paint = host.PaintRevision, layout = host.LayoutRevision, geometry = host.GeometryRevision;
+        var targets = host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet();
+        var sector = (HTMLElement)host.Document.GetElementById("sector")!;
+        bool painted = true;
+        for (int frame = 0; frame < Frames / 2; frame++)
+        {
+            int red = frame % 2 == 0 ? 10 : 200;
+            sector.Style.SetProperty("clip-path", frame % 2 == 0 ? "polygon(0% 10%, 90% 0%, 100% 90%)" : "polygon(0% 0%, 90% 0%, 90% 90%)");
+            sector.Style.SetProperty("background-color", $"rgb({red}, 120, 30)");
+            host.FlushPendingLayout();
+            await NextFrames(1);
+            painted &= host.DisplayList.Runs.OfType<PolygonRun>().Any(run => Math.Abs(run.Color.R - red / 255f) < 0.002f);
+        }
+        Check(host.LayoutRevision == layout && host.PaintRevision == paint && host.GeometryRevision - geometry >= Frames / 2,
+            $"inline polygon clip and fill changes skip layout and repaint (layout +{host.LayoutRevision - layout}, paint +{host.PaintRevision - paint}, geometry +{host.GeometryRevision - geometry})");
+        Check(painted, "retained polygon fill carries each new color");
+        Check(host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet().SetEquals(targets),
+            "retained polygon clip and fill changes keep every target");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(2);
+    }
 }

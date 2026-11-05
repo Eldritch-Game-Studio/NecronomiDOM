@@ -49,25 +49,41 @@ public sealed partial class StyleEngine
         entry.InlineTransformChanged = false;
         return true;
     }
-
-    private static bool InlineCompositorOnlyChange(Entry entry, bool transform)
+    /// <summary>Consumes a guarded paint-only clip/background delta. Layout must still admit the
+    /// existing leaf polygon topology, and the painter must reject transitions or incompatible carriers.</summary>
+    public bool TryConsumeInlinePolygonPaintChange(Element element)
     {
-        if (entry.Element is not HTMLElement html || entry.GeometryInline == null) return false;
+        ArgumentNullException.ThrowIfNull(element);
+        if (!_entries.TryGetValue(element, out var entries) || entries.Normal is not { } entry) return false;
+        Refresh(entry);
+        if (!entry.InlinePolygonPaintChanged) return false;
+        entry.InlinePolygonPaintChanged = false;
+        return true;
+    }
+
+    private enum InlineCompositorKind { None, Opacity, Transform, PolygonPaint }
+
+    private static InlineCompositorKind InlineCompositorOnlyChange(Entry entry)
+    {
+        if (entry.Element is not HTMLElement html || entry.GeometryInline == null) return InlineCompositorKind.None;
         var current = html.Style.Declarations;
-        if (current.Count != entry.GeometryInline.Count) return false;
-        bool changed = false;
+        if (current.Count != entry.GeometryInline.Count) return InlineCompositorKind.None;
+        var kind = InlineCompositorKind.None;
         for (int i = 0; i < current.Count; i++)
         {
             var previous = entry.GeometryInline[i];
             var next = current[i];
-            if (next.Name != previous.Declaration.Name || next.Important != previous.Declaration.Important) return false;
+            if (next.Name != previous.Declaration.Name || next.Important != previous.Declaration.Important) return InlineCompositorKind.None;
             if (ReferenceEquals(next.Value, previous.Declaration.Value)) continue;
-            bool property = transform ? TransformProperty(next.Name) : next.Name == "opacity";
-            if (!property || !previous.Won || !StableInlineValue(next.Value) ||
-                !IndependentGeometry(next.Name, next.Value)) return false;
-            changed = true;
+            var property = TransformProperty(next.Name) ? InlineCompositorKind.Transform :
+                next.Name == "opacity" ? InlineCompositorKind.Opacity :
+                next.Name is "clip-path" or "background-color" ? InlineCompositorKind.PolygonPaint : InlineCompositorKind.None;
+            if (property == InlineCompositorKind.None || kind != InlineCompositorKind.None && kind != property ||
+                !previous.Won || !StableInlineValue(next.Value) || !IndependentGeometry(next.Name, next.Value))
+                return InlineCompositorKind.None;
+            kind = property;
         }
-        return changed;
+        return kind;
     }
 
     // Only a previously winning inline declaration at the identical cascade priority

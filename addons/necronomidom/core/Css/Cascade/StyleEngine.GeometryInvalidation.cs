@@ -65,18 +65,18 @@ public sealed partial class StyleEngine
             DefinesQueryContainer(entries.Normal) || !InlineGeometryOnlyChange(entries.Normal) ||
             !InlineDisplayUnchanged(entries.Normal) || DescendantDependsOnGeometry(element)) return false;
         bool canRefresh = entries.Normal.Generation == _generation || entries.Normal.GeometryRefreshGeneration == _generation;
-        bool opacityOnly = InlineCompositorOnlyChange(entries.Normal, transform: false);
-        bool transformOnly = InlineCompositorOnlyChange(entries.Normal, transform: true);
+        var compositor = InlineCompositorOnlyChange(entries.Normal);
         // An originating element is the inheritance parent of its own generated pseudos.
         // Their paint must also update when they explicitly inherit opacity.
         foreach (var pseudo in entries.Pseudos.Values)
-            if (pseudo.ReadsParentGeometry) opacityOnly = transformOnly = false;
+            if (pseudo.ReadsParentGeometry) compositor = InlineCompositorKind.None;
         // Inherited paint can already require a full compute. Geometry still cannot change
         // matched selectors here, so retain any valid rule collection for that fallback.
         entries.MarkStale(reuseRules: true, generation: _generation);
         if (canRefresh) entries.Normal.GeometryRefreshGeneration = _generation;
-        entries.Normal.InlineOpacityChanged = canRefresh && opacityOnly;
-        entries.Normal.InlineTransformChanged = canRefresh && transformOnly;
+        entries.Normal.InlineOpacityChanged = canRefresh && compositor == InlineCompositorKind.Opacity;
+        entries.Normal.InlineTransformChanged = canRefresh && compositor == InlineCompositorKind.Transform;
+        entries.Normal.InlinePolygonPaintChanged = canRefresh && compositor == InlineCompositorKind.PolygonPaint;
         return true;
     }
 
