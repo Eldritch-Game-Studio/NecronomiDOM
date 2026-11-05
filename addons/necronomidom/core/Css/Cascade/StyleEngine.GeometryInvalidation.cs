@@ -16,6 +16,15 @@ public sealed partial class StyleEngine
     private static bool GeometryProperty(string name) => name is "left" or "right" or "top" or "bottom" or
         "width" or "height" or "translate" or "rotate" or "scale" or "transform" or "transform-origin" or "opacity" or "display";
 
+    private static bool HasInlineGeometry(Element element)
+    {
+        if (element is not HTMLElement html) return false;
+        var declarations = html.Style.Declarations;
+        for (int i = 0; i < declarations.Count; i++)
+            if (GeometryProperty(declarations[i].Name)) return true;
+        return false;
+    }
+
     private static bool InlineGeometryOnly(Element element)
     {
         if (element is not HTMLElement html) return false;
@@ -25,11 +34,35 @@ public sealed partial class StyleEngine
         return true;
     }
 
+    // Container dimensions participate in descendants' computed cq* values, not just their used boxes.
+    private static bool DefinesQueryContainer(Entry entry) =>
+        entry.Values.TryGetValue("container-type", out var value) &&
+        value is not CssKeywordValue { Value: "normal" };
+
+    private static bool InlineGeometryOnlyChange(Entry entry)
+    {
+        // Preserve the existing own-entry invalidation for added/removed geometry declarations,
+        // including a previously empty inline style. Scalar refresh still requires matching snapshots.
+        if (entry.InlineGeometryOnly && InlineGeometryOnly(entry.Element)) return true;
+        if (entry.Element is not HTMLElement html || entry.GeometryInline == null) return false;
+        var current = html.Style.Declarations;
+        if (current.Count != entry.GeometryInline.Count) return false;
+        for (int i = 0; i < current.Count; i++)
+        {
+            var before = entry.GeometryInline[i].Declaration;
+            var after = current[i];
+            if (before.Name != after.Name || before.Important != after.Important) return false;
+            if (!ReferenceEquals(before.Value, after.Value) && !GeometryProperty(after.Name)) return false;
+        }
+        return true;
+    }
+
     private bool TryInvalidateInlineGeometry(Element element)
     {
         if (_geometryStyleSensitive || ValueContext != null || ContainerEnvironment != null ||
-            !_entries.TryGetValue(element, out var entries) || entries.Normal?.InlineGeometryOnly != true ||
-            !InlineGeometryOnly(element) || !InlineDisplayUnchanged(entries.Normal) || DescendantInheritsGeometry(element)) return false;
+            !_entries.TryGetValue(element, out var entries) || entries.Normal == null ||
+            DefinesQueryContainer(entries.Normal) || !InlineGeometryOnlyChange(entries.Normal) ||
+            !InlineDisplayUnchanged(entries.Normal) || DescendantDependsOnGeometry(element)) return false;
         bool canRefresh = entries.Normal.Generation == _generation || entries.Normal.GeometryRefreshGeneration == _generation;
         bool opacityOnly = InlineCompositorOnlyChange(entries.Normal, transform: false);
         bool transformOnly = InlineCompositorOnlyChange(entries.Normal, transform: true);
@@ -58,17 +91,17 @@ public sealed partial class StyleEngine
         return ReferenceEquals(before?.Value, after?.Value) && before?.Important == after?.Important;
     }
 
-    private bool DescendantInheritsGeometry(Node node)
+    private bool DescendantDependsOnGeometry(Node node)
     {
         for (Node? child = node.FirstChild; child != null; child = child.NextSibling)
         {
             if (child is Element element && _entries.TryGetValue(element, out var entries))
             {
-                if (entries.Normal?.ReadsParentGeometry == true) return true;
+                if (entries.Normal is { } normal && (normal.ReadsParentGeometry || DefinesQueryContainer(normal))) return true;
                 foreach (var pseudo in entries.Pseudos.Values)
                     if (pseudo.ReadsParentGeometry) return true;
             }
-            if (DescendantInheritsGeometry(child)) return true;
+            if (DescendantDependsOnGeometry(child)) return true;
         }
         return false;
     }
