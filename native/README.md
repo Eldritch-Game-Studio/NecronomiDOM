@@ -8,6 +8,47 @@ native/build.sh linux-x64
 
 NativeAOT builds for the host operating system. The desktop distribution targets are Linux x64/arm64, Windows x64, and macOS x64/arm64; each must be built and installed-package-qualified on its own native runner with official standard Godot 4.7.2. Those targets are not evidence that any unexercised platform/export works. Android, iOS and Web are outside this distribution scope.
 
+## CI policy
+
+| Event/change | Required work |
+| --- | --- |
+| Ordinary code PR | Unit tests, capability checks, Linux x64 NativeAOT build and all existing native/.NET runtime smokes |
+| Code push to `main` (including native/tooling code) | The same fast checks; no five-platform matrix or distribution ZIP |
+| Native bindings, SDK pin/patch, build or packaging PR | Fast checks **plus all five native builds and freshly installed final-ZIP qualification on each target**, before merge |
+| Documentation/media-only PR or `main` push | Offline documentation/link/content checks, capability freshness and Python helper regressions; no .NET, engine or native build |
+| `v*` tag push | All five native builds, runtime smokes and exact final-ZIP qualification on every target before GitHub release publication |
+| Manual dispatch | Full five-platform qualification by default; `partial=true` is Linux-only diagnostic packaging, never publication |
+
+`scripts/ci-policy.py` classifies complete Git diffs: PRs compare their head with the
+base/head merge base; pushes compare before/after, including an empty-tree first push.
+Deleted and renamed files count under both old and new paths. Markdown, `LICENSE`
+and allowlisted media under `docs/images/` are documentation; unknown paths get code
+checks, never a silent skip. Mixed changes use the stronger gate. Native inputs
+include `native/`, shared `addons/necronomidom/runtime/` bindings, workflow/helper
+scripts, project/build properties, SDK/NuGet pins and extension descriptors. Shared
+runtime changes conservatively take the full PR gate because that code is adapted
+and compiled into the native extension; core-only changes take the fast gate.
+
+Only a newer run of the **same PR** automatically cancels its predecessor. Main,
+manual and release runs have separate run-ID groups and are never automatically
+cancelled. Manual runs, including those selecting a tag, cannot publish a release.
+`scripts/check-docs.py` checks authored Markdown local file/image targets, UTF-8,
+nonempty content, fenced code, generated JSON and nonempty documentation media.
+HTTP(S) links are syntax-checked offline, not fetched; remote availability and
+heading-fragment correctness are not claimed. Vendored upstream Markdown is excluded.
+
+The Linux producer caches **only pinned SDK dependencies**, not addon NativeAOT
+binaries. The exact `ndom-sdk-v1-Linux-X64-<sha256>` key and persistent work directory
+hash the complete lock/patch/build/workflow inputs plus actual .NET, compiler/linker,
+Python/Git, OS/runner-image, installed-package and compiler-flag identity. There are
+no broad restore keys; a changed identity gets a different directory. The SDK's own
+full commit/patch identity checks still run. Hosted targets consume that run's
+portable managed-feed artifact and build their own native libraries.
+All binary handoffs use run-scoped GitHub artifacts, including self-hosted Linux:
+failed-job-only reruns can retrieve the original producer's artifact instead of
+assuming an attempt-local directory exists. This costs artifact transport but
+preserves provenance and never invents a replacement build.
+
 ## Decision: withdraw SDK ownership at public main-loop shutdown
 
 `godot-dotnet.lock` pins upstream source commit `965a09db8b42f79d7987270063eb19abb985ceb6` and the checked-in `patches/godot-dotnet-scene-teardown.patch`. The patch changes the SDK's own lifecycle, not the engine and not an addon-side private-access workaround:
