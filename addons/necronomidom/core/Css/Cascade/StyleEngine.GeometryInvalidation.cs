@@ -14,7 +14,8 @@ public sealed partial class StyleEngine
     // These affect used geometry/paint, not inherited font/color/custom values. Layout still runs normally:
     // descendant percentages resolve against the new boxes, and em values keep the unchanged inherited font.
     private static bool GeometryProperty(string name) => name is "left" or "right" or "top" or "bottom" or
-        "width" or "height" or "translate" or "rotate" or "scale" or "transform" or "transform-origin" or "opacity" or "display";
+        "width" or "height" or "translate" or "rotate" or "scale" or "transform" or "transform-origin" or "opacity" or "display" or
+        "clip-path" or "background-color";
 
     private static bool HasInlineGeometry(Element element)
     {
@@ -70,7 +71,9 @@ public sealed partial class StyleEngine
         // Their paint must also update when they explicitly inherit opacity.
         foreach (var pseudo in entries.Pseudos.Values)
             if (pseudo.ReadsParentGeometry) opacityOnly = transformOnly = false;
-        entries.MarkStale();
+        // Inherited paint can already require a full compute. Geometry still cannot change
+        // matched selectors here, so retain any valid rule collection for that fallback.
+        entries.MarkStale(reuseRules: true, generation: _generation);
         if (canRefresh) entries.Normal.GeometryRefreshGeneration = _generation;
         entries.Normal.InlineOpacityChanged = canRefresh && opacityOnly;
         entries.Normal.InlineTransformChanged = canRefresh && transformOnly;

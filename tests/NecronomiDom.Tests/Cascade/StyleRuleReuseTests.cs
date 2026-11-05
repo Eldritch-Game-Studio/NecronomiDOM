@@ -52,6 +52,32 @@ public sealed class StyleRuleReuseTests
         }
         Assert.That(styles.ReusedRuleCollectionCount, Is.GreaterThan(0));
     }
+    [TestCase(false)]
+    [TestCase(true)]
+    public void InheritedPaletteAndPolygonChangesRetainMatchedRulesInEitherOrder(bool parentFirst)
+    {
+        var (doc, styles) = Load(); var (control, reference) = Load();
+        Compare(doc, styles, control, reference);
+        var parent = (HTMLElement)doc.GetElementById("p")!;
+        var child = (HTMLElement)doc.GetElementById("c")!;
+        for (int i = 0; i < 20; i++)
+        {
+            foreach (var document in new[] { doc, control })
+            {
+                void Palette() => ((HTMLElement)document.GetElementById("p")!).Style.SetProperty("--paint", i % 2 == 0 ? "green" : "blue");
+                void Polygon() => ((HTMLElement)document.GetElementById("c")!).Style.SetProperty("clip-path", $"polygon(0px 0px,{30 + i}px 0px,20px 20px)");
+                if (parentFirst) { Palette(); Polygon(); } else { Polygon(); Palette(); }
+            }
+            // Refresh ancestors first so the next rule-reuse increment belongs to this polygon.
+            _ = styles.GetComputedStyle(parent).GetPropertyValue("--paint");
+            long before = styles.ReusedRuleCollectionCount;
+            _ = styles.GetComputedStyle(child).GetPropertyValue("clip-path");
+            Assert.That(styles.ReusedRuleCollectionCount, Is.GreaterThan(before), "Full inherited-color compute must not rematch unchanged selectors.");
+            reference.Invalidate();
+            Compare(doc, styles, control, reference);
+        }
+        Assert.That(styles.GeometryRefreshCount, Is.Zero, "Inherited palette changes still require the full computed cascade.");
+    }
     [TestCase("[style*='green']{width:12px}")]
     [TestCase("#p{width:attr(data-width px)}")]
     public void StyleAttributeDependenciesDoNotReuseRules(string css)

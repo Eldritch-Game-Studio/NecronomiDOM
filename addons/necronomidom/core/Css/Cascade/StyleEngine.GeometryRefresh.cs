@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NecronomiDom.Css.Om;
 using NecronomiDom.Css.Values;
+using NecronomiDom.Css.Values.Colors;
 using NecronomiDom.Dom;
 
 namespace NecronomiDom.Css.Cascade;
@@ -124,6 +125,7 @@ public sealed partial class StyleEngine
 
     private static bool StableInlineValue(CssValue value)
     {
+        if (IndependentColor(value)) return true;
         if (value is CssKeywordValue || value.GetType() == typeof(CssNumberValue) ||
             value.GetType() == typeof(CssIntegerValue) || value.GetType() == typeof(CssPercentageValue)) return true;
         if (value.GetType() == typeof(CssDimensionValue)) return value is CssDimensionValue { Unit: "px" or "deg" };
@@ -133,14 +135,22 @@ public sealed partial class StyleEngine
             return true;
         }
         return value is CssFunctionValue function && function.Name is
-            ("matrix" or "translate" or "translatex" or "translatey" or "rotate" or "scale" or "scalex" or "scaley" or "skew" or "skewx" or "skewy")
+            ("matrix" or "translate" or "translatex" or "translatey" or "rotate" or "scale" or "scalex" or "scaley" or "skew" or "skewx" or "skewy" or "polygon")
             && function.Arguments != null && StableInlineValue(function.Arguments);
     }
     private static bool TransformProperty(string property) =>
         property is "translate" or "rotate" or "scale" or "transform" or "transform-origin";
 
+    // Named/system/current colors and relative-color functions retain their normal context resolution.
+    // Literal rgb()/color() also retain a specified-function AST; only its context-free channels qualify.
+    private static bool IndependentColor(CssValue value) =>
+        value is CssAbsoluteColorValue { Keyword: null, SpecifiedFunction: null or { Origin: null, ContainsMath: false } };
+
     private static bool IndependentGeometry(string property, CssValue value)
     {
+        if (property == "background-color") return IndependentColor(value);
+        if (property == "clip-path")
+            return value is CssFunctionValue { Name: "polygon", Arguments: { } points } && StableInlineValue(points);
         // The guarded transform subset contains no inherited or external unit bases.
         if (TransformProperty(property)) return StableInlineValue(value);
         if (property is not ("left" or "right" or "top" or "bottom" or "width" or "height" or "opacity" or "rotate")) return false;
