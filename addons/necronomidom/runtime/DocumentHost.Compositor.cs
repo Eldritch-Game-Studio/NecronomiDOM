@@ -14,6 +14,7 @@ public partial class DocumentHost
     private readonly List<(Element Element, int Ordinal, double Alpha)> _inlineOpacityUpdates = new();
     private readonly List<(Element Element, int Ordinal, UsedBoxTransform Transform)> _inlineTransformUpdates = new();
     private readonly List<LeafPolygonPaintUpdate> _inlinePolygonPaintUpdates = new();
+    private readonly List<AbsolutePositionUpdate> _inlinePositionUpdates = new();
     public int GeometryRevision { get; private set; }
 
     private bool TryUpdateInlineCompositor()
@@ -21,6 +22,7 @@ public partial class DocumentHost
         if (_invalidation!.StyleSheetsChanged() || Styles.Media.Width != Size.X || Styles.Media.Height != Size.Y)
             return false;
         _inlineOpacityUpdates.Clear(); _inlineTransformUpdates.Clear(); _inlinePolygonPaintUpdates.Clear();
+        _inlinePositionUpdates.Clear();
         try
         {
             foreach (var element in _inlineStyleChanges)
@@ -32,6 +34,12 @@ public partial class DocumentHost
                     if (_scaleController.Contains(element) || target.Enabled && (target.Duration > 0 || target.Delay > 0) ||
                         !_layout!.TryPrepareTransformUpdate(element, out int ordinal, out var transform)) return false;
                     _inlineTransformUpdates.Add((element, ordinal, transform));
+                    continue;
+                }
+                if (Styles.TryConsumeInlinePositionChange(element))
+                {
+                    if (!_layout!.TryPrepareAbsolutePositionUpdate(element, out var update)) return false;
+                    _inlinePositionUpdates.Add(update);
                     continue;
                 }
                 if (Styles.TryConsumeInlinePolygonPaintChange(element))
@@ -67,7 +75,10 @@ public partial class DocumentHost
                 }
                 _inlineOpacityUpdates.Add((element, group, opacity.Opacity));
             }
-            if (_inlinePolygonPaintUpdates.Count != 0)
+            // Prepared leaf paint uses the old absolute bounds. A mixed position/leaf-paint
+            // transaction retains the full path rather than apply a stale prepared carrier.
+            if (_inlinePositionUpdates.Count != 0 && _inlinePolygonPaintUpdates.Count != 0) return false;
+            if (_inlinePolygonPaintUpdates.Count != 0 || _inlinePositionUpdates.Count != 0)
             {
                 // Text-control selection/caret runs are a separate projection of the layout list.
                 // Keep their existing full update path rather than overwrite that borrowed paint.
@@ -77,6 +88,8 @@ public partial class DocumentHost
             }
             foreach (var update in _inlineTransformUpdates)
                 _layout!.ApplyTransformUpdate(update.Element, update.Transform);
+            bool positionChanged = _inlinePositionUpdates.Count != 0 &&
+                _layout!.ApplyAbsolutePositionUpdates(CollectionsMarshal.AsSpan(_inlinePositionUpdates));
             bool clipChanged = false;
             if (_inlinePolygonPaintUpdates.Count != 0)
             {
@@ -87,6 +100,10 @@ public partial class DocumentHost
                 foreach (var update in _inlinePolygonPaintUpdates)
                     _backgroundColorBefore[update.Element] = update.Fill.Color;
             }
+            else if (_inlinePositionUpdates.Count != 0)
+            {
+                if (!_paint.TryUpdateRetained(DisplayList, _shaper!, _images!)) return false;
+            }
             else
                 foreach (var update in _inlineTransformUpdates)
                     _paint.UpdateTransform(update.Ordinal, update.Transform.Matrix);
@@ -95,7 +112,7 @@ public partial class DocumentHost
                 _paint.UpdateOpacity(update.Ordinal, (float)update.Alpha);
                 _opacityBefore[update.Element] = update.Alpha;
             }
-            if (_inlineTransformUpdates.Count != 0 || clipChanged)
+            if (_inlineTransformUpdates.Count != 0 || clipChanged || positionChanged)
             {
                 GeometryRevision++;
                 _documentInput!.UpdateGeometry(DisplayList, Size.X, Size.Y);
@@ -105,6 +122,7 @@ public partial class DocumentHost
         finally
         {
             _inlineOpacityUpdates.Clear(); _inlineTransformUpdates.Clear(); _inlinePolygonPaintUpdates.Clear();
+            _inlinePositionUpdates.Clear();
         }
     }
 }

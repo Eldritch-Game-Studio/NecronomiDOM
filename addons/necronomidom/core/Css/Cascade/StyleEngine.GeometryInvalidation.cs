@@ -77,6 +77,7 @@ public sealed partial class StyleEngine
         entries.Normal.InlineOpacityChanged = canRefresh && compositor == InlineCompositorKind.Opacity;
         entries.Normal.InlineTransformChanged = canRefresh && compositor == InlineCompositorKind.Transform;
         entries.Normal.InlinePolygonPaintChanged = canRefresh && compositor == InlineCompositorKind.PolygonPaint;
+        entries.Normal.InlinePositionChanged = canRefresh && compositor == InlineCompositorKind.AbsolutePosition;
         return true;
     }
 
