@@ -49,7 +49,14 @@ public sealed partial class FlowLayout
             _result.Runs.Add(new BoxRun(outline, new BoxStyle(default, color, outlineWidth, radius > 0 ? Math.Max(0, radius + expansion) : 0)));
         }
         if (polygon != null)
-        { _result.Runs.Insert(runStart, new BeginPolygonClipRun(box.BorderBox, polygon)); _result.Runs.Add(new EndPolygonClipRun()); }
+        {
+            var clip = new BeginPolygonClipRun(box.BorderBox, polygon);
+            _result.Runs.Insert(runStart, clip);
+            _result.Runs.Add(new EndPolygonClipRun());
+            if (element.FirstChild == null && element is HTMLElement html &&
+                (html.Style.GetSpecifiedValue("clip-path") != null || html.Style.GetSpecifiedValue("background-color") != null))
+                _polygonPaintOwners.Add(clip, element);
+        }
         BeginOpacityPaint(element, box.BorderBox, context.GroupOpacity, runStart);
     }
     private Rect EffectiveClipBounds(PositionedPaintContext context) => new(

@@ -60,7 +60,7 @@ public partial class DocumentPaint
 
     /// <summary>Validate the entire topology before touching native state. Unchanged glyph/mask/image
     /// nodes and buffers stay borrowed and attached; only actual run deltas reach the compositor.</summary>
-    private bool TryUpdateRetained(DisplayList list, INativeFontFamilies fonts, NativeImageSource images)
+    internal bool TryUpdateRetained(DisplayList list, INativeFontFamilies fonts, NativeImageSource images)
     {
         if (_retainedBindings.Count == 0 || list.Runs.Count != _retainedBindings.Count) return false;
         for (int i = 0; i < list.Runs.Count; i++)
