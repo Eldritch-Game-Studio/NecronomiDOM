@@ -74,7 +74,12 @@ public sealed partial class AccessibleTree : IDomChangeSink, IDisposable
         return _changed.Count != 0 || _removed.Count != 0;
     }
     /// <summary>Called after stylesheet/media/layout changes; does not publish or run in clean frames.</summary>
-    public void InvalidateRendering() { ObjectDisposedException.ThrowIf(_disposed, this); _structureDirty = true; }
+    public void InvalidateRendering() { ObjectDisposedException.ThrowIf(_disposed, this); InvalidateStructure(); }
+    private void InvalidateStructure()
+    {
+        _structureDirty = true;
+        _dirty.Clear();
+    }
     private void Recompose()
     {
         _seen.Clear(); _ordered.Clear(); _idReferences.Clear();
@@ -191,24 +196,29 @@ public sealed partial class AccessibleTree : IDomChangeSink, IDisposable
     }
     private void Mark(Node source)
     {
+        // A full recomposition already refreshes every current source. An inactive
+        // reader must not retain every discarded DOM row through its dirty queue.
+        if (_structureDirty || !source.IsConnected) return;
         _dirty.Add(source);
         if (_dependents.TryGetValue(source, out var users)) foreach (var user in users) _dirty.Add(user);
         for (var p = source.ParentNode; p != null; p = p.ParentNode) _dirty.Add(p);
     }
     private void ChangedNode(AccessibleNode ax) { if (!_changed.Contains(ax)) { ax.Revision++; _changed.Add(ax); } }
     bool IDomChangeSink.RequiresAttributeOldValue => _previous?.RequiresAttributeOldValue == true;
-    void IDomChangeSink.ChildrenChanged(Node n) { _previous?.ChildrenChanged(n); _structureDirty = true; Mark(n); }
-    void IDomChangeSink.NodeInserted(Node n) { _previous?.NodeInserted(n); _structureDirty = true; }
-    void IDomChangeSink.NodeRemoved(Node n, Node parent) { _previous?.NodeRemoved(n, parent); _structureDirty = true; Mark(parent); }
+    void IDomChangeSink.ChildrenChanged(Node n) { _previous?.ChildrenChanged(n); InvalidateStructure(); }
+    void IDomChangeSink.NodeInserted(Node n) { _previous?.NodeInserted(n); InvalidateStructure(); }
+    void IDomChangeSink.NodeRemoved(Node n, Node parent) { _previous?.NodeRemoved(n, parent); InvalidateStructure(); }
     void IDomChangeSink.CharacterDataChanged(CharacterData n)
     {
-        _previous?.CharacterDataChanged(n); Mark(n);
-        if (n is Text && string.IsNullOrWhiteSpace(n.Data) != (_nodes.GetValueOrDefault(n) == null)) _structureDirty = true;
+        _previous?.CharacterDataChanged(n);
+        if (n is Text && string.IsNullOrWhiteSpace(n.Data) != (_nodes.GetValueOrDefault(n) == null)) InvalidateStructure();
+        else Mark(n);
     }
     void IDomChangeSink.AttributeChanged(Element e, string name, string? old)
     {
-        _previous?.AttributeChanged(e, name, old); Mark(e);
-        if (name is "id" or "role" or "slot" or "name" or "hidden" or "inert" or "aria-hidden" or "aria-owns" or "style" or "class" or "open" or "tabindex" or "type") _structureDirty = true;
+        _previous?.AttributeChanged(e, name, old);
+        if (name is "id" or "role" or "slot" or "name" or "hidden" or "inert" or "aria-hidden" or "aria-owns" or "style" or "class" or "open" or "tabindex" or "type") InvalidateStructure();
+        else Mark(e);
     }
     public void Dispose()
     {

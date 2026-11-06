@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NecronomiDom.Accessibility;
+using NecronomiDom.Css.Cascade;
 using NecronomiDom.Dom;
 using NecronomiDom.Html;
 using NecronomiDom.Layout;
@@ -233,6 +235,91 @@ public sealed class AccessibleTreeTests
         doc.GetElementById("y")!.TextContent = "Changed"; tree.Synchronize(); Assert.That(button.Name, Is.EqualTo("Changed"));
         doc.GetElementById("x")!.RemoveAttribute("aria-owns"); tree.Synchronize();
         Assert.That(button.Name, Is.Empty); Assert.That(button.Children, Is.Empty);
+    }
+    [TestCase(false)]
+    [TestCase(true)]
+    public void PausedProjectionDoesNotRetainRemovedStyledSuggestionRows(bool synchronizedBeforePause)
+    {
+        var doc = Parse("<div id=suggestions></div><button id=keep>Before</button>");
+        var styles = new StyleEngine(doc);
+        using var tree = new AccessibleTree(doc);
+        if (synchronizedBeforePause) tree.Synchronize();
+        var original = tree.Get(doc.GetElementById("keep")!);
+        var host = (HTMLElement)doc.GetElementById("suggestions")!;
+        var retired = RetireStyledSuggestionRows(doc, styles, host);
+        // Drain both real style sinks' bounded mutation queues, leaving AX as the
+        // only pending reader. Its weak style entries must not pin retired rows.
+        styles.GetComputedStyle(host);
+        doc.DefaultView.GetComputedStyle(host);
+        CollectUnreachableNodes();
+        foreach (var row in retired)
+            Assert.That(row.TryGetTarget(out _), Is.False, "An unread accessibility projection retained a discarded suggestion row.");
+        GC.KeepAlive(styles);
+        GC.KeepAlive(doc);
+        GC.KeepAlive(tree);
+        doc.GetElementById("keep")!.TextContent = "After pause";
+        tree.Synchronize();
+        var resumed = Ax(tree, doc, "keep");
+        Assert.That(resumed.Name, Is.EqualTo("After pause"));
+        if (original != null) Assert.That(resumed, Is.SameAs(original));
+        Assert.That(tree.Nodes.Any(node => node.Source is Element { ClassName: "console-suggestion" }), Is.False);
+        Assert.That(tree.IsDirty, Is.False);
+    }
+    [Test]
+    public void DetachedAttributeChangesDoNotQueueUnpublishedSources()
+    {
+        var doc = Parse("<button id=keep>Keep</button>");
+        using var tree = new AccessibleTree(doc);
+        tree.Synchronize();
+        var retired = CreateDetachedMutationSources(doc);
+        CollectUnreachableNodes();
+        foreach (var source in retired)
+            Assert.That(source.TryGetTarget(out _), Is.False, "Detached nodes cannot affect the published accessibility projection.");
+        Assert.That(tree.IsDirty, Is.False);
+        Assert.That(tree.Synchronize(), Is.False);
+        GC.KeepAlive(doc);
+        GC.KeepAlive(tree);
+    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference<Element>[] RetireStyledSuggestionRows(Document doc, StyleEngine styles, HTMLElement host)
+    {
+        var retired = new WeakReference<Element>[16];
+        for (int i = 0; i < retired.Length; i++)
+        {
+            var row = (HTMLElement)doc.CreateElement("div");
+            row.ClassName = "console-suggestion";
+            var name = (HTMLElement)doc.CreateElement("span");
+            name.TextContent = "Command";
+            var detail = (HTMLElement)doc.CreateElement("span");
+            detail.TextContent = "Details";
+            row.AppendChild(name); row.AppendChild(detail); host.AppendChild(row);
+            styles.GetComputedStyle(row).GetPropertyValue("color");
+            styles.GetComputedStyle(name).GetPropertyValue("color");
+            styles.GetComputedStyle(detail).GetPropertyValue("color");
+            retired[i] = new WeakReference<Element>(row);
+            host.RemoveChild(row);
+        }
+        return retired;
+    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference<Element>[] CreateDetachedMutationSources(Document doc)
+    {
+        var retired = new WeakReference<Element>[16];
+        for (int i = 0; i < retired.Length; i++)
+        {
+            var source = doc.CreateElement("span");
+            source.SetAttribute("aria-label", "Not published");
+            retired[i] = new WeakReference<Element>(source);
+        }
+        return retired;
+    }
+    private static void CollectUnreachableNodes()
+    {
+        // Forced collection is a test-only reachability oracle, never a runtime
+        // memory-management fix. NoInlining keeps factory locals out of the oracle.
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
     }
     [Test]
     public void DisposalRestoresEarlierSinkAndDetachesOldDocument()
