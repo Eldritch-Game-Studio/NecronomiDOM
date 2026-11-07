@@ -210,6 +210,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         await RetainedAbsolutePosition(path);
         // A same-length digit change in a single-line text node replaces its glyph run without relayout.
         await RetainedNumericText(path);
+        // Opacity and clip contexts that appear and disappear across structural rebuilds reuse retained targets.
+        await OscillatingIsolationTargets(path);
 
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
@@ -348,5 +350,52 @@ public partial class RetainedPaintSmoke : Godot.Node
             "digit changes keep shadowed text glyph targets");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(2);
+    }
+
+    private async Task OscillatingIsolationTargets(string path)
+    {
+        var css = new System.Text.StringBuilder("html,body,div{display:block;margin:0;padding:0;border:0;box-sizing:border-box}" +
+            "html,body{width:100%;height:100%;background-color:#243343}");
+        var body = new System.Text.StringBuilder();
+        for (int i = 0; i < 12; i++)
+        {
+            css.Append($"#e{i}{{position:absolute;left:{i % 6 * 16}%;top:{i / 6 * 40}%;width:14%;height:20%;background-color:rgb({60 + i * 15},{200 - i * 10},{90 + i * 7})}}");
+            body.Append($"<div id=\"e{i}\"><div style=\"position:absolute;left:10%;top:10%;width:60%;height:60%;background-color:#f0d070\"></div></div>");
+        }
+        // Wider than 1280 px: six boxes fade and two clip their child, so contexts appear and disappear each toggle.
+        css.Append("@media (min-width:1281px){#e0,#e2,#e4,#e6,#e8,#e10{opacity:.5} #e1,#e3{overflow:hidden;border-radius:12px}}");
+        File.WriteAllText(Path.Combine(_directory, "contexts.html"), "<!doctype html><html><head><style>" + css + "</style></head><body>" + body + "</body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/contexts.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        var seen = new HashSet<ulong>();
+        int Live()
+        {
+            var ids = host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToArray();
+            seen.UnionWith(ids);
+            return ids.Length;
+        }
+        async Task Toggle(bool wide)
+        {
+            host.Size = new Vector2(wide ? 1281 : 1280, 720);
+            host.FlushPendingLayout();
+            await NextFrames(1);
+        }
+        await Toggle(true); int wideLive = Live();
+        await Toggle(false); int narrowLive = Live();
+        int known = seen.Count, paint = host.PaintRevision;
+        for (int cycle = 0; cycle < 24; cycle++)
+        {
+            await Toggle(true); Live();
+            await Toggle(false); Live();
+        }
+        Check(wideLive > narrowLive && host.PaintRevision - paint >= 48,
+            $"context count oscillates across structural rebuilds ({wideLive} wide vs {narrowLive} narrow targets)");
+        Check(seen.Count == known, $"oscillating contexts reuse retained isolation targets ({seen.Count - known} new viewports)");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(3);
+        // Detached spare targets are not in the tree; withdrawing the document must still free every one of them.
+        Check(seen.All(id => GodotObject.InstanceFromId(id) == null), "withdrawing the document frees retained spare targets");
     }
 }

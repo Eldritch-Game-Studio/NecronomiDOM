@@ -8,13 +8,20 @@ namespace NecronomiDom.Runtime;
 
 /// <summary>
 /// One store per DocumentPaint. Retains polygon/context nodes by concrete paint kind across dirty rebuilds;
-/// a different-kind insertion cannot evict unrelated targets. Unused slots still retire at the end of each rebuild.
+/// a different-kind insertion cannot evict unrelated targets. Unused polygon slots retire at the end of each rebuild;
+/// up to <see cref="SpareIsolationTargets"/> unused isolation targets per kind stay detached for the next rebuild.
 /// </summary>
 public sealed class PolygonPaintStore : IDisposable
 {
     private enum SlotKind { Polygon, SinglePolygon, PolygonClip, RectClip, RoundedRectClip, Opacity, Count }
     private readonly List<CanvasItem>?[] _slots = new List<CanvasItem>?[(int)SlotKind.Count];
     private readonly int[] _cursors = new int[(int)SlotKind.Count];
+
+    /// <summary>Detached isolation targets (clip/opacity composites) retained per kind beyond the last rebuild's use.
+    /// A document whose context count oscillates, such as an opacity transition entering and leaving 1, would otherwise
+    /// free and recreate a SubViewport, World2D and material on every structural rebuild. Detached spares do not draw;
+    /// they keep their render target until reused, evicted by a smaller later rebuild, or disposed with the store.</summary>
+    public const int SpareIsolationTargets = 8;
 
     /// <summary>Must precede normal-item cleanup, including DocumentHost's separate Clear calls.</summary>
     public void DetachBeforeClear()
@@ -93,9 +100,10 @@ public sealed class PolygonPaintStore : IDisposable
         {
             var slots = _slots[kind];
             if (slots == null) continue;
-            int cursor = _cursors[kind];
-            for (int i = slots.Count - 1; i >= cursor; i--) slots[i].Free();
-            if (cursor < slots.Count) slots.RemoveRange(cursor, slots.Count - cursor);
+            int keep = _cursors[kind];
+            if (kind >= (int)SlotKind.PolygonClip) keep = Math.Min(slots.Count, keep + SpareIsolationTargets);
+            for (int i = slots.Count - 1; i >= keep; i--) slots[i].Free();
+            if (keep < slots.Count) slots.RemoveRange(keep, slots.Count - keep);
         }
     }
 
