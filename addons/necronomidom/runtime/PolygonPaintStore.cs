@@ -107,6 +107,17 @@ public sealed class PolygonPaintStore : IDisposable
         }
     }
 
+    /// <summary>Shrinks the detached spare isolation targets kept for reuse; the nodes stay for the next rebuild.</summary>
+    internal void ReleaseSpareTargets()
+    {
+        for (int kind = (int)SlotKind.PolygonClip; kind < _slots.Length; kind++)
+        {
+            var slots = _slots[kind];
+            if (slots == null) continue;
+            for (int i = _cursors[kind]; i < slots.Count; i++) ((PolygonComposite)slots[i]).ReleaseTarget();
+        }
+    }
+
     public void Dispose()
     {
         DetachBeforeClear();
