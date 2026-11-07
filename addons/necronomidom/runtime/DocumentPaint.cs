@@ -52,7 +52,7 @@ public partial class DocumentPaint : Node2D
         _backgrounds?.BeginRebuild();
         _gradients?.BeginRebuild();
         // Keep withdrawal and unused-slot retirement, without creating paint resources for transparent boxes.
-        if (!list.RequiresRasterization) { EndStoreRebuild(); return; }
+        if (!list.RequiresRasterization) { EndStoreRebuild(); ReleaseTargets(); return; }
         CanvasItem parent = CompositionParent();
         // A bounded row per box permits independent animated colors/radii without mutating
         // another box that happened to share its previous style or rebuilding every glyph.
@@ -186,6 +186,8 @@ public partial class DocumentPaint : Node2D
         // Stores have independent slot order. Fit the actual combined subtree only after
         // every live context is measured, so each child sees its final parent canvas once.
         foreach (var context in _isolatedContexts) context.MeasurePaint();
+        if (TargetsHidden) { ReleaseTargets(); return; }
+        _targetsReleased = false;
         foreach (var context in _isolatedContexts) context.FitTarget(true);
     }
     private void EndStoreRebuild()
@@ -270,6 +272,11 @@ public partial class DocumentPaint : Node2D
     public override void _ExitTree() => Clear();
     public override void _Notification(int what)
     {
+        if (what == NotificationVisibilityChanged)
+        {
+            if (TargetsHidden) ReleaseTargets(); else RestoreTargets();
+            return;
+        }
         if (what != NotificationPredelete) return;
         Clear(); _polygons.Dispose(); _borders?.Dispose(); _ellipticalClips?.Dispose(); _backgrounds?.Dispose();
         _gradients?.Dispose();

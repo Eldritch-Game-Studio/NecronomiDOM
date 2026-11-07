@@ -41,9 +41,11 @@ public partial class DocumentPaint
     }
     private void FitRetainedTargets()
     {
+        if (TargetsHidden) { _dirtyTargets.Clear(); ReleaseTargets(); return; }
         foreach (var context in _isolatedContexts) context.BeginRebuild();
         foreach (var context in _isolatedContexts) context.MeasurePaint();
-        foreach (var context in _isolatedContexts) context.FitTarget(_dirtyTargets.Contains(context));
+        foreach (var context in _isolatedContexts) context.FitTarget(_targetsReleased || _dirtyTargets.Contains(context));
+        _targetsReleased = false;
         _dirtyTargets.Clear();
     }
     private void MarkRetainedContentChanged(CanvasItem? item, bool ownContent)

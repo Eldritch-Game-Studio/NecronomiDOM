@@ -217,6 +217,9 @@ public partial class RetainedPaintSmoke : Godot.Node
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
         await Settle(1281);
         string[] warnings = _warnings.Messages;
+        // A hidden or empty linear document drops its device-sized offscreen targets and restores them on show.
+        // Runs after the per-frame synchronization sample because its pixel checks read the window back.
+        await HiddenDocumentTargets(path);
         foreach (string warning in warnings) GD.Print("RETAINED_PAINT_SMOKE sync warning: " + warning);
         // Godot reports these only from the main thread while a separate render thread draws real frames.
         bool observable = Rendering && !RenderingServer.IsOnRenderThread();
@@ -397,5 +400,88 @@ public partial class RetainedPaintSmoke : Godot.Node
         await NextFrames(3);
         // Detached spare targets are not in the tree; withdrawing the document must still free every one of them.
         Check(seen.All(id => GodotObject.InstanceFromId(id) == null), "withdrawing the document frees retained spare targets");
+    }
+
+    private async Task HiddenDocumentTargets(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "hidden.html"), "<!doctype html><html><head><style>" +
+            "html,body,div,p{display:block;margin:0;padding:0;border:0;box-sizing:border-box} " +
+            "html,body{width:100%;height:100%;color:white;font-size:20px} #root{position:absolute;left:0;top:0;width:100%;height:100%;background-color:#18202a} #root.gone{display:none} " +
+            "#panel{position:absolute;left:60px;top:60px;width:420px;height:240px;border-radius:16px;overflow:hidden;background-color:#2c3a4c} " +
+            "#fade{position:absolute;left:520px;top:60px;width:200px;height:160px;opacity:.5;background-color:#c0a55c} " +
+            "#label{position:absolute;left:20px;top:20px;width:300px}" +
+            "</style></head><body><div id=\"root\"><div id=\"panel\"><p id=\"label\">Hidden target</p></div><div id=\"fade\"></div></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/hidden.html", Size = new Vector2(1280, 720), LinearComposition = true };
+        layer.AddChild(host);
+        await NextFrames(10);
+        host.FlushPendingLayout();
+        await Frame(); await Frame();
+        PolygonComposite[] Composites() => host.FindChildren("*", "", true, false).OfType<PolygonComposite>().ToArray();
+        long Area() => Composites().Sum(c => (long)c.TargetCapacity.X * c.TargetCapacity.Y);
+        bool Released() => Composites().All(c => c.TargetCapacity == new Vector2I(2, 2));
+        ulong Memory() => RenderingServer.GetRenderingInfo(RenderingServer.RenderingInfo.TextureMemUsed);
+        var label = host.Document.GetElementById("label")!;
+        long shownArea = Area();
+        // Headless Godot draws into a 64x64 dummy window, so only a drawing display has full-size targets.
+        Check(Composites().Length >= 3 && (!Rendering || Composites().Max(c => (long)c.TargetCapacity.X * c.TargetCapacity.Y) >= 1280L * 720),
+            $"linear document owns a full-size target ({Composites().Length} composites, {shownArea} target pixels)");
+        byte[]? shown = await CaptureDocument();
+        ulong shownMemory = Memory();
+
+        async Task CheckHiddenAndRestored(string how, Action hide, Action show)
+        {
+            hide();
+            // Texture frees are applied by the render thread; read memory after a frame issued since hiding.
+            await CaptureDocument();
+            ulong hiddenMemory = Memory();
+            Check(Released(), $"{how}: every offscreen target drops to its minimum size");
+            // Changes while hidden must not regrow targets; the final document equals the shown one.
+            label.TextContent = "Changed while hidden"; host.FlushPendingLayout();
+            label.TextContent = "Hidden target"; host.FlushPendingLayout();
+            await Frame();
+            Check(Released(), $"{how}: document changes while hidden do not regrow targets");
+            // Showing measures, regrows and requests captures synchronously, before the next frame is issued.
+            ulong start = Time.GetTicksUsec();
+            show();
+            double showMs = (Time.GetTicksUsec() - start) / 1000.0;
+            byte[]? first = await CaptureDocument();
+            GD.Print($"RETAINED_PAINT_SMOKE {how}: show() took {showMs:F2} ms on the main thread; " +
+                $"texture memory {shownMemory / 1048576.0:F1} -> {hiddenMemory / 1048576.0:F1} MiB while hidden");
+            Check(Area() >= shownArea, $"{how}: showing restores full-size targets");
+            if (Rendering)
+            {
+                Check(shownMemory - hiddenMemory >= (ulong)(1280L * 720 * 4),
+                    $"{how}: hidden document releases texture memory ({(shownMemory - hiddenMemory) / 1048576.0:F1} MiB)");
+                Check(first != null && shown != null && first.AsSpan().SequenceEqual(shown),
+                    $"{how}: the first frame after showing matches the document before hiding");
+            }
+        }
+        await CheckHiddenAndRestored("host hidden", () => host.Visible = false, () => host.Visible = true);
+        await CheckHiddenAndRestored("parent layer hidden", () => layer.Visible = false, () => layer.Visible = true);
+        await CheckHiddenAndRestored("empty document",
+            () => { host.Document.GetElementById("root")!.ClassList.Add("gone"); host.FlushPendingLayout(); },
+            () => { host.Document.GetElementById("root")!.ClassList.Remove("gone"); host.FlushPendingLayout(); });
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(3);
+    }
+
+    private async Task Frame()
+    {
+        if (Rendering) await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        else await NextFrames(1);
+    }
+
+    /// <summary>Captures the first frame whose draw was issued after the caller's last change. With a separate
+    /// render thread, frame_post_draw can still belong to a frame queued before that change; reading the texture
+    /// synchronizes with the render thread, so it returns that first frame's finished pixels.</summary>
+    private async Task<byte[]?> CaptureDocument()
+    {
+        // A headless display never draws a frame; there is nothing to read back.
+        if (!Rendering) { await NextFrames(1); return null; }
+        int issued = Engine.GetFramesDrawn();
+        while (Engine.GetFramesDrawn() <= issued) await NextFrames(1);
+        using var image = GetViewport().GetTexture().GetImage();
+        return image.GetRegion(new Rect2I(0, 0, 1280, 720)).GetData();
     }
 }

@@ -33,7 +33,8 @@ public partial class PolygonComposite : Node2D
     private readonly Color[] _colors = [new Color(1, 1, 1, 1)];
     private Rect2 _logicalBounds;
     private bool _measured, _hasPaint;
-    private Vector2I _capacity = new(2, 2);
+    private static readonly Vector2I MinimumCapacity = new(2, 2);
+    private Vector2I _capacity = MinimumCapacity;
     private Rect2 _deviceBounds;
     private Transform2D _deviceTransform;
     private Transform2D _captureTransform;
@@ -48,6 +49,7 @@ public partial class PolygonComposite : Node2D
     public Vector2I TargetCapacity => _capacity;
     public int TargetResizeCount { get; private set; }
     public int TargetUpdateCount { get; private set; }
+    public int TargetReleaseCount { get; private set; }
 
     protected PolygonComposite()
     {
@@ -201,6 +203,17 @@ public partial class PolygonComposite : Node2D
         bool captureNeeded = _contentDirty || captureChanged;
         if (captureNeeded) RequestCapture();
         if (changed || captureNeeded && TargetUpdateCount == 1) QueueRedraw();
+    }
+    /// <summary>Drops the offscreen target to its minimum size while the owning document is hidden or has
+    /// nothing to paint. The node, World2D and texture wrapper stay alive, so no viewport is recreated;
+    /// the next fit measures again, regrows the target and recaptures before it is drawn.</summary>
+    internal void ReleaseTarget()
+    {
+        _measured = false; _hasPaint = false; _deviceBounds = default; _contentDirty = true;
+        _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
+        QueueRedraw();
+        if (_capacity == MinimumCapacity) return;
+        _capacity = MinimumCapacity; _target.Size = _capacity; TargetReleaseCount++;
     }
     private void RequestCapture()
     {
