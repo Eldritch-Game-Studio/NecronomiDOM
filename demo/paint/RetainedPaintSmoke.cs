@@ -210,6 +210,8 @@ public partial class RetainedPaintSmoke : Godot.Node
         await RetainedAbsolutePosition(path);
         // A same-length digit change in a single-line text node replaces its glyph run without relayout.
         await RetainedNumericText(path);
+        // A host that rewrites the same inline styles every frame, as world-anchored labels do, allocates almost nothing.
+        await IdleInlineStyleWrites(path);
         // Opacity and clip contexts that appear and disappear across structural rebuilds reuse retained targets.
         await OscillatingIsolationTargets(path);
 
@@ -313,6 +315,40 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(host.LayoutRevision == layout && host.PaintRevision == paint && host.GeometryRevision - geometry >= Frames / 2,
             $"absolute inset moves translate the subtree without layout or repaint (layout +{host.LayoutRevision - layout}, paint +{host.PaintRevision - paint}, geometry +{host.GeometryRevision - geometry})");
         Check(moved, "translated descendants land where a fresh layout would place them");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(2);
+    }
+
+    private async Task IdleInlineStyleWrites(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "idle.html"), "<!doctype html><html><head><style>" +
+            "html,body,div{display:block;margin:0;padding:0;border:0;box-sizing:border-box} html,body{width:100%;height:100%;background-color:#202c39;color:white} " +
+            ".label{position:absolute;left:0;top:0;width:160px;height:40px;background-color:#332e27;border-radius:8px}" +
+            "</style></head><body><div class=\"label\" id=\"a\"></div><div class=\"label\" id=\"b\"></div><div class=\"label\" id=\"c\"></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/idle.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        var labels = new[] { "a", "b", "c" }.Select(id => (HTMLElement)host.Document.GetElementById(id)!).ToArray();
+        string[] transforms = { "translate(120.5px, 64.25px)", "translate(480px, 200.75px)", "translate(800.125px, 320px)" };
+        void Write()
+        {
+            for (int i = 0; i < labels.Length; i++)
+            {
+                labels[i].Style.SetProperty("transform", transforms[i]);
+                labels[i].Style.SetProperty("opacity", "0.9");
+            }
+            host.FlushPendingLayout();
+        }
+        for (int frame = 0; frame < 10; frame++) { Write(); await NextFrames(1); }
+        int paint = host.PaintRevision, layout = host.LayoutRevision;
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int frame = 0; frame < Frames; frame++) { Write(); await NextFrames(1); }
+        long perFrame = (GC.GetAllocatedBytesForCurrentThread() - before) / Frames;
+        GD.Print($"RETAINED_PAINT_SMOKE idle inline writes: {perFrame} managed bytes per frame on the main thread");
+        Check(host.LayoutRevision == layout && host.PaintRevision == paint, "rewriting unchanged inline styles is not a document change");
+        // Six unchanged writes, a flush and the host's own frame used to allocate tens of kilobytes per frame.
+        Check(perFrame < 2048, $"an idle document with per-frame inline writes allocates almost nothing ({perFrame} B/frame)");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(2);
     }

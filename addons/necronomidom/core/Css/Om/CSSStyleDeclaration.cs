@@ -136,9 +136,21 @@ namespace NecronomiDom.Css.Om
             if (_propertyGrammar && !property.StartsWith("--", StringComparison.Ordinal) && CssPropertyRegistry.Get(property) == null) return;
             if (string.IsNullOrEmpty(value)) { RemoveProperty(property); return; }
             if (!string.IsNullOrEmpty(priority) && !Dom.Names.AsciiEqual(priority, "important")) return;
+            bool important = !string.IsNullOrEmpty(priority);
+            if (_propertyGrammar)
+            {
+                // Equal property text always parses to the same immutable longhand values, so repeated writes
+                // (a per-frame transform or position) skip tokenizing and grammar matching entirely.
+                if (ParentRule is CSSKeyframeRule && important) return;
+                if (_descriptorRule == "position-try" && (important || !CssDescriptorParser.IsPositionTryProperty(property))) return;
+                var parsed = ParsedValueCache.Parse(property, value);
+                if (parsed == null) return;
+                if (ApplyParsed(parsed, important, false, true)) Changed?.Invoke();
+                return;
+            }
             var declaration = CssParser.ParseDeclaration(CssSerialization.SerializeIdentifier(property) + ":" + value);
             if (declaration == null || declaration.Important) return;
-            if (Apply(declaration with { Important = !string.IsNullOrEmpty(priority) }, false, out var changed, true) && changed) Changed?.Invoke();
+            if (Apply(declaration with { Important = important }, false, out var changed, true) && changed) Changed?.Invoke();
         }
         public string RemoveProperty(string property)
         {
@@ -173,29 +185,46 @@ namespace NecronomiDom.Css.Om
             if (_descriptorRule == "position-try" && (declaration.Important || !CssDescriptorParser.IsPositionTryProperty(declaration.Name))) return false;
             var parsed = CssPropertyParser.Parse(declaration.Name, declaration.Value);
             if (parsed == null) return false;
-            foreach (var (name, value) in parsed.Longhands) changed |= Store(new CssDeclaration(name, value, declaration.Important), preserveImportant, notifyBefore && !changed);
+            changed = ApplyParsed(parsed, declaration.Important, preserveImportant, notifyBefore);
             return true;
         }
-        private bool Store(CssDeclaration declaration, bool preserveImportant, bool notifyBefore = false)
+        private bool ApplyParsed(ParsedProperty parsed, bool important, bool preserveImportant, bool notifyBefore)
+        {
+            bool changed = false;
+            var longhands = parsed.Longhands;
+            for (int i = 0; i < longhands.Count; i++)
+                changed |= Store(longhands[i].Longhand, longhands[i].Value, important, preserveImportant, notifyBefore && !changed);
+            return changed;
+        }
+        private bool Store(CssDeclaration declaration, bool preserveImportant, bool notifyBefore = false) =>
+            Store(declaration.Name, declaration.Value, declaration.Important, preserveImportant, notifyBefore, declaration);
+        /// <summary>Creates the declaration record only when it is actually stored; an unchanged write allocates nothing.</summary>
+        private bool Store(string name, CssValue value, bool important, bool preserveImportant, bool notifyBefore, CssDeclaration? record = null)
         {
             _computedIndex = null;
-            _version++;
             for (var i = 0; i < _declarations.Count; i++)
             {
                 var previous = _declarations[i];
-                if (previous.Name != declaration.Name) continue;
-                if (preserveImportant && previous.Important && !declaration.Important) return false;
+                if (previous.Name != name) continue;
+                if (preserveImportant && previous.Important && !important) return false;
                 var append = false;
                 for (var j = i + 1; j < _declarations.Count; j++)
-                    if (MappingConflicts(declaration.Name, _declarations[j].Name)) { append = true; break; }
-                if (append) { if (notifyBefore) BeforeChange?.Invoke(); _declarations.RemoveAt(i); _declarations.Add(declaration); return true; }
-                if (previous.Important == declaration.Important && SameValue(previous.Value, declaration.Value)) return false;
+                    if (MappingConflicts(name, _declarations[j].Name)) { append = true; break; }
+                if (append)
+                {
+                    if (notifyBefore) BeforeChange?.Invoke();
+                    _version++; _declarations.RemoveAt(i); _declarations.Add(record ?? new CssDeclaration(name, value, important));
+                    return true;
+                }
+                if (previous.Important == important && SameValue(previous.Value, value)) return false;
                 if (notifyBefore) BeforeChange?.Invoke();
-                _declarations[i] = declaration;
+                _version++;
+                _declarations[i] = record ?? new CssDeclaration(name, value, important);
                 return true;
             }
             if (notifyBefore) BeforeChange?.Invoke();
-            _declarations.Add(declaration);
+            _version++;
+            _declarations.Add(record ?? new CssDeclaration(name, value, important));
             return true;
         }
         private static bool SameValue(CssValue first, CssValue second)
@@ -228,9 +257,8 @@ namespace NecronomiDom.Css.Om
         private bool Remove(string name, bool notifyBefore = false)
         {
             _computedIndex = null;
-            _version++;
             for (var i = 0; i < _declarations.Count; i++)
-                if (_declarations[i].Name == name) { if (notifyBefore) BeforeChange?.Invoke(); _declarations.RemoveAt(i); return true; }
+                if (_declarations[i].Name == name) { if (notifyBefore) BeforeChange?.Invoke(); _version++; _declarations.RemoveAt(i); return true; }
             return false;
         }
         private bool SamePriority(IReadOnlyList<string> names, out bool important)
