@@ -16,20 +16,20 @@ public sealed partial class FlowLayout
         return width;
     }
 
-    private bool WidthIsAuto(Element element, CSSStyleDeclaration style)
-        => !SampleWidth(element).HasValue && style.GetPropertyValue("width") == "auto";
+    private bool WidthIsAuto(Element element, BoxStyleSnapshot style)
+        => !SampleWidth(element).HasValue && style.Width.IsAuto;
 
-    private bool WidthHasPercentage(Element element, CSSStyleDeclaration style)
-        => SampleWidth(element) is { } sampled ? sampled.HasPercentage : style.GetPropertyValue("width").EndsWith('%');
+    private bool WidthHasPercentage(Element element, BoxStyleSnapshot style)
+        => SampleWidth(element) is { } sampled ? sampled.HasPercentage : style.Width.IsPercent;
 
-    private double UsedWidth(Element element, CSSStyleDeclaration style, double basis)
-        => SampleWidth(element)?.Resolve(basis) ?? Length(style, "width", basis);
+    private double UsedWidth(Element element, BoxStyleSnapshot style, double basis)
+        => SampleWidth(element)?.Resolve(basis) ?? Length(style, style.Width, "width", basis);
 
-    private double? IntrinsicSpecifiedWidth(Element element, CSSStyleDeclaration style)
+    private double? IntrinsicSpecifiedWidth(Element element, BoxStyleSnapshot style)
     {
         if (SampleWidth(element) is { } sampled)
             return sampled.HasPercentage ? null : sampled.Pixels;
-        string width = style.GetPropertyValue("width");
-        return width == "auto" || width.EndsWith('%') ? null : Number(width, 0);
+        var width = style.Width;
+        return width.IsAuto || width.IsPercent ? null : Length(style, width, "width", 0);
     }
 }

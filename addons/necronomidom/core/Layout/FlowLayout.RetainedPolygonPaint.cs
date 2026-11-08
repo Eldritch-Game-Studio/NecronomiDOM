@@ -86,7 +86,7 @@ public sealed partial class FlowLayout
             _result.Runs[update.RunIndex + 1] = update.Fill;
             if (!ReferenceEquals(geometry.Polygon, update.Clip.Geometry))
             {
-                _result.Boxes[update.BoxIndex] = box with { UsedGeometry = geometry with { Polygon = update.Clip.Geometry } };
+                box.UsedGeometry = geometry with { Polygon = update.Clip.Geometry };
                 CompleteHitGeometryAt(update.BoxIndex);
                 geometryChanged = true;
             }

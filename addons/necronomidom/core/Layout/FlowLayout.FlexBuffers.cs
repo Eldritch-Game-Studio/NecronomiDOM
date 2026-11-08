@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
-using NecronomiDom.Css.Om;
 using NecronomiDom.Dom;
 
 namespace NecronomiDom.Layout;
@@ -11,13 +9,13 @@ public sealed partial class FlowLayout
     {
         internal readonly List<FlexChild> Children = new();
         internal readonly List<Element> Absolute = new();
-        internal readonly StringBuilder Text = new();
+        internal readonly CollectedText Text = new();
         internal void Clear() { Children.Clear(); Absolute.Clear(); Text.Clear(); }
     }
     private readonly Stack<FlexCollectionBuffers> _flexCollectionPool = new();
     internal int FlexCollectionBufferCount { get; private set; }
 
-    private double FlexChildren(Element element, CSSStyleDeclaration style, PositionedBoxPlan plan,
+    private double FlexChildren(Element element, BoxStyleSnapshot style, PositionedBoxPlan plan,
         int containing, bool emit, bool measureScrollOverflow = false)
     {
         if (!_flexCollectionPool.TryPop(out var buffers))

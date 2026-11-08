@@ -69,7 +69,8 @@ public sealed partial class FlowLayout
     private static PositionedContainingBlock Translate(PositionedContainingBlock box, double dx, double dy) =>
         box with { ContentBox = Translate(box.ContentBox, dx, dy), PaddingBox = Translate(box.PaddingBox, dx, dy) };
 
-    private static LayoutBox TranslateLayoutBox(LayoutBox box, double dx, double dy)
+    /// <summary>Moves a box in place; the list entry is unchanged so retained consumers keep their references.</summary>
+    private static void TranslateLayoutBox(LayoutBox box, double dx, double dy)
     {
         UsedLayoutGeometry? geometry = box.UsedGeometry;
         if (geometry is { } used) geometry = used with
@@ -77,8 +78,9 @@ public sealed partial class FlowLayout
             Context = used.Context with { ClipBounds = Translate(used.Context.ClipBounds, dx, dy) },
             Transform = used.Transform with { Matrix = TranslateTransform(used.Transform.Matrix, dx, dy) }
         };
-        return box with { Bounds = Translate(box.Bounds, dx, dy),
-            ScrollOverflow = Translate(box.ScrollOverflow, dx, dy), UsedGeometry = geometry };
+        box.Bounds = Translate(box.Bounds, dx, dy);
+        box.ScrollOverflow = Translate(box.ScrollOverflow, dx, dy);
+        box.UsedGeometry = geometry;
     }
 
     private void TranslateSubtree(int boxStart, int runStart, int contextStart, int deferredStart, double dx, double dy)
@@ -87,7 +89,7 @@ public sealed partial class FlowLayout
         {
             var box = _result.Boxes[i];
             TranslateAbsoluteInputs(box, dx, dy);
-            _result.Boxes[i] = TranslateLayoutBox(box, dx, dy);
+            TranslateLayoutBox(box, dx, dy);
         }
         for (int i = runStart; i < _result.Runs.Count; i++)
             _result.Runs[i] = TranslatePaintRun(_result.Runs[i], dx, dy);

@@ -26,6 +26,7 @@ namespace NecronomiDom.Css.Om
                         if (ReferenceEquals(ordered[i], _declarations[i])) continue;
                         _declarations[i] = ordered[i];
                         _computedText[i] = null;
+                        _version++;
                     }
                     return;
                 }
@@ -34,6 +35,7 @@ namespace NecronomiDom.Css.Om
             index.Clear();
             Array.Clear(_computedText);
             _computedIndex = null;
+            _version++;
             _declarations.Clear();
             bool distinct = true;
             foreach (var declaration in declarations)
@@ -96,6 +98,7 @@ namespace NecronomiDom.Css.Om
                 throw new InvalidOperationException("Missing indexed computed longhand: " + name);
             _declarations[index] = new CssDeclaration(name, value, false);
             _computedText[index] = null;
+            _version++;
         }
     }
 }

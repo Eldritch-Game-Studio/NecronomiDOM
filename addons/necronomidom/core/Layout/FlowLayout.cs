@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Css.Om;
 using NecronomiDom.Css.Values;
@@ -84,7 +83,7 @@ public sealed partial class FlowLayout
     public DisplayList Layout(Document document, double width, double height)
     {
         if (!double.IsFinite(width) || width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
-        _result = new DisplayList();
+        _result = new DisplayList(_result.Runs.Count, _result.Boxes.Count);
         _viewport = new Rect(0, 0, width, height);
         _containing.Clear(); _deferred.Clear();
         _opacityOwners.Clear();
@@ -117,25 +116,27 @@ public sealed partial class FlowLayout
         PositionedContainingBlock? absolute = null, PositionedBoxPlan? usedPlan = null)
     {
         var s = _styles.GetComputedStyle(e);
-        if (s.GetPropertyValue("display") == "none") return 0;
-        Validate(e, s);
-        if (s.GetPropertyValue("display") is not ("block" or "flow-root" or "flex")) Fail(e, "display", s.GetPropertyValue("display"));
+        var bs = BoxStyleSnapshot.For(s);
+        if (bs.DisplayNone) return 0;
+        Validate(e, s, bs);
+        if (bs.Display is not ("block" or "flow-root" or "flex")) Fail(e, "display", bs.Display);
         ImageResource? image = e.LocalName == "img" ? ImageLayout.Intrinsic(_images, e) : null;
-        var plan = usedPlan ?? PositionedLayoutSolver.Prepare(s, flow, absolute ?? flow, x, y,
-            image == null ? IntrinsicWidth(e, s) : default, image, SampleWidth(e));
+        var plan = usedPlan ?? PositionedLayoutSolver.Prepare(bs, flow, absolute ?? flow, x, y,
+            image == null ? IntrinsicWidth(e, bs) : default, image, SampleWidth(e));
         bool rootBody = e.LocalName == "body" && e.ParentElement?.LocalName == "html"
             && ReferenceEquals(e.ParentElement, e.OwnerDocument?.DocumentElement);
         if (usedPlan == null && !plan.ExcludedFromFlow && !rootBody && ((plan.MarginTop ?? 0) != 0 || (plan.MarginBottom ?? 0) != 0))
             Fail(e, "margin-block", "nonzero (collapsing not in this profile)");
         int boxIndex = _result.Boxes.Count, runStart = _result.Runs.Count;
         int contextStart = _containing.Count, deferredStart = _deferred.Count, ownContaining = containing;
-        _result.Boxes.Add(new LayoutBox(e, default, s.GetPropertyValue("pointer-events") != "none"));
+        var layoutBox = new LayoutBox(e, default, bs.PointerEvents);
+        _result.Boxes.Add(layoutBox);
         var paintFrame = EnterPaintPhase(boxIndex);
-        bool transformContext = HasTransform(e, s);
+        bool transformContext = HasTransform(e, bs);
         if (plan.Mode != PositionedMode.Static || transformContext)
         { ownContaining = _containing.Count; _containing.Add(new ContainingContext(e, null)); }
-        var gutters = image == null ? ResolveScrollGutters(e, s, plan) : default;
-        double natural = image == null ? LayoutChildren(e, s, gutters.Children(plan), ownContaining) : 0;
+        var gutters = image == null ? ResolveScrollGutters(e, bs, plan) : default;
+        double natural = image == null ? LayoutChildren(e, s, bs, gutters.Children(plan), ownContaining) : 0;
         var box = gutters.Complete(PositionedLayoutSolver.Complete(plan, natural + gutters.Bottom));
         double dy = box.BorderBox.Y - plan.PreLayoutBorderBoxOriginY;
         if (dy != 0)
@@ -152,17 +153,17 @@ public sealed partial class FlowLayout
         var scrollOverflow = CompleteScrollGeometry(e, s, box, natural, boxIndex, runStart,
             ownContaining == contextStart ? contextStart + 1 : contextStart, paintFrame, gutters);
         var computedValues = _styles.GetComputedValues(e);
-        var decoration = BoxDecorationResolver.ResolveParts(computedValues, box.BorderBox);
+        var decoration = BoxDecorationResolver.ResolveParts(bs, box.BorderBox);
         decoration = decoration with { Background = SampleBackgroundColor(e, decoration.Background) };
-        var context = PositionedLayoutSolver.ResolvePaintContext(computedValues, box, in decoration);
+        var context = PositionedLayoutSolver.ResolvePaintContext(bs, box, in decoration);
         bool targetOpacityContext = context.GroupOpacity < 1;
         context = SamplePaintOpacity(e, context);
-        ConvexPolygon? polygon = s.GetPropertyValue("clip-path") == "none" ? null
+        ConvexPolygon? polygon = bs.ClipPathNone ? null
             : PolygonClipResolver.Resolve(ComputedValue(s, "clip-path"), box.BorderBox);
         var transform = BoxTransformResolver.Resolve(computedValues, box.BorderBox, SampleScale(e));
-        _result.Boxes[boxIndex] = new LayoutBox(e, box.BorderBox, s.GetPropertyValue("pointer-events") != "none")
-        { UsedGeometry = new UsedLayoutGeometry(context, polygon, plan.Mode, _containing[containing].Element, decoration.Radii, transform),
-            ScrollOverflow = scrollOverflow };
+        layoutBox.Bounds = box.BorderBox;
+        layoutBox.UsedGeometry = new UsedLayoutGeometry(context, polygon, plan.Mode, _containing[containing].Element, decoration.Radii, transform);
+        layoutBox.ScrollOverflow = scrollOverflow;
         // Auto/zero positioned phases are scoped and atomic with opacity/clip-path groups.
         // Ordinary ancestors pass positioned descendants outward while retaining their real overflow clips.
         bool paintBoundary = e.ParentElement == null || plan.Mode != PositionedMode.Static
@@ -180,11 +181,26 @@ public sealed partial class FlowLayout
         CompletePaintPhase(paintFrame, e, plan.Mode, _containing[containing].Element, context, paintBoundary);
         return box.FlowContribution;
     }
-    private void Validate(Element e, CSSStyleDeclaration s)
+    private void Validate(Element e, CSSStyleDeclaration s, BoxStyleSnapshot bs)
     {
         if (!RuntimeCapabilities.AdmitsElement(e.LocalName)) Fail(e, "element", e.LocalName);
         if (e is HTMLInputElement { IsTextEditable: false } input) Fail(e, "input type", input.Type);
         if (e.ShadowRootInternal != null) Fail(e, "shadow-root", "unsupported");
+        // Style-only checks are proved once per computed-style version for this instance's profile;
+        // the host's font map can change between layouts without a style change, so it is read every time.
+        bool proved = bs.ValidatedBy == _profileId;
+        if (!proved) ValidateProfile(e, s);
+        _ = ResolveTextFamily(s);
+        if (proved) return;
+        if (s.GetPropertyValue("white-space-collapse") != "collapse"
+            && !(e is HTMLTextAreaElement && s.GetPropertyValue("white-space-collapse") == "preserve"))
+            Fail(e, "white-space-collapse", s.GetPropertyValue("white-space-collapse"));
+        bs.ValidatedBy = _profileId;
+    }
+    private static int _profileIds;
+    private readonly int _profileId = System.Threading.Interlocked.Increment(ref _profileIds);
+    private void ValidateProfile(Element e, CSSStyleDeclaration s)
+    {
         List<string>? unsupported = null;
         foreach (var d in s.EnumerateLonghands())
         {
@@ -209,23 +225,15 @@ public sealed partial class FlowLayout
             if (!RuntimeCapabilities.AdmitsKeyword(property, s.GetPropertyValue(property)))
                 Fail(e, property, s.GetPropertyValue(property));
         }
-        _ = ResolveTextFamily(s);
-        if (s.GetPropertyValue("white-space-collapse") != "collapse"
-            && !(e is HTMLTextAreaElement && s.GetPropertyValue("white-space-collapse") == "preserve"))
-            Fail(e, "white-space-collapse", s.GetPropertyValue("white-space-collapse"));
     }
-    private static string Collapse(string text)
-    {
-        var b = new StringBuilder(); bool space = false;
-        foreach (char c in text)
-        {
-            if (c is ' ' or '\t' or '\n' or '\r' or '\f') { space = b.Length > 0; continue; }
-            if (space) b.Append(' ');
-            b.Append(c); space = false;
-        }
-        return b.ToString();
-    }
+    // Measurement recursion collects text per element; collectors are rented so steady-state layout allocates none.
+    private readonly Stack<CollectedText> _textPool = new();
+    private CollectedText RentText() => _textPool.TryPop(out var text) ? text : new CollectedText();
+    private void ReturnText(CollectedText text) { text.Clear(); _textPool.Push(text); }
     private static double Length(CSSStyleDeclaration s, string p, double basis) => Number(s.GetPropertyValue(p), basis);
+    private static double Length(BoxStyleSnapshot s, in BoxLength value, string property, double basis)
+        => value.IsLength ? value.Resolve(basis)
+            : throw new NotSupportedException("Runtime length is not resolved px/percentage: " + s.Style.GetPropertyValue(property));
     private static double Number(string v, double basis)
     {
         if (v == "0") return 0;

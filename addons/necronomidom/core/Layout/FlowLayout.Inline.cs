@@ -24,7 +24,7 @@ public sealed partial class FlowLayout
     private readonly record struct TextShapingParameters(double Weight, double Spacing, string Family, ITextShaper Shaper, bool Italic);
     private (string Family, ITextShaper Shaper) ResolveTextFamily(CSSStyleDeclaration style)
     {
-        string family = AuthoredFontFamilies.Name(style.GetSpecifiedValue("font-family"));
+        string family = BoxStyleSnapshot.For(style).FontFamily;
         if (!_fontFamilies.TryGetValue(family, out var shaper))
             throw new NotSupportedException("Runtime font-family is not authored/mapped: " + family + "; fallback is disabled.");
         return (family, shaper);

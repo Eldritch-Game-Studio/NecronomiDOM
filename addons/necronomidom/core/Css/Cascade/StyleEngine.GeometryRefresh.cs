@@ -163,8 +163,10 @@ public sealed partial class StyleEngine
             foreach (var item in list.Items) if (!StableInlineValue(item)) return false;
             return true;
         }
+        // Parsed transform functions carry CssValueParser.CanonicalFunction names (translateX, scaleY, skewX ...).
         return value is CssFunctionValue function && function.Name is
-            ("matrix" or "translate" or "translatex" or "translatey" or "rotate" or "scale" or "scalex" or "scaley" or "skew" or "skewx" or "skewy" or "polygon")
+            ("matrix" or "translate" or "translateX" or "translateY" or "rotate" or "scale" or "scaleX" or "scaleY"
+                or "skew" or "skewX" or "skewY" or "polygon")
             && function.Arguments != null && StableInlineValue(function.Arguments);
     }
     private static bool TransformProperty(string property) =>

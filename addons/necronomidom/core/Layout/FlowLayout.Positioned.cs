@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using NecronomiDom.Css.Om;
 using NecronomiDom.Css.Values;
 using NecronomiDom.Dom;
@@ -16,11 +15,11 @@ public sealed partial class FlowLayout
     private readonly List<DeferredBlock> _deferred = new();
     private Rect _viewport;
 
-    private double LayoutChildren(Element e, CSSStyleDeclaration s, PositionedBoxPlan plan, int containing)
+    private double LayoutChildren(Element e, CSSStyleDeclaration s, BoxStyleSnapshot bs, PositionedBoxPlan plan, int containing)
     {
         if (e is HTMLTextAreaElement || e is HTMLInputElement { IsTextEditable: true })
             return LayoutTextControl((HTMLElement)e, s, plan);
-        if (s.GetPropertyValue("display") == "flex") return LayoutFlexChildren(e, s, plan, containing);
+        if (bs.Display == "flex") return LayoutFlexChildren(e, bs, plan, containing);
         var content = new Rect(plan.ContentOriginX, plan.ContentOriginY, plan.ContentWidth, plan.DefiniteContentHeight ?? 0);
         var edges = plan.Edges;
         var padding = new Rect(content.X - edges.PaddingLeft, content.Y - edges.PaddingTop,
@@ -28,32 +27,33 @@ public sealed partial class FlowLayout
         var flow = new PositionedContainingBlock(content, padding, plan.DescendantHeightIsDefinite ?? plan.DefiniteContentHeight.HasValue);
         if (HasInlineChildren(e))
         {
-            foreach (var child in e.ChildNodes)
-                if (child is Element absolute && _styles.GetComputedStyle(absolute).GetPropertyValue("position") == "absolute")
+            for (var child = e.FirstChild; child != null; child = child.NextSibling)
+                if (child is Element absolute && BoxStyleSnapshot.For(_styles.GetComputedStyle(absolute)).Mode == PositionedMode.Absolute)
                     DeferAbsolute(absolute, flow, content.X, content.Y, containing);
             return LayoutInlineFragments(e, s, content.X, content.Y, content.Width, true);
         }
         double y = content.Y;
-        var text = new StringBuilder(); bool blocks = false;
-        foreach (var child in e.ChildNodes)
+        // Children recurse into Block, so the element's text is collected in its own rented collector.
+        CollectedText? text = null; bool blocks = false;
+        for (var child = e.FirstChild; child != null; child = child.NextSibling)
         {
-            if (child is Text t) text.Append(t.Data);
+            if (child is Text t) (text ??= RentText()).Append(t.Data);
             else if (child is Element element)
             {
-                var style = _styles.GetComputedStyle(element);
-                string display = style.GetPropertyValue("display");
-                if (display == "none") continue;
-                if (style.GetPropertyValue("position") == "absolute")
+                var style = BoxStyleSnapshot.For(_styles.GetComputedStyle(element));
+                if (style.DisplayNone) continue;
+                if (style.Mode == PositionedMode.Absolute)
                 {
                     DeferAbsolute(element, flow, content.X, y, containing);
                     continue;
                 }
-                if (!string.IsNullOrWhiteSpace(text.ToString())) Fail(e, "children", "mixed block and inline");
-                text.Clear(); blocks = true;
+                if (text != null && !text.IsWhiteSpace()) Fail(e, "children", "mixed block and inline");
+                text?.Clear(); blocks = true;
                 y += Block(element, content.X, y, flow, containing);
             }
         }
-        string collapsed = Collapse(text.ToString());
+        string collapsed = text == null ? "" : text.Collapse();
+        if (text != null) ReturnText(text);
         if (blocks && collapsed.Length != 0) Fail(e, "children", "mixed block and inline");
         if (collapsed.Length != 0) y += Inline(e, s, collapsed, content.X, y, content.Width);
         return y - content.Y;
@@ -96,16 +96,16 @@ public sealed partial class FlowLayout
             Block(item.Element, item.X, item.Y, item.Flow, containing, box);
         }
     }
-    private PositionedIntrinsicWidth IntrinsicWidth(Element e, CSSStyleDeclaration style)
+    private PositionedIntrinsicWidth IntrinsicWidth(Element e, BoxStyleSnapshot style)
     {
-        if (style.GetPropertyValue("position") != "absolute" || !WidthIsAuto(e, style)
-            || style.GetPropertyValue("left") != "auto" && style.GetPropertyValue("right") != "auto") return default;
-        foreach (var child in e.ChildNodes)
+        if (style.Mode != PositionedMode.Absolute || !WidthIsAuto(e, style)
+            || !style.Left.IsAuto && !style.Right.IsAuto) return default;
+        for (var child = e.FirstChild; child != null; child = child.NextSibling)
         {
             if (child is Element ce)
             {
-                var cs = _styles.GetComputedStyle(ce);
-                if (cs.GetPropertyValue("display") == "none" || cs.GetPropertyValue("position") == "absolute") continue;
+                var cs = BoxStyleSnapshot.For(_styles.GetComputedStyle(ce));
+                if (cs.DisplayNone || cs.Mode == PositionedMode.Absolute) continue;
                 if (WidthHasPercentage(ce, cs)) Fail(ce, "intrinsic width", "percentage child width in shrink-to-fit formatting is unsupported");
             }
         }

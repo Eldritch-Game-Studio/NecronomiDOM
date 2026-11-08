@@ -26,9 +26,9 @@ public sealed partial class FlowLayout
 
     private bool HasInlineChildren(Element element)
     {
-        foreach (var node in element.ChildNodes)
-            if (node is Element child && _styles.GetComputedStyle(child).GetPropertyValue("display") == "inline"
-                && _styles.GetComputedStyle(child).GetPropertyValue("position") != "absolute") return true;
+        for (var node = element.FirstChild; node != null; node = node.NextSibling)
+            if (node is Element child && BoxStyleSnapshot.For(_styles.GetComputedStyle(child)) is { Display: "inline" } style
+                && style.Mode != PositionedMode.Absolute) return true;
         return false;
     }
     private InlineContent CollectInlineContent(Element root, CSSStyleDeclaration rootStyle)
@@ -45,7 +45,7 @@ public sealed partial class FlowLayout
         }
         void Visit(Element element, CSSStyleDeclaration style)
         {
-            foreach (var child in element.ChildNodes)
+            for (var child = element.FirstChild; child != null; child = child.NextSibling)
             {
                 if (child is Text node)
                 {
@@ -78,7 +78,7 @@ public sealed partial class FlowLayout
     }
     private void ValidateInlineElement(Element element, CSSStyleDeclaration style, CSSStyleDeclaration rootStyle)
     {
-        Validate(element, style);
+        Validate(element, style, BoxStyleSnapshot.For(style));
         if (!RuntimeCapabilities.AdmitsInlineElement(element.LocalName)) Fail(element, "inline element", "only text spans and anchors are supported");
         // Inline box edges, positioning and independent compositing are not silently treated as text styles.
         foreach (string side in new[] { "top", "right", "bottom", "left" })
