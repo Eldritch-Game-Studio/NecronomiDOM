@@ -81,7 +81,7 @@ namespace NecronomiDom.Css.Values.Grammar
                                 if (child is TypeNode { Name: "number" or "integer" or "zero" })
                                     foreach (GrammarMatch m in Walk(child, pos, depth + 1)) yield return m;
                         foreach (GrammarNode child in combination.Items)
-                            if (!numericToken || child is not TypeNode { Name: "number" or "integer" or "zero" })
+                            if ((!numericToken || child is not TypeNode { Name: "number" or "integer" or "zero" }) && CanStart(child, token))
                                 foreach (GrammarMatch m in Walk(child, pos, depth + 1)) yield return m;
                     }
                     else if (combination.Kind == CombinatorKind.Sequence)
