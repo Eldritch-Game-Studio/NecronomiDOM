@@ -40,7 +40,7 @@ public sealed partial class FlowLayout
             ? new LayoutHitClip(own, box.Element, box.Bounds, null, 0, false, corners: geometry.BorderRadii, transform: hitTransform) : own;
         var visualBounds = hitTransform == null ? box.Bounds : worldTransform.TransformBounds(box.Bounds);
         if (!SameHitGeometry(box, self, hitTransform, visualBounds))
-            _result.Boxes[index] = box with { HitClip = self, HitTransform = hitTransform, VisualBounds = visualBounds };
+        { box.HitClip = self; box.HitTransform = hitTransform; box.VisualBounds = visualBounds; }
         var context = geometry.Context;
         _descendantClips[box.Element] = context.ClipsX || context.ClipsY
             ? new LayoutHitClip(own, box.Element, context.ClipBounds, null, context.ClipRadius, true, context.ClipsX, context.ClipsY,

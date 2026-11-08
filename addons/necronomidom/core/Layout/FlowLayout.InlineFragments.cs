@@ -26,7 +26,7 @@ public sealed partial class FlowLayout
 
     private bool HasInlineChildren(Element element)
     {
-        foreach (var node in element.ChildNodes)
+        for (var node = element.FirstChild; node != null; node = node.NextSibling)
             if (node is Element child && BoxStyleSnapshot.For(_styles.GetComputedStyle(child)) is { Display: "inline" } style
                 && style.Mode != PositionedMode.Absolute) return true;
         return false;
@@ -45,7 +45,7 @@ public sealed partial class FlowLayout
         }
         void Visit(Element element, CSSStyleDeclaration style)
         {
-            foreach (var child in element.ChildNodes)
+            for (var child = element.FirstChild; child != null; child = child.NextSibling)
             {
                 if (child is Text node)
                 {

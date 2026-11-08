@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using NecronomiDom.Css.Om;
 using NecronomiDom.Css.Values;
 using NecronomiDom.Dom;
@@ -28,16 +27,17 @@ public sealed partial class FlowLayout
         var flow = new PositionedContainingBlock(content, padding, plan.DescendantHeightIsDefinite ?? plan.DefiniteContentHeight.HasValue);
         if (HasInlineChildren(e))
         {
-            foreach (var child in e.ChildNodes)
+            for (var child = e.FirstChild; child != null; child = child.NextSibling)
                 if (child is Element absolute && BoxStyleSnapshot.For(_styles.GetComputedStyle(absolute)).Mode == PositionedMode.Absolute)
                     DeferAbsolute(absolute, flow, content.X, content.Y, containing);
             return LayoutInlineFragments(e, s, content.X, content.Y, content.Width, true);
         }
         double y = content.Y;
-        var text = new StringBuilder(); bool blocks = false;
-        foreach (var child in e.ChildNodes)
+        // Children recurse into Block, so the element's text is collected in its own rented collector.
+        CollectedText? text = null; bool blocks = false;
+        for (var child = e.FirstChild; child != null; child = child.NextSibling)
         {
-            if (child is Text t) text.Append(t.Data);
+            if (child is Text t) (text ??= RentText()).Append(t.Data);
             else if (child is Element element)
             {
                 var style = BoxStyleSnapshot.For(_styles.GetComputedStyle(element));
@@ -47,12 +47,13 @@ public sealed partial class FlowLayout
                     DeferAbsolute(element, flow, content.X, y, containing);
                     continue;
                 }
-                if (!string.IsNullOrWhiteSpace(text.ToString())) Fail(e, "children", "mixed block and inline");
-                text.Clear(); blocks = true;
+                if (text != null && !text.IsWhiteSpace()) Fail(e, "children", "mixed block and inline");
+                text?.Clear(); blocks = true;
                 y += Block(element, content.X, y, flow, containing);
             }
         }
-        string collapsed = Collapse(text.ToString());
+        string collapsed = text == null ? "" : text.Collapse();
+        if (text != null) ReturnText(text);
         if (blocks && collapsed.Length != 0) Fail(e, "children", "mixed block and inline");
         if (collapsed.Length != 0) y += Inline(e, s, collapsed, content.X, y, content.Width);
         return y - content.Y;
@@ -99,7 +100,7 @@ public sealed partial class FlowLayout
     {
         if (style.Mode != PositionedMode.Absolute || !WidthIsAuto(e, style)
             || !style.Left.IsAuto && !style.Right.IsAuto) return default;
-        foreach (var child in e.ChildNodes)
+        for (var child = e.FirstChild; child != null; child = child.NextSibling)
         {
             if (child is Element ce)
             {

@@ -110,4 +110,27 @@ public sealed class BoxStyleSnapshotTests
             new(new Rect(0, 0, 100, 100), new Rect(0, 0, 100, 100), true), new(new Rect(0, 0, 100, 100), new Rect(0, 0, 100, 100), true), 0, 0, default));
         Assert.That(ex!.Message, Is.EqualTo("Positioned layout rejects position: fixed"));
     }
+
+    [Test]
+    public void ProfileValidationRerunsAfterAStyleChangeAndForAnotherLayoutInstance()
+    {
+        var (doc, styles, flow) = Load("<div class=row><div class=item id=a></div></div>");
+        flow.Layout(doc, 300, 200);
+        var a = (HTMLElement)doc.GetElementById("a")!;
+        var proved = BoxStyleSnapshot.For(styles.GetComputedStyle(a));
+        Assert.That(proved.ValidatedBy, Is.Not.EqualTo(0));
+        a.Style.SetProperty("position", "fixed");
+        var ex = Assert.Throws<NotSupportedException>(() => flow.Layout(doc, 300, 200));
+        Assert.That(ex!.Message, Does.Contain("position"));
+        a.Style.RemoveProperty("position");
+        a.Style.SetProperty("font-style", "oblique");
+        ex = Assert.Throws<NotSupportedException>(() => flow.Layout(doc, 300, 200));
+        Assert.That(ex!.Message, Does.Contain("rejects <div id='a'> font-style: oblique"));
+        a.Style.RemoveProperty("font-style");
+        flow.Layout(doc, 300, 200);
+        // Another layout over the same engine proves the style with its own profile before trusting it.
+        var other = new FlowLayout(styles, new Metrics(), "serif");
+        ex = Assert.Throws<NotSupportedException>(() => other.Layout(doc, 300, 200));
+        Assert.That(ex!.Message, Does.Contain("font-family"));
+    }
 }

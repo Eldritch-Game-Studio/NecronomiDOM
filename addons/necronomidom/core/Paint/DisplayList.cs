@@ -55,7 +55,13 @@ public sealed record TextRun(string Text, double X, double Baseline, int FontSiz
 public enum ImageSampling { Linear, Nearest, Pixelated }
 /// <summary>Visible destination and matching intrinsic-pixel crop, already clipped to the content box.</summary>
 public sealed record ImageRun(string ResourceKey, Rect Destination, Rect Source, ImageSampling Sampling) : PaintRun;
-public sealed partial record LayoutBox(Element Element, Rect Bounds, bool PointerEvents);
+/// <summary>One laid-out element. Layout owns the record while it builds and retains a display list: the
+/// final bounds, used geometry and hit links are written into the same instance instead of cloning it, so a
+/// consumer holding a box from the current list sees retained updates in place.</summary>
+public sealed partial record LayoutBox(Element Element, Rect Bounds, bool PointerEvents)
+{
+    public Rect Bounds { get; internal set; } = Bounds;
+}
 
 /// <summary>A painted DOM text subrange. Start/Length address the shared ShapingText.
 /// SourceOffsets maps each retained UTF-16 unit (and its end boundary) back to the original
@@ -86,6 +92,9 @@ public sealed record InlineTextFragment(Text Node, int Start, int Length, Rect B
 /// <summary>CSS paint order retained verbatim; adapters may batch only consecutive box runs.</summary>
 public sealed partial class DisplayList
 {
+    public DisplayList() { }
+    /// <summary>Pre-sizes the lists (layout passes the previous frame's counts so steady-state frames do not regrow them).</summary>
+    internal DisplayList(int runCapacity, int boxCapacity) { Runs = new(runCapacity); Boxes = new(boxCapacity); }
     public List<PaintRun> Runs { get; } = new();
     public List<LayoutBox> Boxes { get; } = new();
     /// <summary>False only when no run can paint: empty lists or plain boxes with zero-alpha fill and border.

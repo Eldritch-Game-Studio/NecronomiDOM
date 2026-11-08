@@ -75,6 +75,9 @@ internal sealed class BoxStyleSnapshot
     internal readonly double FlexGrow, FlexShrink;
     /// <summary>NaN when the computed opacity is not a plain number.</summary>
     internal readonly double Opacity;
+    /// <summary>Any of transform/translate/rotate/scale is not none.</summary>
+    internal readonly bool HasTransform;
+    private string? _fontFamily;
 
     private BorderSides _borders;
     private bool _bordersResolved;
@@ -82,8 +85,9 @@ internal sealed class BoxStyleSnapshot
     private readonly BoxLength[] _cornerLengths = new BoxLength[8];
     private readonly CssValue[] _cornerValues = new CssValue[8];
     private bool _cornersResolved;
-    /// <summary>Which FlowLayout instance proved this style against the runtime profile (its own font map and animation sources).</summary>
-    internal object? ValidatedBy;
+    /// <summary>Id of the FlowLayout instance that proved this style against the runtime profile (its own animation
+    /// sources and initial-value map); 0 until proved. An id, not a reference, so a replaced layout is not retained.</summary>
+    internal int ValidatedBy;
 
     private BoxStyleSnapshot(CSSStyleDeclaration style, int version)
     {
@@ -130,6 +134,8 @@ internal sealed class BoxStyleSnapshot
         OverflowX = style.GetPropertyValue("overflow-x"); OverflowY = style.GetPropertyValue("overflow-y");
         TextWrapMode = style.GetPropertyValue("text-wrap-mode");
         Opacity = style.GetSpecifiedValue("opacity") is CssNumberValue opacity ? opacity.Value : double.NaN;
+        HasTransform = !None("transform") || !None("translate") || !None("rotate") || !None("scale");
+        bool None(string property) => style.GetSpecifiedValue(property) is CssKeywordValue { Value: "none" };
     }
 
     /// <summary>The current snapshot for a computed style, rebuilt only after the declaration changed.</summary>
@@ -165,6 +171,8 @@ internal sealed class BoxStyleSnapshot
         }
     }
     internal Rgba Background => _background ??= Color("background-color");
+    /// <summary>The authored family name layout maps to a shaper (AuthoredFontFamilies.Name), resolved once per version.</summary>
+    internal string FontFamily => _fontFamily ??= AuthoredFontFamilies.Name(Style.GetSpecifiedValue("font-family"));
     /// <summary>Border radii resolved against the final border box, before overlap normalization.</summary>
     internal BorderRadii Radii(Rect bounds)
     {

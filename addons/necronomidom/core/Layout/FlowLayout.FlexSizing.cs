@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using NecronomiDom.Dom;
 using NecronomiDom.Paint;
 
@@ -16,16 +15,16 @@ public sealed partial class FlowLayout
         if (HasInlineChildren(e)) return LayoutInlineFragments(e, style.Style, 0, 0, plan.ContentWidth, false);
         double height = 0;
         // Children recurse into the same measurement, so the element's text is collected in its own rented builder.
-        StringBuilder? text = null; bool blocks = false;
+        CollectedText? text = null; bool blocks = false;
         var flow = FlexContaining(plan);
-        foreach (var node in e.ChildNodes)
+        for (var node = e.FirstChild; node != null; node = node.NextSibling)
         {
             if (node is Text t) (text ??= RentText()).Append(t.Data);
             else if (node is Element child)
             {
                 var cs = BoxStyleSnapshot.For(_styles.GetComputedStyle(child));
                 if (cs.DisplayNone || cs.Mode == PositionedMode.Absolute) continue;
-                if (text != null && !IsWhiteSpace(text)) Fail(e, "children", "mixed block and inline");
+                if (text != null && !text.IsWhiteSpace()) Fail(e, "children", "mixed block and inline");
                 text?.Clear(); blocks = true;
                 ImageResource? image = child.LocalName == "img" ? ImageLayout.Intrinsic(_images, child) : null;
                 var cp = PositionedLayoutSolver.Prepare(cs, flow, flow, 0, 0, FlexIntrinsic(child, cs), image, SampleWidth(child));
@@ -35,7 +34,7 @@ public sealed partial class FlowLayout
                     + (cp.MarginTop ?? 0) + (cp.MarginBottom ?? 0);
             }
         }
-        string collapsed = text == null ? "" : Collapse(text);
+        string collapsed = text == null ? "" : text.Collapse();
         if (text != null) ReturnText(text);
         if (blocks && collapsed.Length != 0) Fail(e, "children", "mixed block and inline");
         return height + (collapsed.Length == 0 ? 0 : FlexTextHeight(style, collapsed, plan.ContentWidth));
@@ -69,11 +68,11 @@ public sealed partial class FlowLayout
         bool wrap = row && style.FlexWrap == "wrap";
         int count = 0;
         // Children recurse into the same intrinsic measurement, so the element's text is collected locally.
-        StringBuilder? text = null;
+        CollectedText? text = null;
         void AddText()
         {
             if (text == null || text.Length == 0) return;
-            string value = Collapse(text); text.Clear();
+            string value = text.Collapse(); text.Clear();
             if (value.Length == 0) return;
             var own = FlexTextIntrinsic(e, style.Style, value);
             if (style.TextWrapMode == "nowrap") own = new PositionedIntrinsicWidth(own.Maximum, own.Maximum);
@@ -81,7 +80,7 @@ public sealed partial class FlowLayout
             else { minimum = Math.Max(minimum, own.Minimum); maximum = Math.Max(maximum, own.Maximum); }
             count++;
         }
-        foreach (var node in e.ChildNodes)
+        for (var node = e.FirstChild; node != null; node = node.NextSibling)
         {
             if (node is Text t) (text ??= RentText()).Append(t.Data);
             else if (node is Element child)
@@ -123,7 +122,7 @@ public sealed partial class FlowLayout
         double lineHeight = TextLineHeight(style.Style, fontSize, shaping);
         if (text.Length == 0) return 0;
         if (style.TextWrapMode == "nowrap") return lineHeight;
-        if (!Ascii.IsValid(text)) return WrapUnicodeText(text, fontSize, shaping, width) * lineHeight;
+        if (!System.Text.Ascii.IsValid(text)) return WrapUnicodeText(text, fontSize, shaping, width) * lineHeight;
         int lines = 1; string line = "";
         foreach (string word in text.Split(' '))
         {

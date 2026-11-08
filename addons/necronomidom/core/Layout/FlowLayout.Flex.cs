@@ -28,7 +28,7 @@ public sealed partial class FlowLayout
         var children = buffers.Children;
         var absolute = buffers.Absolute;
         var text = buffers.Text;
-        foreach (var node in e.ChildNodes)
+        for (var node = e.FirstChild; node != null; node = node.NextSibling)
         {
             if (node is Text t) { text.Append(t.Data); continue; }
             if (node is not Element child) continue;
@@ -75,7 +75,7 @@ public sealed partial class FlowLayout
         void AddAnonymous()
         {
             if (text.Length == 0) return;
-            string value = Collapse(text); text.Clear();
+            string value = text.Collapse(); text.Clear();
             if (value.Length == 0) return;
             var intrinsic = FlexTextIntrinsic(e, style.Style, value);
             double width = row ? intrinsic.Maximum : alignment == "stretch" ? plan.ContentWidth

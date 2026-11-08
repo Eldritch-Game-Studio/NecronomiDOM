@@ -181,7 +181,7 @@ public sealed partial class FlowLayout
                 {
                     var box = _result.Boxes[index];
                     TranslateAbsoluteInputs(box, update.X, update.Y, update.Element);
-                    _result.Boxes[index] = TranslateLayoutBox(box, update.X, update.Y);
+                    TranslateLayoutBox(box, update.X, update.Y);
                     _absoluteHitUpdates.Add(index);
                 }
             }

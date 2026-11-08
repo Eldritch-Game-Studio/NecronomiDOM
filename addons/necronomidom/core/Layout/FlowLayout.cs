@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Css.Om;
 using NecronomiDom.Css.Values;
@@ -84,7 +83,7 @@ public sealed partial class FlowLayout
     public DisplayList Layout(Document document, double width, double height)
     {
         if (!double.IsFinite(width) || width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
-        _result = new DisplayList();
+        _result = new DisplayList(_result.Runs.Count, _result.Boxes.Count);
         _viewport = new Rect(0, 0, width, height);
         _containing.Clear(); _deferred.Clear();
         _opacityOwners.Clear();
@@ -130,9 +129,10 @@ public sealed partial class FlowLayout
             Fail(e, "margin-block", "nonzero (collapsing not in this profile)");
         int boxIndex = _result.Boxes.Count, runStart = _result.Runs.Count;
         int contextStart = _containing.Count, deferredStart = _deferred.Count, ownContaining = containing;
-        _result.Boxes.Add(new LayoutBox(e, default, bs.PointerEvents));
+        var layoutBox = new LayoutBox(e, default, bs.PointerEvents);
+        _result.Boxes.Add(layoutBox);
         var paintFrame = EnterPaintPhase(boxIndex);
-        bool transformContext = HasTransform(e, s);
+        bool transformContext = HasTransform(e, bs);
         if (plan.Mode != PositionedMode.Static || transformContext)
         { ownContaining = _containing.Count; _containing.Add(new ContainingContext(e, null)); }
         var gutters = image == null ? ResolveScrollGutters(e, bs, plan) : default;
@@ -161,9 +161,9 @@ public sealed partial class FlowLayout
         ConvexPolygon? polygon = bs.ClipPathNone ? null
             : PolygonClipResolver.Resolve(ComputedValue(s, "clip-path"), box.BorderBox);
         var transform = BoxTransformResolver.Resolve(computedValues, box.BorderBox, SampleScale(e));
-        _result.Boxes[boxIndex] = new LayoutBox(e, box.BorderBox, bs.PointerEvents)
-        { UsedGeometry = new UsedLayoutGeometry(context, polygon, plan.Mode, _containing[containing].Element, decoration.Radii, transform),
-            ScrollOverflow = scrollOverflow };
+        layoutBox.Bounds = box.BorderBox;
+        layoutBox.UsedGeometry = new UsedLayoutGeometry(context, polygon, plan.Mode, _containing[containing].Element, decoration.Radii, transform);
+        layoutBox.ScrollOverflow = scrollOverflow;
         // Auto/zero positioned phases are scoped and atomic with opacity/clip-path groups.
         // Ordinary ancestors pass positioned descendants outward while retaining their real overflow clips.
         bool paintBoundary = e.ParentElement == null || plan.Mode != PositionedMode.Static
@@ -188,15 +188,17 @@ public sealed partial class FlowLayout
         if (e.ShadowRootInternal != null) Fail(e, "shadow-root", "unsupported");
         // Style-only checks are proved once per computed-style version for this instance's profile;
         // the host's font map can change between layouts without a style change, so it is read every time.
-        bool proved = ReferenceEquals(bs.ValidatedBy, this);
+        bool proved = bs.ValidatedBy == _profileId;
         if (!proved) ValidateProfile(e, s);
         _ = ResolveTextFamily(s);
         if (proved) return;
         if (s.GetPropertyValue("white-space-collapse") != "collapse"
             && !(e is HTMLTextAreaElement && s.GetPropertyValue("white-space-collapse") == "preserve"))
             Fail(e, "white-space-collapse", s.GetPropertyValue("white-space-collapse"));
-        bs.ValidatedBy = this;
+        bs.ValidatedBy = _profileId;
     }
+    private static int _profileIds;
+    private readonly int _profileId = System.Threading.Interlocked.Increment(ref _profileIds);
     private void ValidateProfile(Element e, CSSStyleDeclaration s)
     {
         List<string>? unsupported = null;
@@ -224,46 +226,10 @@ public sealed partial class FlowLayout
                 Fail(e, property, s.GetPropertyValue(property));
         }
     }
-    private static string Collapse(string text)
-    {
-        var b = new StringBuilder(); bool space = false;
-        foreach (char c in text)
-        {
-            if (c is ' ' or '\t' or '\n' or '\r' or '\f') { space = b.Length > 0; continue; }
-            if (space) b.Append(' ');
-            b.Append(c); space = false;
-        }
-        return b.ToString();
-    }
-    /// <summary>Same collapse over collected text; returns "" for collapsible-space-only input without building a copy.</summary>
-    private static string Collapse(StringBuilder text)
-    {
-        bool empty = true;
-        foreach (var chunk in text.GetChunks())
-            foreach (char c in chunk.Span)
-                if (c is not (' ' or '\t' or '\n' or '\r' or '\f')) { empty = false; break; }
-        if (empty) return "";
-        var b = new StringBuilder(text.Length); bool space = false;
-        foreach (var chunk in text.GetChunks())
-            foreach (char c in chunk.Span)
-            {
-                if (c is ' ' or '\t' or '\n' or '\r' or '\f') { space = b.Length > 0; continue; }
-                if (space) b.Append(' ');
-                b.Append(c); space = false;
-            }
-        return b.ToString();
-    }
-    private static bool IsWhiteSpace(StringBuilder text)
-    {
-        foreach (var chunk in text.GetChunks())
-            foreach (char c in chunk.Span)
-                if (!char.IsWhiteSpace(c)) return false;
-        return true;
-    }
-    // Measurement recursion collects text per element; builders are rented so steady-state layout allocates none.
-    private readonly Stack<StringBuilder> _textPool = new();
-    private StringBuilder RentText() => _textPool.TryPop(out var text) ? text : new StringBuilder();
-    private void ReturnText(StringBuilder text) { text.Clear(); _textPool.Push(text); }
+    // Measurement recursion collects text per element; collectors are rented so steady-state layout allocates none.
+    private readonly Stack<CollectedText> _textPool = new();
+    private CollectedText RentText() => _textPool.TryPop(out var text) ? text : new CollectedText();
+    private void ReturnText(CollectedText text) { text.Clear(); _textPool.Push(text); }
     private static double Length(CSSStyleDeclaration s, string p, double basis) => Number(s.GetPropertyValue(p), basis);
     private static double Length(BoxStyleSnapshot s, in BoxLength value, string property, double basis)
         => value.IsLength ? value.Resolve(basis)

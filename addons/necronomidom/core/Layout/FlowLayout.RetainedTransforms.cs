@@ -49,7 +49,7 @@ public sealed partial class FlowLayout
         {
             var box = _result.Boxes[i];
             if (ReferenceEquals(box.Element, element) && box.UsedGeometry is { } geometry)
-            { _result.Boxes[i] = box with { UsedGeometry = geometry with { Transform = transform } }; break; }
+            { box.UsedGeometry = geometry with { Transform = transform }; break; }
         }
         CompleteHitGeometry(element);
     }

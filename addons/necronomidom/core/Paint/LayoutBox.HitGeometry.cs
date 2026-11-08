@@ -5,12 +5,12 @@ namespace NecronomiDom.Paint;
 
 public sealed partial record LayoutBox
 {
-    internal UsedLayoutGeometry? UsedGeometry { get; init; }
-    internal LayoutHitClip? HitClip { get; init; }
-    internal LayoutHitTransform? HitTransform { get; init; }
+    internal UsedLayoutGeometry? UsedGeometry { get; set; }
+    internal LayoutHitClip? HitClip { get; set; }
+    internal LayoutHitTransform? HitTransform { get; set; }
     private Rect? _visualBounds;
     /// <summary>Axis-aligned viewport bounds after the actual ancestor/own CSS affine composition.</summary>
-    public Rect VisualBounds { get => _visualBounds ?? Bounds; internal init => _visualBounds = value; }
+    public Rect VisualBounds { get => _visualBounds ?? Bounds; internal set => _visualBounds = value; }
     /// <summary>Maps native text hit coordinates through the same cached inverse as box hit testing.</summary>
     public bool TryMapPoint(double x, double y, out double localX, out double localY)
     {
