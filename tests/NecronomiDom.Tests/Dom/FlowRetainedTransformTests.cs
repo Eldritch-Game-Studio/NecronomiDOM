@@ -26,6 +26,9 @@ public sealed class FlowRetainedTransformTests
     }
 
     [TestCase("transform", "translate(10px,5px) rotate(12deg)")]
+    [TestCase("transform", "scaleY(0.42)")]
+    [TestCase("transform", "translateY(-40px)")]
+    [TestCase("transform", "scaleX(.5) skewY(3deg) translateX(4px)")]
     [TestCase("translate", "15% 12px")]
     [TestCase("scale", ".75 1.2")]
     [TestCase("rotate", "45deg")]
@@ -61,6 +64,38 @@ public sealed class FlowRetainedTransformTests
         target.Style.SetProperty("transform", "none");
         Assert.That(styles.TryConsumeInlineTransformChange(target), Is.True);
         Assert.That(flow.TryPrepareTransformUpdate(target, out _, out _), Is.False);
+    }
+
+    [TestCase("scaleY(0.3)", "scaleY(0.42)")]
+    [TestCase("scaleY(0)", "scaley(0.5)")]
+    [TestCase("translateY(-40px)", "translateY(-50px)")]
+    public void MeterBarInlineTransformWritesAreCompositorOnly(string initial, string next)
+    {
+        // Dirge's mixer drives absolutely positioned meter bars through inline scaleY/translateY writes.
+        static Document Meter(string transform) => HtmlImporter.Import("<!doctype html><style>html,body,div{display:block;margin:0;padding:0;" +
+            "font-family:monospace;font-size:16px;line-height:20px;appearance:none}html,body{width:100%;height:100%}" +
+            "#meter{position:relative;width:24px;height:148px;background-color:#111}" +
+            "#bar{position:absolute;bottom:0;left:2px;width:8px;height:148px;background-color:#3fb950;transform-origin:50% 100%}</style>" +
+            "<div id=meter><div id=bar style='transform:" + transform + "'></div></div>",
+            "meter-transform", WebUrl.Parse("res:///meter-transform.html")!).Document;
+        var doc = Meter(initial);
+        var styles = new StyleEngine(doc);
+        var flow = new FlowLayout(styles, new Metrics(), "monospace");
+        var bar = (HTMLElement)doc.GetElementById("bar")!;
+        var list = flow.Layout(doc, 240, 160);
+        long computed = styles.ComputedEntryCount, refreshes = styles.GeometryRefreshCount;
+        bar.Style.SetProperty("transform", next);
+        Assert.That(styles.TryConsumeInlineTransformChange(bar), Is.True);
+        Assert.That(flow.TryPrepareTransformUpdate(bar, out int ordinal, out var transform), Is.True);
+        Assert.That(ordinal, Is.EqualTo(0));
+        flow.ApplyTransformUpdate(bar, transform);
+        Assert.That(styles.GeometryRefreshCount, Is.EqualTo(refreshes + 1));
+        Assert.That(styles.ComputedEntryCount - computed, Is.EqualTo(1), "the only refresh was the geometry-only one, not a full cascade");
+        var referenceDoc = Meter(next);
+        var referenceStyles = new StyleEngine(referenceDoc);
+        var expected = new FlowLayout(referenceStyles, new Metrics(), "monospace").Layout(referenceDoc, 240, 160);
+        Assert.That(list.Runs, Is.EqualTo(expected.Runs));
+        Assert.That(list.Boxes.Select(box => box.VisualBounds), Is.EqualTo(expected.Boxes.Select(box => box.VisualBounds)));
     }
 
     [TestCase(false)]
