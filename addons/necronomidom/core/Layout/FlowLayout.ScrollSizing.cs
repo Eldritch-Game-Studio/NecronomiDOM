@@ -24,10 +24,11 @@ public sealed partial class FlowLayout
                 DescendantContainingBlock = new PositionedContainingBlock(content, padding, box.DescendantContainingBlock.HeightIsDefinite) };
         }
     }
-    private ScrollGutters ResolveScrollGutters(Element element, CSSStyleDeclaration style, PositionedBoxPlan plan)
+    private ScrollGutters ResolveScrollGutters(Element element, BoxStyleSnapshot box, PositionedBoxPlan plan)
     {
-        string x = style.GetPropertyValue("overflow-x"), y = style.GetPropertyValue("overflow-y");
+        string x = box.OverflowX, y = box.OverflowY;
         if (x is not ("auto" or "scroll") && y is not ("auto" or "scroll")) return default;
+        var style = box.Style;
         double size = style.GetPropertyValue("scrollbar-width") switch { "none" => 0, "thin" => 8, _ => 15 };
         size = ScrollbarLength(style, "--necronomidom-scrollbar-size", size);
         if (style.GetPropertyValue("scrollbar-width") == "none" || size <= 0) return default;
@@ -36,13 +37,13 @@ public sealed partial class FlowLayout
         for (int pass = 0; pass < 3; pass++)
         {
             var children = gutters.Children(plan);
-            double natural = style.GetPropertyValue("display") == "flex"
-                ? FlexChildren(element, style, children, 0, false, measureScrollOverflow: true)
-                : FlexMeasure(element, style, children);
+            double natural = box.Display == "flex"
+                ? FlexChildren(element, box, children, 0, false, measureScrollOverflow: true)
+                : FlexMeasure(element, box, children);
             var final = PositionedLayoutSolver.Complete(plan, natural + gutters.Bottom);
             double right = gutters.Right, bottom = gutters.Bottom;
             if (y == "auto" && natural > Math.Max(0, final.ContentBox.Height - bottom)) right = size;
-            if (x == "auto" && FlexIntrinsic(element, style).Minimum > children.ContentWidth) bottom = size;
+            if (x == "auto" && FlexIntrinsic(element, box).Minimum > children.ContentWidth) bottom = size;
             var next = new ScrollGutters(Math.Min(right, final.PaddingBox.Width), Math.Min(bottom, final.PaddingBox.Height));
             if (next == gutters) return gutters;
             gutters = next;

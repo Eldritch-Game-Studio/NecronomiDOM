@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using NecronomiDom.Css.Om;
 using NecronomiDom.Dom;
 
 namespace NecronomiDom.Layout;
@@ -51,10 +50,10 @@ public sealed partial class FlowLayout
         }
         return count;
     }
-    private double AlignWrappedLines(Element e, CSSStyleDeclaration style, PositionedBoxPlan plan,
+    private double AlignWrappedLines(Element e, BoxStyleSnapshot style, PositionedBoxPlan plan,
         List<FlexChild> children, Span<FlexWrapLine> lines)
     {
-        double gap = FlexGap(style, "row-gap", plan.DefiniteContentHeight);
+        double gap = FlexGap(style, style.RowGap, "row-gap", plan.DefiniteContentHeight);
         double natural = Math.Max(0, lines.Length - 1) * gap;
         for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
@@ -69,7 +68,7 @@ public sealed partial class FlowLayout
         }
         double available = plan.DefiniteContentHeight ?? natural;
         double remaining = available - natural, offset = 0, spacing = gap, stretch = 0;
-        string alignment = style.GetPropertyValue("align-content");
+        string alignment = style.Style.GetPropertyValue("align-content");
         switch (alignment)
         {
             case "normal": case "stretch": if (remaining > 0 && lines.Length > 0) stretch = remaining / lines.Length; break;

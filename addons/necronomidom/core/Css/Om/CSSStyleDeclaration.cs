@@ -26,6 +26,12 @@ namespace NecronomiDom.Css.Om
         internal bool IsComputed { get; set; }
         internal Action? BeforeRead { get; set; }
         private bool _reading;
+        private int _version;
+        /// <summary>Advances whenever a stored declaration changes. A consumer's parsed view of this
+        /// declaration stays valid exactly while the version it was built from still matches.</summary>
+        internal int Version { get { Read(); return _version; } }
+        /// <summary>One consumer-owned parsed view (layout's box style snapshot), validated against <see cref="Version"/>.</summary>
+        internal object? ConsumerView;
         public int Length { get { Read(); return _declarations.Count; } }
         internal IReadOnlyList<CssDeclaration> Declarations { get { Read(); return _declarations; } }
         public IEnumerable<CssDeclaration> EnumerateLonghands() { Read(); return _declarations; }
@@ -173,6 +179,7 @@ namespace NecronomiDom.Css.Om
         private bool Store(CssDeclaration declaration, bool preserveImportant, bool notifyBefore = false)
         {
             _computedIndex = null;
+            _version++;
             for (var i = 0; i < _declarations.Count; i++)
             {
                 var previous = _declarations[i];
@@ -221,6 +228,7 @@ namespace NecronomiDom.Css.Om
         private bool Remove(string name, bool notifyBefore = false)
         {
             _computedIndex = null;
+            _version++;
             for (var i = 0; i < _declarations.Count; i++)
                 if (_declarations[i].Name == name) { if (notifyBefore) BeforeChange?.Invoke(); _declarations.RemoveAt(i); return true; }
             return false;

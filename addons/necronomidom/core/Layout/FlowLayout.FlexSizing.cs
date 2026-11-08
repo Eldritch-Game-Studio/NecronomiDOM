@@ -1,7 +1,5 @@
 using System;
-using System.Globalization;
 using System.Text;
-using NecronomiDom.Css.Om;
 using NecronomiDom.Dom;
 using NecronomiDom.Paint;
 
@@ -9,117 +7,122 @@ namespace NecronomiDom.Layout;
 
 public sealed partial class FlowLayout
 {
-    private double MeasureFlexHeight(Element e, CSSStyleDeclaration style, PositionedBoxPlan plan)
+    private double MeasureFlexHeight(Element e, BoxStyleSnapshot style, PositionedBoxPlan plan)
     {
         if (e.LocalName == "img") return plan.DefiniteContentHeight ?? 0;
         if (e is HTMLTextAreaElement || e is HTMLInputElement { IsTextEditable: true })
-            return TextControlHeight((HTMLElement)e, style, plan.ContentWidth);
-        if (style.GetPropertyValue("display") == "flex") return FlexChildren(e, style, plan, 0, false);
-        if (HasInlineChildren(e)) return LayoutInlineFragments(e, style, 0, 0, plan.ContentWidth, false);
+            return TextControlHeight((HTMLElement)e, style.Style, plan.ContentWidth);
+        if (style.Display == "flex") return FlexChildren(e, style, plan, 0, false);
+        if (HasInlineChildren(e)) return LayoutInlineFragments(e, style.Style, 0, 0, plan.ContentWidth, false);
         double height = 0;
-        var text = new StringBuilder(); bool blocks = false;
+        // Children recurse into the same measurement, so the element's text is collected in its own rented builder.
+        StringBuilder? text = null; bool blocks = false;
         var flow = FlexContaining(plan);
         foreach (var node in e.ChildNodes)
         {
-            if (node is Text t) text.Append(t.Data);
+            if (node is Text t) (text ??= RentText()).Append(t.Data);
             else if (node is Element child)
             {
-                var cs = _styles.GetComputedStyle(child);
-                if (cs.GetPropertyValue("display") == "none" || cs.GetPropertyValue("position") == "absolute") continue;
-                if (!string.IsNullOrWhiteSpace(text.ToString())) Fail(e, "children", "mixed block and inline");
-                text.Clear(); blocks = true;
+                var cs = BoxStyleSnapshot.For(_styles.GetComputedStyle(child));
+                if (cs.DisplayNone || cs.Mode == PositionedMode.Absolute) continue;
+                if (text != null && !IsWhiteSpace(text)) Fail(e, "children", "mixed block and inline");
+                text?.Clear(); blocks = true;
                 ImageResource? image = child.LocalName == "img" ? ImageLayout.Intrinsic(_images, child) : null;
                 var cp = PositionedLayoutSolver.Prepare(cs, flow, flow, 0, 0, FlexIntrinsic(child, cs), image, SampleWidth(child));
                 double natural = FlexMeasure(child, cs, cp);
-                height += FlexClamp(cs, "height", cp.DefiniteContentHeight ?? natural, cp.Edges.Vertical,
+                height += FlexClamp(cs, false, cp.DefiniteContentHeight ?? natural, cp.Edges.Vertical,
                     plan.DefiniteContentHeight ?? 0, flow.HeightIsDefinite, 0) + cp.Edges.Vertical
                     + (cp.MarginTop ?? 0) + (cp.MarginBottom ?? 0);
             }
         }
-        string collapsed = Collapse(text.ToString());
+        string collapsed = text == null ? "" : Collapse(text);
+        if (text != null) ReturnText(text);
         if (blocks && collapsed.Length != 0) Fail(e, "children", "mixed block and inline");
         return height + (collapsed.Length == 0 ? 0 : FlexTextHeight(style, collapsed, plan.ContentWidth));
     }
-    private PositionedIntrinsicWidth MeasureFlexIntrinsic(Element e, CSSStyleDeclaration style)
+    private PositionedIntrinsicWidth MeasureFlexIntrinsic(Element e, BoxStyleSnapshot style)
     {
         if (e is HTMLTextAreaElement || e is HTMLInputElement { IsTextEditable: true })
-            return TextControlIntrinsic((ITextControl)e, style);
+            return TextControlIntrinsic((ITextControl)e, style.Style);
         if (e.LocalName == "img")
         {
             _ = SampleWidth(e);
             var image = ImageLayout.Intrinsic(_images, e);
-            double horizontal = Length(style, "padding-left", 0) + Length(style, "padding-right", 0)
-                + Length(style, "border-left-width", 0) + Length(style, "border-right-width", 0);
-            double vertical = Length(style, "padding-top", 0) + Length(style, "padding-bottom", 0)
-                + Length(style, "border-top-width", 0) + Length(style, "border-bottom-width", 0);
-            if (style.GetPropertyValue("width").EndsWith('%'))
+            double horizontal = Length(style, style.PaddingLeft, "padding-left", 0) + Length(style, style.PaddingRight, "padding-right", 0)
+                + Length(style, style.BorderLeftWidth, "border-left-width", 0) + Length(style, style.BorderRightWidth, "border-right-width", 0);
+            double vertical = Length(style, style.PaddingTop, "padding-top", 0) + Length(style, style.PaddingBottom, "padding-bottom", 0)
+                + Length(style, style.BorderTopWidth, "border-top-width", 0) + Length(style, style.BorderBottomWidth, "border-bottom-width", 0);
+            if (style.Width.IsPercent)
             {
-                string height = style.GetPropertyValue("height");
-                double width = height == "auto" || height.EndsWith('%') ? image.Width
-                    : Math.Max(0, Number(height, 0) - (style.GetPropertyValue("box-sizing") == "border-box" ? vertical : 0)) * image.Width / image.Height;
+                var height = style.Height;
+                double width = height.IsAuto || height.IsPercent ? image.Width
+                    : Math.Max(0, Length(style, height, "height", 0) - (style.BorderBox ? vertical : 0)) * image.Width / image.Height;
                 return new PositionedIntrinsicWidth(width, width);
             }
-            var size = ImageLayout.Size(style, image, 0, horizontal, vertical, null);
+            var size = ImageLayout.Size(style.Style, image, 0, horizontal, vertical, null);
             return new PositionedIntrinsicWidth(size.Width, size.Width);
         }
-        if (style.GetPropertyValue("display") != "flex" && HasInlineChildren(e))
-            return InlineIntrinsic(e, style);
+        if (style.Display != "flex" && HasInlineChildren(e))
+            return InlineIntrinsic(e, style.Style);
         double minimum = 0, maximum = 0;
-        var text = new StringBuilder();
-        bool row = style.GetPropertyValue("display") == "flex" && style.GetPropertyValue("flex-direction") is "row" or "row-reverse";
-        bool wrap = row && style.GetPropertyValue("flex-wrap") == "wrap";
+        bool row = style.Display == "flex" && style.FlexDirection is "row" or "row-reverse";
+        bool wrap = row && style.FlexWrap == "wrap";
         int count = 0;
+        // Children recurse into the same intrinsic measurement, so the element's text is collected locally.
+        StringBuilder? text = null;
         void AddText()
         {
-            string value = Collapse(text.ToString()); text.Clear();
+            if (text == null || text.Length == 0) return;
+            string value = Collapse(text); text.Clear();
             if (value.Length == 0) return;
-            var own = FlexTextIntrinsic(e, style, value);
-            if (style.GetPropertyValue("text-wrap-mode") == "nowrap") own = new PositionedIntrinsicWidth(own.Maximum, own.Maximum);
+            var own = FlexTextIntrinsic(e, style.Style, value);
+            if (style.TextWrapMode == "nowrap") own = new PositionedIntrinsicWidth(own.Maximum, own.Maximum);
             if (row) { minimum = wrap ? Math.Max(minimum, own.Minimum) : minimum + own.Minimum; maximum += own.Maximum; }
             else { minimum = Math.Max(minimum, own.Minimum); maximum = Math.Max(maximum, own.Maximum); }
             count++;
         }
         foreach (var node in e.ChildNodes)
         {
-            if (node is Text t) text.Append(t.Data);
+            if (node is Text t) (text ??= RentText()).Append(t.Data);
             else if (node is Element child)
             {
-                var cs = _styles.GetComputedStyle(child);
-                if (cs.GetPropertyValue("display") == "none" || cs.GetPropertyValue("position") == "absolute") continue;
+                var cs = BoxStyleSnapshot.For(_styles.GetComputedStyle(child));
+                if (cs.DisplayNone || cs.Mode == PositionedMode.Absolute) continue;
                 AddText(); count++;
                 var nested = FlexIntrinsic(child, cs);
-                double extra = Length(cs, "padding-left", 0) + Length(cs, "padding-right", 0)
-                    + Length(cs, "border-left-width", 0) + Length(cs, "border-right-width", 0);
+                double extra = Length(cs, cs.PaddingLeft, "padding-left", 0) + Length(cs, cs.PaddingRight, "padding-right", 0)
+                    + Length(cs, cs.BorderLeftWidth, "border-left-width", 0) + Length(cs, cs.BorderRightWidth, "border-right-width", 0);
                 double min = nested.Minimum + extra, max = nested.Maximum + extra;
                 if (IntrinsicSpecifiedWidth(child, cs) is { } specifiedWidth)
-                    min = max = FlexLineSolver.Quantize(specifiedWidth) + (cs.GetPropertyValue("box-sizing") == "border-box" ? 0 : extra);
-                double margins = FlexMargin(cs, "margin-left", 0) + FlexMargin(cs, "margin-right", 0);
+                    min = max = FlexLineSolver.Quantize(specifiedWidth) + (cs.BorderBox ? 0 : extra);
+                double margins = FlexMargin(cs, cs.MarginLeft, "margin-left", 0) + FlexMargin(cs, cs.MarginRight, "margin-right", 0);
                 if (row) { if (wrap) minimum = Math.Max(minimum, min + margins); else minimum += min + margins; maximum += max + margins; }
                 else { minimum = Math.Max(minimum, min + margins); maximum = Math.Max(maximum, max + margins); }
             }
         }
         AddText();
+        if (text != null) ReturnText(text);
         if (row)
         {
-            double gap = FlexGap(style, "column-gap", null) * Math.Max(0, count - 1);
+            double gap = FlexGap(style, style.ColumnGap, "column-gap", null) * Math.Max(0, count - 1);
             if (!wrap) minimum += gap;
             maximum += gap;
         }
         return new PositionedIntrinsicWidth(minimum, maximum);
     }
-    private PositionedIntrinsicWidth FlexTextIntrinsic(Element element, CSSStyleDeclaration style, string text)
+    private PositionedIntrinsicWidth FlexTextIntrinsic(Element element, Css.Om.CSSStyleDeclaration style, string text)
     {
         // InlineNode::ComputeMinMaxSizes consumes ShapeResult::SnappedWidth (ceil), not raw glyph advances.
         var size = MeasureIntrinsicText(element, style, text);
         return new(FlexLineSolver.CeilIntrinsic(size.Minimum), FlexLineSolver.CeilIntrinsic(size.Maximum));
     }
-    private double FlexTextHeight(CSSStyleDeclaration style, string text, double width)
+    private double FlexTextHeight(BoxStyleSnapshot style, string text, double width)
     {
-        int fontSize = TextFontSize(style);
-        var shaping = TextShaping(style, fontSize);
-        double lineHeight = TextLineHeight(style, fontSize, shaping);
+        int fontSize = TextFontSize(style.Style);
+        var shaping = TextShaping(style.Style, fontSize);
+        double lineHeight = TextLineHeight(style.Style, fontSize, shaping);
         if (text.Length == 0) return 0;
-        if (style.GetPropertyValue("text-wrap-mode") == "nowrap") return lineHeight;
+        if (style.TextWrapMode == "nowrap") return lineHeight;
         if (!Ascii.IsValid(text)) return WrapUnicodeText(text, fontSize, shaping, width) * lineHeight;
         int lines = 1; string line = "";
         foreach (string word in text.Split(' '))
@@ -135,24 +138,26 @@ public sealed partial class FlowLayout
         if (child.Element.LocalName != "img")
             return row ? child.MaximumWidth : child.ContentHeight;
         var image = ImageLayout.Intrinsic(_images, child.Element);
-        string cross = row ? "height" : "width";
+        var style = child.Style;
+        BoxLength cross = row ? style.Height : style.Width;
+        string property = row ? "height" : "width";
         bool definite = !row || FlexHeightBasis(parent);
         double decoration = row ? child.Plan.Edges.Vertical : child.Plan.Edges.Horizontal;
         double basis = row ? parent.DefiniteContentHeight ?? 0 : parent.ContentWidth;
-        double size = FlexAutoSize(child.Style, cross, definite) ? row ? image.Height : image.Width
-            : Math.Max(0, Length(child.Style, cross, basis) - (child.Style.GetPropertyValue("box-sizing") == "border-box" ? decoration : 0));
-        size = FlexClamp(child.Style, cross, size, decoration, basis, definite, 0);
+        double size = FlexAutoSize(cross, definite) ? row ? image.Height : image.Width
+            : Math.Max(0, Length(style, cross, property, basis) - (style.BorderBox ? decoration : 0));
+        size = FlexClamp(style, !row, size, decoration, basis, definite, 0);
         return row ? size * image.Width / image.Height : size * image.Height / image.Width;
     }
     private static bool FlexHeightBasis(PositionedBoxPlan plan)
         => plan.DescendantHeightIsDefinite ?? plan.DefiniteContentHeight.HasValue;
-    private static bool FlexUsedHeightIsDefinite(CSSStyleDeclaration style, bool row, bool parentDefinite, string alignment, bool autoCrossMargin)
+    private static bool FlexUsedHeightIsDefinite(BoxStyleSnapshot style, bool row, bool parentDefinite, string alignment, bool autoCrossMargin)
     {
         if (row)
-            return !FlexAutoSize(style, "height", parentDefinite) || parentDefinite && alignment == "stretch" && !autoCrossMargin;
+            return !FlexAutoSize(style.Height, parentDefinite) || parentDefinite && alignment == "stretch" && !autoCrossMargin;
         if (parentDefinite) return true;
-        string basis = style.GetPropertyValue("flex-basis");
-        return basis == "auto" ? !FlexAutoSize(style, "height", false) : basis != "content" && !basis.EndsWith('%');
+        var basis = style.FlexBasis;
+        return basis.IsAuto ? !FlexAutoSize(style.Height, false) : basis.Kind != BoxLengthKind.Content && !basis.IsPercent;
     }
     private static PositionedContainingBlock FlexContaining(PositionedBoxPlan plan)
     {
@@ -163,59 +168,46 @@ public sealed partial class FlowLayout
     }
     private double FlexMinimum(FlexChild child, bool row, PositionedBoxPlan parent)
     {
-        var cs = child.Style; string property = row ? "width" : "height";
+        var cs = child.Style;
         double decoration = row ? child.Plan.Edges.Horizontal : child.Plan.Edges.Vertical;
         double basis = row ? parent.ContentWidth : parent.DefiniteContentHeight ?? 0;
         bool definite = row || FlexHeightBasis(parent);
-        double automatic = cs.GetPropertyValue(row ? "overflow-x" : "overflow-y") is "hidden" or "scroll" or "auto" ? 0
+        double automatic = (row ? cs.OverflowX : cs.OverflowY) is "hidden" or "scroll" or "auto" ? 0
             : child.Element.LocalName == "img" ? FlexContentBasis(child, row, parent) : row ? child.MinimumWidth : child.ContentHeight;
-        string specified = cs.GetPropertyValue(property);
         if (row && !WidthIsAuto(child.Element, cs))
-            automatic = Math.Min(automatic, Math.Max(0, UsedWidth(child.Element, cs, basis)
-                - (cs.GetPropertyValue("box-sizing") == "border-box" ? decoration : 0)));
-        else if (!row && specified != "auto" && !(specified.EndsWith('%') && !definite))
-            automatic = Math.Min(automatic, Math.Max(0, Number(specified, basis) - (cs.GetPropertyValue("box-sizing") == "border-box" ? decoration : 0)));
-        automatic = Math.Min(automatic, FlexLimit(cs, "max-" + property, decoration, basis, definite, double.PositiveInfinity));
-        return FlexLimit(cs, "min-" + property, decoration, basis, definite, automatic);
+            automatic = Math.Min(automatic, Math.Max(0, UsedWidth(child.Element, cs, basis) - (cs.BorderBox ? decoration : 0)));
+        else if (!row && !cs.Height.IsAuto && !(cs.Height.IsPercent && !definite))
+            automatic = Math.Min(automatic, Math.Max(0, Length(cs, cs.Height, "height", basis) - (cs.BorderBox ? decoration : 0)));
+        automatic = Math.Min(automatic, FlexLimit(cs, row ? cs.MaxWidth : cs.MaxHeight, row ? "max-width" : "max-height", decoration, basis, definite, double.PositiveInfinity));
+        return FlexLimit(cs, row ? cs.MinWidth : cs.MinHeight, row ? "min-width" : "min-height", decoration, basis, definite, automatic);
     }
-    private static double FlexClamp(CSSStyleDeclaration style, string dimension, double size, double decoration, double basis, bool definite, double automatic)
+    /// <summary>Clamps a used size between the min-/max- longhands of one axis (<paramref name="width"/> selects the axis).</summary>
+    private static double FlexClamp(BoxStyleSnapshot style, bool width, double size, double decoration, double basis, bool definite, double automatic)
     {
-        double minimum = FlexLimit(style, "min-" + dimension, decoration, basis, definite, automatic);
-        double maximum = Math.Max(minimum, FlexLimit(style, "max-" + dimension, decoration, basis, definite, double.PositiveInfinity));
+        double minimum = FlexLimit(style, width ? style.MinWidth : style.MinHeight, width ? "min-width" : "min-height", decoration, basis, definite, automatic);
+        double maximum = Math.Max(minimum, FlexLimit(style, width ? style.MaxWidth : style.MaxHeight, width ? "max-width" : "max-height", decoration, basis, definite, double.PositiveInfinity));
         return FlexLineSolver.Quantize(Math.Clamp(size, minimum, maximum));
     }
-    private static double FlexLimit(CSSStyleDeclaration style, string property, double decoration, double basis, bool definite, double fallback)
+    private static double FlexLimit(BoxStyleSnapshot style, in BoxLength value, string property, double decoration, double basis, bool definite, double fallback)
     {
-        string value = style.GetPropertyValue(property);
-        if (value is "auto" or "none" || value.EndsWith('%') && !definite) return fallback;
-        return Math.Max(0, FlexLineSolver.Quantize(Number(value, basis)) - (style.GetPropertyValue("box-sizing") == "border-box" ? decoration : 0));
+        if (value.IsAuto || value.IsNone || value.IsPercent && !definite) return fallback;
+        return Math.Max(0, FlexLineSolver.Quantize(Length(style, value, property, basis)) - (style.BorderBox ? decoration : 0));
     }
-    private static bool FlexAutoSize(CSSStyleDeclaration style, string dimension, bool definite)
+    private static bool FlexAutoSize(in BoxLength value, bool definite) => value.IsAuto || value.IsPercent && !definite;
+    private static double FlexRelative(BoxStyleSnapshot style, in BoxLength a, in BoxLength b, string start, string end, double basis, bool definite)
     {
-        string value = style.GetPropertyValue(dimension);
-        return value == "auto" || value.EndsWith('%') && !definite;
+        if (!a.IsAuto && !(a.IsPercent && !definite)) return Length(style, a, start, basis);
+        return b.IsAuto || b.IsPercent && !definite ? 0 : -Length(style, b, end, basis);
     }
-    private static double FlexRelative(CSSStyleDeclaration style, string start, string end, double basis, bool definite)
-    {
-        string a = style.GetPropertyValue(start), b = style.GetPropertyValue(end);
-        if (a != "auto" && !(a.EndsWith('%') && !definite)) return Number(a, basis);
-        return b == "auto" || b.EndsWith('%') && !definite ? 0 : -Number(b, basis);
-    }
-    private static double FlexMargin(CSSStyleDeclaration style, string property, double basis)
-        => style.GetPropertyValue(property) == "auto" ? 0 : FlexLineSolver.Quantize(Length(style, property, basis));
+    private static double FlexMargin(BoxStyleSnapshot style, in BoxLength value, string property, double basis)
+        => value.IsAuto ? 0 : FlexLineSolver.Quantize(Length(style, value, property, basis));
     private static double FlexCrossMargins(FlexChild child, bool row, double basis) => child.Text != null ? 0
-        : FlexMargin(child.Style, row ? "margin-top" : "margin-left", basis) + FlexMargin(child.Style, row ? "margin-bottom" : "margin-right", basis);
-    private static double FlexGap(CSSStyleDeclaration style, string property, double? basis)
-    {
-        string value = style.GetPropertyValue(property);
-        return value == "normal" || value.EndsWith('%') && !basis.HasValue ? 0 : FlexLineSolver.Quantize(Number(value, basis ?? 0));
-    }
-    private static double FlexFactor(CSSStyleDeclaration style, string property)
-    {
-        if (!double.TryParse(style.GetPropertyValue(property), NumberStyles.Float, CultureInfo.InvariantCulture, out double value) || !double.IsFinite(value) || value < 0)
-            throw new NotSupportedException("Flex " + property + ": " + style.GetPropertyValue(property));
-        return value;
-    }
+        : row ? FlexMargin(child.Style, child.Style.MarginTop, "margin-top", basis) + FlexMargin(child.Style, child.Style.MarginBottom, "margin-bottom", basis)
+        : FlexMargin(child.Style, child.Style.MarginLeft, "margin-left", basis) + FlexMargin(child.Style, child.Style.MarginRight, "margin-right", basis);
+    private static double FlexGap(BoxStyleSnapshot style, in BoxLength value, string property, double? basis)
+        => value.Kind == BoxLengthKind.Normal || value.IsPercent && !basis.HasValue ? 0 : FlexLineSolver.Quantize(Length(style, value, property, basis ?? 0));
+    private static double FlexFactor(BoxStyleSnapshot style, double value, string property)
+        => double.IsNaN(value) ? throw new NotSupportedException("Flex " + property + ": " + style.Style.GetPropertyValue(property)) : value;
     private static string FlexAlignment(Element e, string value)
     {
         if (value is "normal" or "stretch") return "stretch";

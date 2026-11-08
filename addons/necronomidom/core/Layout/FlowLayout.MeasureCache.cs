@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using NecronomiDom.Css.Om;
 using NecronomiDom.Dom;
 
 namespace NecronomiDom.Layout;
@@ -9,11 +8,17 @@ public sealed partial class FlowLayout
     // Nested flex layout asks for the same intrinsic widths and natural heights while
     // resolving ancestors, final main sizes and paint. Only measurement is memoized:
     // Block still emits each box, paint context and hit target through its normal path.
-    // The full plan distinguishes wrapping widths and definite percentage-height bases.
     private readonly Dictionary<Element, PositionedIntrinsicWidth> _passIntrinsic = new();
-    private readonly Dictionary<(Element Element, PositionedBoxPlan Plan), double> _passMeasure = new();
+    private readonly Dictionary<MeasureKey, double> _passMeasure = new();
 
-    private PositionedIntrinsicWidth FlexIntrinsic(Element element, CSSStyleDeclaration style)
+    /// <summary>The plan inputs a natural content height depends on: available width, definite height
+    /// and percentage basis, and the padding box edges. Origins, static positions, insets, margins and
+    /// min/max constraints place or clamp the box afterwards, so the measure pass and the emitting pass
+    /// of the same element share one entry even though their plans carry different positions.</summary>
+    private readonly record struct MeasureKey(Element Element, double ContentWidth, double? DefiniteContentHeight,
+        bool? DescendantHeightIsDefinite, PositionedEdges Edges);
+
+    private PositionedIntrinsicWidth FlexIntrinsic(Element element, BoxStyleSnapshot style)
     {
         if (_passIntrinsic.TryGetValue(element, out var measured)) return measured;
         measured = MeasureFlexIntrinsic(element, style);
@@ -22,9 +27,9 @@ public sealed partial class FlowLayout
         return measured;
     }
 
-    private double FlexMeasure(Element element, CSSStyleDeclaration style, PositionedBoxPlan plan)
+    private double FlexMeasure(Element element, BoxStyleSnapshot style, PositionedBoxPlan plan)
     {
-        var key = (element, plan);
+        var key = new MeasureKey(element, plan.ContentWidth, plan.DefiniteContentHeight, plan.DescendantHeightIsDefinite, plan.Edges);
         if (_passMeasure.TryGetValue(key, out double measured)) return measured;
         measured = MeasureFlexHeight(element, style, plan);
         _passMeasure.Add(key, measured);

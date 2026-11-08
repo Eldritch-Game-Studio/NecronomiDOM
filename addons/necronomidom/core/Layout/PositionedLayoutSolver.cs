@@ -1,7 +1,5 @@
 using System;
-using System.Globalization;
 using NecronomiDom.Css.Om;
-using NecronomiDom.Css.Values;
 using NecronomiDom.Paint;
 
 namespace NecronomiDom.Layout;
@@ -16,35 +14,36 @@ public static class PositionedLayoutSolver
     public static PositionedBoxPlan Prepare(CSSStyleDeclaration style, PositionedContainingBlock flowContainingBlock,
         PositionedContainingBlock absoluteContainingBlock, double staticX, double staticY, PositionedIntrinsicWidth intrinsicWidth,
         ImageResource? image = null, AnimatedWidth? animatedWidth = null)
+        => Prepare(BoxStyleSnapshot.For(style), flowContainingBlock, absoluteContainingBlock, staticX, staticY, intrinsicWidth, image, animatedWidth);
+
+    internal static PositionedBoxPlan Prepare(BoxStyleSnapshot box, PositionedContainingBlock flowContainingBlock,
+        PositionedContainingBlock absoluteContainingBlock, double staticX, double staticY, PositionedIntrinsicWidth intrinsicWidth,
+        ImageResource? image = null, AnimatedWidth? animatedWidth = null)
     {
         if (image.HasValue && animatedWidth.HasValue)
             throw new NotSupportedException("Animated width on replaced images is outside the current geometry profile.");
-        PositionedMode mode = style.GetPropertyValue("position") switch
-        {
-            "static" => PositionedMode.Static, "relative" => PositionedMode.Relative, "absolute" => PositionedMode.Absolute,
-            var value => throw Reject("position", value)
-        };
-        if (style.GetPropertyValue("direction") != "ltr") throw Reject("direction", style.GetPropertyValue("direction"));
-        if (style.GetPropertyValue("z-index") != "auto") throw Reject("z-index", style.GetPropertyValue("z-index"));
+        PositionedMode mode = box.Mode ?? throw Reject("position", box.Position);
+        if (!box.DirectionLtr) throw Reject("direction", box.Style.GetPropertyValue("direction"));
+        if (!box.ZIndexAuto) throw Reject("z-index", box.Style.GetPropertyValue("z-index"));
         bool absolute = mode == PositionedMode.Absolute;
         var cb = absolute ? absoluteContainingBlock : flowContainingBlock;
         Rect basis = absolute ? cb.PaddingBox : cb.ContentBox;
         bool definite = absolute || cb.HeightIsDefinite;
-        var edges = new PositionedEdges(Length(style, "padding-top", basis.Width), Length(style, "padding-right", basis.Width),
-            Length(style, "padding-bottom", basis.Width), Length(style, "padding-left", basis.Width),
-            Length(style, "border-top-width", basis.Width), Length(style, "border-right-width", basis.Width),
-            Length(style, "border-bottom-width", basis.Width), Length(style, "border-left-width", basis.Width));
-        string sizing = style.GetPropertyValue("box-sizing");
-        if (sizing is not ("content-box" or "border-box")) throw Reject("box-sizing", sizing);
-        bool borderBox = sizing == "border-box";
-        double? ml = AutoLength(style, "margin-left", basis.Width), mr = AutoLength(style, "margin-right", basis.Width);
-        double? mt = AutoLength(style, "margin-top", basis.Width), mb = AutoLength(style, "margin-bottom", basis.Width);
-        double? left = AutoLength(style, "left", basis.Width), right = AutoLength(style, "right", basis.Width);
-        double? top = Offset(style, "top", basis.Height, definite), bottom = Offset(style, "bottom", basis.Height, definite);
+        var edges = box.FixedEdges ?? new PositionedEdges(Length(box, box.PaddingTop, "padding-top", basis.Width),
+            Length(box, box.PaddingRight, "padding-right", basis.Width), Length(box, box.PaddingBottom, "padding-bottom", basis.Width),
+            Length(box, box.PaddingLeft, "padding-left", basis.Width), Length(box, box.BorderTopWidth, "border-top-width", basis.Width),
+            Length(box, box.BorderRightWidth, "border-right-width", basis.Width), Length(box, box.BorderBottomWidth, "border-bottom-width", basis.Width),
+            Length(box, box.BorderLeftWidth, "border-left-width", basis.Width));
+        if (!box.BoxSizingValid) throw Reject("box-sizing", box.Style.GetPropertyValue("box-sizing"));
+        bool borderBox = box.BorderBox;
+        double? ml = AutoLength(box, box.MarginLeft, "margin-left", basis.Width), mr = AutoLength(box, box.MarginRight, "margin-right", basis.Width);
+        double? mt = AutoLength(box, box.MarginTop, "margin-top", basis.Width), mb = AutoLength(box, box.MarginBottom, "margin-bottom", basis.Width);
+        double? left = AutoLength(box, box.Left, "left", basis.Width), right = AutoLength(box, box.Right, "right", basis.Width);
+        double? top = Offset(box, box.Top, "top", basis.Height, definite), bottom = Offset(box, box.Bottom, "bottom", basis.Height, definite);
         ImageSize? imageSize = image.HasValue
-            ? ImageLayout.Size(style, image.Value, basis.Width, edges.Horizontal, edges.Vertical, definite ? basis.Height : null)
+            ? ImageLayout.Size(box.Style, image.Value, basis.Width, edges.Horizontal, edges.Vertical, definite ? basis.Height : null)
             : null;
-        double? width = imageSize?.Width ?? animatedWidth?.Resolve(basis.Width) ?? AutoLength(style, "width", basis.Width);
+        double? width = imageSize?.Width ?? animatedWidth?.Resolve(basis.Width) ?? AutoLength(box, box.Width, "width", basis.Width);
         if (width.HasValue && !imageSize.HasValue) width = Math.Max(0, width.Value - (borderBox ? edges.Horizontal : 0));
         if (!width.HasValue)
         {
@@ -60,8 +59,8 @@ public static class PositionedLayoutSolver
                 width = Math.Min(Math.Max(intrinsicWidth.Minimum, available), intrinsicWidth.Maximum);
             }
         }
-        double minWidth = Constraint(style, "min-width", basis.Width, true, borderBox ? edges.Horizontal : 0, false);
-        double maxWidth = Constraint(style, "max-width", basis.Width, true, borderBox ? edges.Horizontal : 0, true);
+        double minWidth = Constraint(box, box.MinWidth, "min-width", basis.Width, true, borderBox ? edges.Horizontal : 0, false);
+        double maxWidth = Constraint(box, box.MaxWidth, "max-width", basis.Width, true, borderBox ? edges.Horizontal : 0, true);
         width = Constrain(width.Value, minWidth, maxWidth);
         double outerWidth = width.Value + edges.Horizontal;
         double x;
@@ -73,12 +72,12 @@ public static class PositionedLayoutSolver
             x = staticX + marginLeft;
             if (mode == PositionedMode.Relative) x += left ?? -(right ?? 0);
         }
-        double? height = imageSize?.Height ?? AutoHeight(style, basis.Height, definite);
+        double? height = imageSize?.Height ?? Offset(box, box.Height, "height", basis.Height, definite);
         if (height.HasValue && !imageSize.HasValue) height = Math.Max(0, height.Value - (borderBox ? edges.Vertical : 0));
         if (absolute && !height.HasValue && top.HasValue && bottom.HasValue)
             height = Math.Max(0, basis.Height - top.Value - bottom.Value - (mt ?? 0) - (mb ?? 0) - edges.Vertical);
-        double minHeight = Constraint(style, "min-height", basis.Height, definite, borderBox ? edges.Vertical : 0, false);
-        double maxHeight = Constraint(style, "max-height", basis.Height, definite, borderBox ? edges.Vertical : 0, true);
+        double minHeight = Constraint(box, box.MinHeight, "min-height", basis.Height, definite, borderBox ? edges.Vertical : 0, false);
+        double maxHeight = Constraint(box, box.MaxHeight, "max-height", basis.Height, definite, borderBox ? edges.Vertical : 0, true);
         if (height.HasValue) height = Constrain(height.Value, minHeight, maxHeight);
         double y = staticY + (absolute ? 0 : mt ?? 0);
         if (absolute) y = AbsoluteAxis(basis.Y, basis.Height, staticY, top, bottom, (height ?? 0) + edges.Vertical, mt, mb, false);
@@ -108,10 +107,13 @@ public static class PositionedLayoutSolver
     }
 
     public static PositionedPaintContext ResolvePaintContext(CSSStyleDeclaration style, PositionedBoxResult box)
-        => ResolvePaintContext(style, box, BoxDecorationResolver.ResolveParts(style, box.BorderBox));
-    internal static PositionedPaintContext ResolvePaintContext(CSSStyleDeclaration style, PositionedBoxResult box, in BoxDecorationParts decoration)
     {
-        bool x = Clips(style.GetPropertyValue("overflow-x")), y = Clips(style.GetPropertyValue("overflow-y"));
+        var snapshot = BoxStyleSnapshot.For(style);
+        return ResolvePaintContext(snapshot, box, BoxDecorationResolver.ResolveParts(snapshot, box.BorderBox));
+    }
+    internal static PositionedPaintContext ResolvePaintContext(BoxStyleSnapshot style, PositionedBoxResult box, in BoxDecorationParts decoration)
+    {
+        bool x = Clips(style.OverflowX), y = Clips(style.OverflowY);
         double innerRadius = 0;
         BorderRadii innerRadii = default;
         if (x || y)
@@ -126,10 +128,8 @@ public static class PositionedLayoutSolver
             if (corner.X == corner.Y && corner == innerRadii.TopRight && corner == innerRadii.BottomRight && corner == innerRadii.BottomLeft)
                 innerRadius = corner.X;
         }
-        if (style.GetSpecifiedValue("opacity") is not CssNumberValue opacity
-            || !double.IsFinite(opacity.Value) || opacity.Value < 0 || opacity.Value > 1)
-            throw Reject("opacity", style.GetPropertyValue("opacity"));
-        double alpha = opacity.Value;
+        double alpha = style.Opacity;
+        if (!double.IsFinite(alpha) || alpha < 0 || alpha > 1) throw Reject("opacity", style.Style.GetPropertyValue("opacity"));
         return new PositionedPaintContext(x, y, box.PaddingBox, alpha, innerRadius) { ClipRadii = innerRadii };
     }
 
@@ -153,40 +153,19 @@ public static class PositionedLayoutSolver
         if (end.HasValue) return origin + available - end.Value - me - size;
         return staticPosition + ms;
     }
-    private static double? AutoHeight(CSSStyleDeclaration style, double basis, bool definite)
-    {
-        string value = style.GetPropertyValue("height");
-        return value == "auto" || value.EndsWith('%') && !definite ? null : Number(value, basis);
-    }
-    private static double? Offset(CSSStyleDeclaration style, string property, double basis, bool definite)
-    {
-        string value = style.GetPropertyValue(property);
-        return value == "auto" || value.EndsWith('%') && !definite ? null : Number(value, basis);
-    }
+    /// <summary>auto, or an indefinite percentage, resolves to no offset/height.</summary>
+    private static double? Offset(BoxStyleSnapshot box, in BoxLength value, string property, double basis, bool definite)
+        => value.IsAuto || value.IsPercent && !definite ? null : Length(box, value, property, basis);
     private static double Constrain(double value, double minimum, double maximum) => Math.Max(minimum, Math.Min(value, maximum));
-    private static double Constraint(CSSStyleDeclaration style, string property, double basis, bool definite, double extra, bool maximum)
+    private static double Constraint(BoxStyleSnapshot box, in BoxLength value, string property, double basis, bool definite, double extra, bool maximum)
     {
-        string value = style.GetPropertyValue(property);
-        if ((!maximum && value == "auto") || (maximum && value == "none") || value.EndsWith('%') && !definite)
+        if ((!maximum && value.IsAuto) || (maximum && value.IsNone) || value.IsPercent && !definite)
             return maximum ? double.PositiveInfinity : 0;
-        return Math.Max(0, Number(value, basis) - extra);
+        return Math.Max(0, Length(box, value, property, basis) - extra);
     }
-    private static double? AutoLength(CSSStyleDeclaration style, string property, double basis)
-    {
-        string value = style.GetPropertyValue(property);
-        return value == "auto" ? null : Number(value, basis);
-    }
-    private static double Length(CSSStyleDeclaration style, string property, double basis) => Number(style.GetPropertyValue(property), basis);
-    private static double Number(string value, double basis)
-    {
-        if (value == "0") return 0;
-        double multiplier;
-        ReadOnlySpan<char> number;
-        if (value.EndsWith("px", StringComparison.Ordinal)) { number = value.AsSpan(0, value.Length - 2); multiplier = 1; }
-        else if (value.EndsWith('%')) { number = value.AsSpan(0, value.Length - 1); multiplier = basis / 100; }
-        else throw Reject("length", value);
-        if (!double.TryParse(number, NumberStyles.Float, CultureInfo.InvariantCulture, out double result) || !double.IsFinite(result)) throw Reject("length", value);
-        return result * multiplier;
-    }
+    private static double? AutoLength(BoxStyleSnapshot box, in BoxLength value, string property, double basis)
+        => value.IsAuto ? null : Length(box, value, property, basis);
+    private static double Length(BoxStyleSnapshot box, in BoxLength value, string property, double basis)
+        => value.IsLength ? value.Resolve(basis) : throw Reject("length", box.Style.GetPropertyValue(property));
     private static NotSupportedException Reject(string property, string value) => new($"Positioned layout rejects {property}: {value}");
 }
