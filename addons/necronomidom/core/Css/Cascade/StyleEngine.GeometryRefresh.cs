@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NecronomiDom.Css.Om;
+using NecronomiDom.Css.TypedOm;
 using NecronomiDom.Css.Values;
 using NecronomiDom.Css.Values.Colors;
 using NecronomiDom.Dom;
@@ -9,7 +10,14 @@ namespace NecronomiDom.Css.Cascade;
 
 public sealed partial class StyleEngine
 {
-    private readonly record struct GeometryInlineValue(CssDeclaration Declaration, bool Won);
+    private readonly record struct GeometryInlineValue(CssDeclaration Declaration, bool Won, long Revision)
+    {
+        internal GeometryInlineValue(CssDeclaration declaration, bool won)
+            : this(declaration, won, ValueRevision(declaration.Value)) { }
+        internal bool Matches(CssValue value) =>
+            ReferenceEquals(value, Declaration.Value) && Revision == ValueRevision(value);
+        private static long ValueRevision(CssValue value) => value is TypedTransformSlot typed ? typed.Revision : 0;
+    }
     internal long GeometryRefreshCount { get; private set; }
 
 
@@ -86,7 +94,7 @@ public sealed partial class StyleEngine
             var previous = entry.GeometryInline[i];
             var next = current[i];
             if (next.Name != previous.Declaration.Name || next.Important != previous.Declaration.Important) return InlineCompositorKind.None;
-            if (ReferenceEquals(next.Value, previous.Declaration.Value)) continue;
+            if (previous.Matches(next.Value)) continue;
             var property = TransformProperty(next.Name) ? InlineCompositorKind.Transform :
                 next.Name == "opacity" ? InlineCompositorKind.Opacity :
                 next.Name is "clip-path" or "background-color" ? InlineCompositorKind.PolygonPaint :
@@ -111,7 +119,7 @@ public sealed partial class StyleEngine
             var prior = entry.GeometryInline[i];
             var next = current[i];
             if (next.Name != prior.Declaration.Name || next.Important != prior.Declaration.Important) return false;
-            if (ReferenceEquals(next.Value, prior.Declaration.Value)) continue;
+            if (prior.Matches(next.Value)) continue;
             if (!prior.Won || !StableInlineValue(next.Value) || !IndependentGeometry(next.Name, next.Value))
                 return false;
         }
@@ -119,7 +127,7 @@ public sealed partial class StyleEngine
         for (int i = 0; i < current.Count; i++)
         {
             var next = current[i];
-            if (ReferenceEquals(next.Value, entry.GeometryInline[i].Declaration.Value)) continue;
+            if (entry.GeometryInline[i].Matches(next.Value)) continue;
             var computed = ComputedValueResolver.Resolve(next.Name, next.Value, default);
             ReplaceGeometryValue(entry, next.Name, computed);
             // The existing cascade exposes physical and logical longhands together.
@@ -154,6 +162,7 @@ public sealed partial class StyleEngine
 
     private static bool StableInlineValue(CssValue value)
     {
+        if (value is TypedTransformSlot typed) return typed.IsIndependentGeometry;
         if (IndependentColor(value)) return true;
         if (value is CssKeywordValue || value.GetType() == typeof(CssNumberValue) ||
             value.GetType() == typeof(CssIntegerValue) || value.GetType() == typeof(CssPercentageValue)) return true;

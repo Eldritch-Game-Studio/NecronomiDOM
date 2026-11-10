@@ -3,7 +3,6 @@ namespace AngleSharp.Text
     using AngleSharp.Dom;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Text;
 
     /// <summary>
@@ -31,12 +30,12 @@ namespace AngleSharp.Text
         /// <summary>
         /// Gets the UTF-32 (Little Endian) encoding.
         /// </summary>
-        public static readonly Encoding Utf32Le = GetEncoding("UTF-32LE");
+        public static readonly Encoding Utf32Le = new UTF32Encoding(false, true);
 
         /// <summary>
         /// Gets the UTF-32 (Little Endian) encoding.
         /// </summary>
-        public static readonly Encoding Utf32Be = GetEncoding("UTF-32BE");
+        public static readonly Encoding Utf32Be = new UTF32Encoding(true, true);
 
         /// <summary>
         /// Gets the chinese government standard encoding.
@@ -126,7 +125,7 @@ namespace AngleSharp.Text
         /// <summary>
         /// Gets the US-ASCII encoding.
         /// </summary>
-        public static readonly Encoding UsAscii = GetEncoding("us-ascii");
+        public static readonly Encoding UsAscii = Encoding.ASCII;
 
         /// <summary>
         /// Gets the ks_c_5601-1987 encoding.
@@ -136,6 +135,8 @@ namespace AngleSharp.Text
         #endregion
 
         #region Fields
+
+        private static readonly Encoding Replacement = new ReplacementEncoding();
 
         private static readonly Dictionary<String, Encoding> encodings = CreateEncodings();
 
@@ -292,18 +293,12 @@ namespace AngleSharp.Text
 
         #region Helper
 
-        private static Encoding GetEncoding(String name, Encoding? fallback = default)
+        private static Encoding GetEncoding(String name)
         {
-            try
-            {
-                return Encoding.GetEncoding(name);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("The platform does not allow using the '{0}' encoding: {1}", name, ex);
-                // We use a catch em all since WP8 does throw a different exception than W*.
-                return fallback ?? Utf8;
-            }
+            // Never register a provider process-wide: a provider loaded with an editor
+            // plugin would otherwise keep its collectible AssemblyLoadContext alive.
+            return CodePagesEncodingProvider.Instance.GetEncoding(name)
+                ?? throw new NotSupportedException($"The required encoding '{name}' is unavailable.");
         }
 
         private static Dictionary<String, Encoding> CreateEncodings()
@@ -499,7 +494,7 @@ namespace AngleSharp.Text
             encodings.Add("koi8_r", kr);
             encodings.Add("koi8-u", GetEncoding("koi8-u"));
 
-            var chineseOfficial = GetEncoding("GB18030", GetEncoding("x-cp20936"));
+            var chineseOfficial = Gb18030;
             encodings.Add("chinese", chineseOfficial);
             encodings.Add("csgb2312", chineseOfficial);
             encodings.Add("csiso58gb231280", chineseOfficial);
@@ -509,7 +504,7 @@ namespace AngleSharp.Text
             encodings.Add("gbk", chineseOfficial);
             encodings.Add("iso-ir-58", chineseOfficial);
             encodings.Add("x-gbk", chineseOfficial);
-            encodings.Add("hz-gb-2312", GetEncoding("hz-gb-2312"));
+            encodings.Add("hz-gb-2312", Replacement);
             encodings.Add("gb18030", Gb18030);
 
             var chineseSimplified = GetEncoding("x-cp50227");
@@ -526,13 +521,13 @@ namespace AngleSharp.Text
             encodings.Add("csiso2022jp", isojp);
             encodings.Add("iso-2022-jp", isojp);
 
-            var isokr = GetEncoding("iso-2022-kr");
-            encodings.Add("csiso2022kr", isokr);
-            encodings.Add("iso-2022-kr", isokr);
-
-            var isocn = GetEncoding("iso-2022-cn");
-            encodings.Add("iso-2022-cn", isocn);
-            encodings.Add("iso-2022-cn-ext", isocn);
+            // These labels denote WHATWG replacement, not legacy ISO-2022 decoders.
+            // https://encoding.spec.whatwg.org/#replacement
+            encodings.Add("csiso2022kr", Replacement);
+            encodings.Add("iso-2022-kr", Replacement);
+            encodings.Add("iso-2022-cn", Replacement);
+            encodings.Add("iso-2022-cn-ext", Replacement);
+            encodings.Add("replacement", Replacement);
             encodings.Add("shift_jis", GetEncoding("shift_jis"));
 
             var eucjp = GetEncoding("euc-jp");

@@ -155,6 +155,12 @@ namespace AngleSharp.Html
         private Stream BuildRequestContent(Encoding? encoding, Action<StreamWriter> process)
         {
             encoding ??= TextEncoding.Utf8;
+            // Replacement has no encoder; the standard's output encoding is UTF-8.
+            if (encoding is ReplacementEncoding)
+            {
+                encoding = TextEncoding.Utf8;
+            }
+
             var ms = new MemoryStream();
             FixPotentialBoundaryCollisions(encoding);
             ReplaceCharset(encoding);

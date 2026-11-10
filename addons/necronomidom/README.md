@@ -26,6 +26,16 @@ Use Godot .NET. Add this line to your project's `.csproj`, before `</Project>`, 
 
 Attach `res://addons/necronomidom/runtime/DocumentHost.cs` to a `Control` to use the full C# DOM API, CSSOM and typed state bindings.
 
+Managed editor assembly reload withdraws the host's native callbacks and paint
+resources before unloading, then reconstructs mounted documents from their
+restored `DocumentPath`. This is a document reload, not preservation of in-memory
+DOM edits or focus state. Detached hosts reconstruct when they next enter the tree.
+
+Reuse Typed OM transform values for animation. Mutations of a reused transform
+slot are revision-tracked, so supported independent 2D transforms update retained
+paint and hit geometry without relaying out the document. Relative/font-dependent
+transforms still take the full layout path.
+
 ## Authoring
 
 - Write ordinary HTML and linked CSS files for your interface.

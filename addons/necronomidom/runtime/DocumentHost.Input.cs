@@ -18,6 +18,13 @@ public partial class DocumentHost
     [Export, BindProperty(Name = "navigate_right_action")] public StringName NavigateRightAction { get; set; } = "ui_right";
     [Export, BindProperty(Name = "navigate_up_action")] public StringName NavigateUpAction { get; set; } = "ui_up";
     [Export, BindProperty(Name = "navigate_down_action")] public StringName NavigateDownAction { get; set; } = "ui_down";
+    /// <summary>Actions that classify native joypad events for controller navigation inside a focused text field. Null
+    /// uses the navigate actions. Set them when those are application-pressed aliases without native bindings (for
+    /// example a per-player action namespace); otherwise no joypad event matches and a pad cannot leave the field.</summary>
+    public StringName? ControllerNavigateLeftMatch { get; set; }
+    public StringName? ControllerNavigateRightMatch { get; set; }
+    public StringName? ControllerNavigateUpMatch { get; set; }
+    public StringName? ControllerNavigateDownMatch { get; set; }
     /// <summary>Raised once per cancel press (Escape or <see cref="CancelAction"/>) while the host accepts input.
     /// Closing screens, popping menus or vetoing the intent belongs to the application.</summary>
     public event Action? CancelRequested;

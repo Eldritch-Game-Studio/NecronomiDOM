@@ -410,6 +410,18 @@ suite from the repository root:
 dotnet test tests/NecronomiDom.Tests/NecronomiDom.Tests.csproj --filter FullyQualifiedName~StyleComputedReuseTests
 ```
 
+### Packaging for a managed host
+
+For a .NET host that supplies its native integration, commit source changes and run
+`python3 scripts/package-managed.py`. It rebuilds the Release demo and writes
+`dist/necronomidom-managed-<commit>.zip`: deterministic committed addon source with
+per-file hashes and upstream provenance in `addon-package.json`. The host compiles
+the source through `NecronomiDom.targets`. This profile omits GDExtension registration
+and native binaries, preventing duplicate registration in engines with embedded modules.
+It is not the standalone GDScript/native release; that release still uses the native
+build and final-ZIP qualification workflow.
+Host-generated `.import` files are excluded; installing this package preserves the host's asset-import settings.
+
 ## Supported profile
 
 NecronomiDOM implements a deliberate subset of the web platform and refuses the rest loudly: content outside the

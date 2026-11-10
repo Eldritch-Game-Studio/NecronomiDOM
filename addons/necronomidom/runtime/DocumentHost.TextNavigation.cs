@@ -17,8 +17,9 @@ public partial class DocumentHost
         if (input is InputEventJoypadMotion motion) source = (input.Device, true, (int)motion.Axis);
         else if (input is InputEventJoypadButton button) source = (input.Device, false, (int)button.ButtonIndex);
         else return;
-        var strength = new Vector4(input.GetActionStrength(NavLeft), input.GetActionStrength(NavRight),
-            input.GetActionStrength(NavUp), input.GetActionStrength(NavDown));
+        var strength = new Vector4(input.GetActionStrength(ControllerNavigateLeftMatch ?? NavLeft),
+            input.GetActionStrength(ControllerNavigateRightMatch ?? NavRight),
+            input.GetActionStrength(ControllerNavigateUpMatch ?? NavUp), input.GetActionStrength(ControllerNavigateDownMatch ?? NavDown));
         if (strength == Vector4.Zero) _controllerNavigation.Remove(source);
         else _controllerNavigation[source] = strength;
     }

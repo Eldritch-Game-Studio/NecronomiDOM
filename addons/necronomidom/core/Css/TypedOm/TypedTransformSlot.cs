@@ -19,6 +19,29 @@ namespace NecronomiDom.Css.TypedOm
             for (int i = 0; i < value.Components.Count; i++) functions.Add(Function(i, value.Components[i]));
         }
         internal CSSTransformValue Current => _current;
+        internal long Revision { get; private set; }
+        internal bool IsIndependentGeometry
+        {
+            get
+            {
+                foreach (var component in _components)
+                {
+                    if (!component.Is2D) return false;
+                    bool independent = component.Kind switch
+                    {
+                        CSSTransformKind.Matrix => true,
+                        CSSTransformKind.Translate or CSSTransformKind.Scale or CSSTransformKind.Skew =>
+                            Independent(component.X) && Independent(component.Y),
+                        CSSTransformKind.Rotate => Independent(component.Angle),
+                        _ => false
+                    };
+                    if (!independent) return false;
+                }
+                return true;
+            }
+        }
+        private static bool Independent(CSSNumericValue value) => value.TryGetUnit(out var unit)
+            && unit.Unit is "number" or "percent" or "px" or "deg";
         internal bool SameShape(CSSTransformValue value)
         {
             if (value.Components.Count != Items.Count) return false;
@@ -45,7 +68,10 @@ namespace NecronomiDom.Css.TypedOm
                 == (right.Unit == "number" ? 0 : right.Unit == "percent" ? 1 : 2);
         }
         internal void Update(CSSTransformValue value)
-        { for (int i = 0; i < _components.Length; i++) _components[i] = value.Components[i]; }
+        {
+            for (int i = 0; i < _components.Length; i++) _components[i] = value.Components[i];
+            Revision++;
+        }
         internal CSSTransformValue Snapshot()
         {
             var components = new CSSTransformComponent[_current.Components.Count];

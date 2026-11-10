@@ -13,3 +13,12 @@ here. It fixes HTML tree construction in eight parser files:
   owner inheritance.
 
 Scripting is always parsed with the scripting flag off; NecronomiDOM never executes scripts.
+
+Encoding integration is also patched directly in the vendored sources:
+`EncodingMetaHandler` does not register a process-wide code-page provider;
+`TextEncoding` uses the provider locally so collectible hosts do not acquire a
+global provider root. The WHATWG replacement labels (including `iso-2022-cn`)
+decode a nonempty stream to one U+FFFD through `ReplacementEncoding`, rather than
+probing unsupported platform encodings or silently treating them as UTF-8.
+`FormDataSet` normalizes replacement output encoding to UTF-8, as the standard
+requires. Regression coverage lives in `TextEncodingTests`.

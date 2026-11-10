@@ -1,5 +1,6 @@
 using System.Linq;
 using NecronomiDom.Css.Cascade;
+using NecronomiDom.Css.TypedOm;
 using NecronomiDom.Dom;
 using NecronomiDom.Html;
 using NecronomiDom.Layout;
@@ -53,6 +54,51 @@ public sealed class FlowRetainedTransformTests
         for (int y = 0; y < 160; y += 4)
             for (int x = 0; x < 240; x += 4)
                 Assert.That(list.HitTest(x, y)?.Id, Is.EqualTo(expected.HitTest(x, y)?.Id), $"{x},{y}");
+    }
+
+    [Test]
+    public void ReusedTypedTransformUpdatesPaintAndClippedHitsOnEveryMutation()
+    {
+        var (doc, styles, flow, target) = Load();
+        var components = new[] { CSSTransformComponent.Translate(new CSSUnitValue(0, "percent"), new CSSUnitValue(5, "px")) };
+        var value = new CSSTransformValue(components);
+        target.AttributeStyleMap.Set("transform", value);
+        var list = flow.Layout(doc, 240, 160);
+        foreach (int percent in new[] { 15, 55, -10 })
+        {
+            components[0] = CSSTransformComponent.Translate(new CSSUnitValue(percent, "percent"), new CSSUnitValue(5, "px"));
+            target.AttributeStyleMap.Set("transform", value);
+            Assert.That(styles.TryConsumeInlineTransformChange(target), Is.True);
+            Assert.That(flow.TryPrepareTransformUpdate(target, out _, out var transform), Is.True);
+            flow.ApplyTransformUpdate(target, transform);
+
+            var (referenceDoc, referenceStyles, referenceFlow, referenceTarget) = Load();
+            referenceTarget.Style.SetProperty("transform", $"translate({percent}%,5px)");
+            referenceStyles.Invalidate();
+            var expected = referenceFlow.Layout(referenceDoc, 240, 160);
+            Assert.That(list.Runs, Is.EqualTo(expected.Runs));
+            for (int y = 0; y < 160; y += 4)
+                for (int x = 0; x < 240; x += 4)
+                    Assert.That(list.HitTest(x, y)?.Id, Is.EqualTo(expected.HitTest(x, y)?.Id), $"{percent}: {x},{y}");
+        }
+    }
+
+    [Test]
+    public void TypedRelativeTranslationRetainsFontDependentLayout()
+    {
+        var (doc, styles, flow, target) = Load();
+        var components = new[] { CSSTransformComponent.Translate(new CSSUnitValue(0, "em"), new CSSUnitValue(0, "px")) };
+        var value = new CSSTransformValue(components);
+        target.AttributeStyleMap.Set("transform", value);
+        flow.Layout(doc, 240, 160);
+        components[0] = CSSTransformComponent.Translate(new CSSUnitValue(2, "em"), new CSSUnitValue(0, "px"));
+        target.AttributeStyleMap.Set("transform", value);
+        Assert.That(styles.TryConsumeInlineTransformChange(target), Is.False);
+        var actual = flow.Layout(doc, 240, 160);
+        var (referenceDoc, referenceStyles, referenceFlow, referenceTarget) = Load();
+        referenceTarget.Style.SetProperty("transform", "translate(2em,0px)");
+        referenceStyles.Invalidate();
+        Assert.That(actual.Runs, Is.EqualTo(referenceFlow.Layout(referenceDoc, 240, 160).Runs));
     }
 
     [Test]
