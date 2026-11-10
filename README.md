@@ -394,6 +394,22 @@ python3 scripts/generate-capabilities.py --check  # CI: fail on stale/missing ge
 files. Add them to `css.customData` / `html.customData` in workspace settings. They supplement
 completion/documentation; they do not suppress every unsupported browser suggestion.
 
+### Incremental style reconciliation
+
+Class, pseudo-state (including hover), and tree changes still rematch selectors. When stylesheet
+sources remain unchanged, specified and computed values can independently reuse proven inputs
+instead of discarding their snapshots merely because rule matching changed. Added and removed
+declarations, inheritance, direction, and context-dependent values remain subject to recomputation;
+stylesheet and media changes retire the old source-generation proof.
+
+`StyleComputedReuseTests` compares incremental results with full computation, including class/hover
+toggles, structural selectors, sibling numeric inputs, and source/media invalidation. Run the focused
+suite from the repository root:
+
+```sh
+dotnet test tests/NecronomiDom.Tests/NecronomiDom.Tests.csproj --filter FullyQualifiedName~StyleComputedReuseTests
+```
+
 ## Supported profile
 
 NecronomiDOM implements a deliberate subset of the web platform and refuses the rest loudly: content outside the

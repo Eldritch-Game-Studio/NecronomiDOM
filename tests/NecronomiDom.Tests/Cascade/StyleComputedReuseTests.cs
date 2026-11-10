@@ -197,6 +197,93 @@ public sealed class StyleComputedReuseTests
         }
         Assert.That(styles.ReusedComputedValueCount, Is.GreaterThan(0));
     }
+    [Test]
+    public void ClassAndHoverChangesReuseUnchangedValuesButStillMatchRules()
+    {
+        const string css = "#p.selected{background-color:blue}#p:hover{border-top:2px solid red}";
+        var (doc, styles) = Load(true, css); var (control, reference) = Load(false, css);
+        Compare(doc, styles, control, reference);
+        var parent = doc.GetElementById("p")!;
+        var other = control.GetElementById("p")!;
+        for (int i = 0; i < 4; i++)
+        {
+            long reused = styles.ReusedComputedValueCount;
+            long reusedRules = styles.ReusedRuleCollectionCount;
+            parent.ClassName = other.ClassName = i % 2 == 0 ? "selected" : "";
+            parent.PseudoState = other.PseudoState = i % 2 == 0 ? ElementPseudoState.Hover : 0;
+            reference.Invalidate();
+            Compare(doc, styles, control, reference);
+            Assert.That(styles.ReusedComputedValueCount, Is.GreaterThan(reused),
+                "selector invalidation must not discard independently proved computed inputs");
+            Assert.That(styles.ReusedRuleCollectionCount, Is.EqualTo(reusedRules),
+                "matching must still discover added and removed class/state rules");
+            Assert.That(styles.GetComputedStyle(parent).GetPropertyValue("background-color"),
+                Is.EqualTo(i % 2 == 0 ? "rgb(0, 0, 255)" : "rgba(0, 0, 0, 0)"));
+        }
+    }
+
+    [TestCase("#p.selected{--paint:blue}#p.selected #c{border-left-style:none}")]
+    [TestCase("#p.selected{font-size:30px}#p.selected #c{width:2em}")]
+    [TestCase("#p.selected{color:purple}#p.selected #g{color:inherit}")]
+    [TestCase("#p.selected{display:block}#p.selected #c{display:inline}")]
+    [TestCase("#p.selected{direction:rtl}#p.selected #c{margin-inline-start:13px}")]
+    [TestCase("#p.selected{width:300px}#c{width:10cqw}")]
+    [TestCase("#p.selected{writing-mode:vertical-rl}#c{width:10cqi}")]
+    [TestCase("#p.selected #c{position:absolute;overflow-y:hidden}")]
+    public void SelectorChangesRecomputeNewRemovedInheritedAndContextDependentInputs(string css)
+    {
+        var (doc, styles) = Load(true, css); var (control, reference) = Load(false, css);
+        Compare(doc, styles, control, reference);
+        foreach (string classes in new[] { "selected", "", "selected" })
+        {
+            doc.GetElementById("p")!.ClassName = classes;
+            control.GetElementById("p")!.ClassName = classes;
+            reference.Invalidate();
+            Compare(doc, styles, control, reference);
+        }
+    }
+
+    [Test]
+    public void StructuralSelectorAndSiblingNumericInputsStayLiveAfterCachedComputation()
+    {
+        const string css = "#c{width:calc(10px * sibling-count())}#c:first-child{padding-left:7px}";
+        var (doc, styles) = Load(true, css); var (control, reference) = Load(false, css);
+        Compare(doc, styles, control, reference);
+        foreach (var document in new[] { doc, control })
+            document.GetElementById("p")!.InsertBefore(document.CreateElement("div"), document.GetElementById("c"));
+        reference.Invalidate();
+        Compare(doc, styles, control, reference);
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("c")!).GetPropertyValue("width"), Is.EqualTo("20px"));
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("c")!).GetPropertyValue("padding-left"), Is.EqualTo("0px"));
+        foreach (var document in new[] { doc, control })
+            document.GetElementById("p")!.RemoveChild(document.GetElementById("p")!.FirstChild!);
+        reference.Invalidate();
+        Compare(doc, styles, control, reference);
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("c")!).GetPropertyValue("width"), Is.EqualTo("10px"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void SourceAndMediaInvalidationRetireSelectorReuseSnapshots(bool mediaChange)
+    {
+        const string css = "@media(min-width:600px){#p.selected{--paint:blue}#c{padding-left:17px}}";
+        var (doc, styles) = Load(true, css); var (control, reference) = Load(false, css);
+        styles.Media = reference.Media = new MediaEnvironment { Width = 400, Height = 300 };
+        Compare(doc, styles, control, reference);
+        doc.GetElementById("p")!.ClassName = control.GetElementById("p")!.ClassName = "selected";
+        Compare(doc, styles, control, reference);
+        long reused = styles.ReusedComputedValueCount;
+        if (mediaChange)
+            styles.Media = reference.Media = new MediaEnvironment { Width = 800, Height = 300 };
+        else
+            foreach (var document in new[] { doc, control })
+                document.QuerySelector("style")!.TextContent += "#p.selected{--paint:blue}#c{padding-left:17px}";
+        Compare(doc, styles, control, reference);
+        Assert.That(styles.ReusedComputedValueCount, Is.EqualTo(reused),
+            "new source generations still require a fresh cache proof");
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("c")!).GetPropertyValue("padding-left"), Is.EqualTo("17px"));
+    }
+
     [TestCase("c", "position", "absolute")]
     [TestCase("c", "border-left-style", "none")]
     [TestCase("c", "overflow-y", "hidden")]

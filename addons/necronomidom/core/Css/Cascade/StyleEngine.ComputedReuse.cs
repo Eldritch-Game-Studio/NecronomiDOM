@@ -38,7 +38,7 @@ public sealed partial class StyleEngine
         private Dependencies? _active;
         private ComputedValueContext _context;
         private string? _documentHref;
-        private bool _hasSnapshot, _previousSnapshot, _rulesStable;
+        private bool _hasSnapshot, _previousSnapshot, _sourcesStable;
         private CssValue? _stroke, _shadow;
 
         private sealed class Dependencies
@@ -59,12 +59,12 @@ public sealed partial class StyleEngine
             private static bool SameValue(CssValue? before, CssValue? after) => before == null
                 ? after == null : ImmutableScalar(before) && ReferenceEquals(before, after);
         }
-        internal void Begin(Entry entry, bool rulesStable)
+        internal void Begin(Entry entry, bool sourcesStable)
         {
             entry.Values.Clear();
             _stroke = entry.InheritedStrokeColor; _shadow = entry.InheritedTextShadow;
             _previousSnapshot = _hasSnapshot; _hasSnapshot = false;
-            _rulesStable = rulesStable; _property = null; _active = null;
+            _sourcesStable = sourcesStable; _property = null; _active = null;
         }
         internal bool Admit(in ComputedValueContext context)
         {
@@ -72,7 +72,7 @@ public sealed partial class StyleEngine
             var scalar = context with { ContainerUnitBasis = null, NumericValue = null,
                 PropertyValue = null, ParentPropertyValue = null, SystemFont = null,
                 FontPaletteValue = null, SystemColor = null, ViewportUnitRead = null };
-            bool reusable = _rulesStable && _previousSnapshot &&
+            bool reusable = _sourcesStable && _previousSnapshot &&
                 _documentHref == context.DocumentUrl?.Href && SameContext(_context, scalar);
             _context = scalar; _documentHref = context.DocumentUrl?.Href;
             return reusable;
@@ -149,7 +149,10 @@ public sealed partial class StyleEngine
     private void BeginComputedRefresh(Entry entry)
     {
         if (IncrementalReconciliation && ValueContext == null && ContainerEnvironment == null)
-            (entry.ComputedReuse ??= new()).Begin(entry, entry.ReuseRules && entry.RuleGeneration == _generation);
+            // Selector matching may change without changing the source generation (class/state/tree edits).
+            // Recollect those rules normally. Specified reuse revisits old and new explicit declarations
+            // plus inheritance; computed reuse proves the resulting inputs and context independently.
+            (entry.ComputedReuse ??= new()).Begin(entry, entry.RuleGeneration == _generation);
         else
         {
             entry.ComputedReuse = null;

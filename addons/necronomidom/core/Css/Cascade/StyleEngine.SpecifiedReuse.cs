@@ -33,7 +33,7 @@ public sealed partial class StyleEngine
         private bool _specifiedReady, _specifiedRtl;
         internal bool ReuseSpecified(bool rtl)
         {
-            bool reuse = _rulesStable && _previousSnapshot && _specifiedReady && _specifiedRtl == rtl;
+            bool reuse = _sourcesStable && _previousSnapshot && _specifiedReady && _specifiedRtl == rtl;
             _specifiedReady = false;
             _specifiedRtl = rtl;
             if (!reuse) return false;
