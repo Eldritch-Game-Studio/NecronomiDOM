@@ -25,6 +25,7 @@ namespace NecronomiDom.Css.Cascade
         private readonly List<SheetSource> _previousSources = new();
         private readonly List<CompoundSelector> _inTreeCompounds = new();
         private bool _hasShadowTrees, _restyleAllOnChange, _siblingSensitive, _inTreeUnbounded, _directionSensitive;
+        private bool _invalidationFeaturesDirty;
 
         /// <summary>Changes a reader has not drained yet; a larger backlog collapses into one full restyle.</summary>
         private const int MaxPendingChanges = 1024;
@@ -179,23 +180,27 @@ namespace NecronomiDom.Css.Cascade
             return false;
         }
 
-        /// <summary>Selector features that bound invalidation; rescanned only when the style sources change.</summary>
+        /// <summary>Selector features that bound invalidation; rescanned when sources or conditional media change.</summary>
         private void ScanInvalidationFeatures()
         {
+            _invalidationFeaturesDirty = false;
             _restyleAllOnChange = _siblingSensitive = _inTreeUnbounded = _directionSensitive = false;
             _geometryStyleSensitive = false;
             _inTreeCompounds.Clear();
-            var visited = new HashSet<CSSStyleSheet>();
-            foreach (var source in _sources) ScanSheet(source.Sheet, visited);
+            var visited = new HashSet<(CSSStyleSheet, Node)>();
+            foreach (var source in _sources) ScanSheet(source.Sheet, source.Root, visited);
         }
-        private void ScanSheet(CSSStyleSheet sheet, HashSet<CSSStyleSheet> visited)
+        private void ScanSheet(CSSStyleSheet sheet, Node root, HashSet<(CSSStyleSheet, Node)> visited)
         {
-            if (visited.Add(sheet)) ScanRules(sheet.CssRules, visited);
+            if (visited.Add((sheet, root))) ScanRules(sheet.CssRules, root, visited);
         }
-        private void ScanRules(CSSRuleList rules, HashSet<CSSStyleSheet> visited)
+        private void ScanRules(CSSRuleList rules, Node root, HashSet<(CSSStyleSheet, Node)> visited)
         {
             foreach (CSSRule rule in rules)
             {
+                // An inactive query cannot make ordinary focus/hover updates invalidate every element.
+                // Observe it even before any element matches, so crossing its boundary rescans these flags.
+                if (rule is CSSMediaRule media && CanObserveMedia && !MatchesMedia(media.Media.Queries, root)) continue;
                 ScanGeometryRule(rule);
                 if (rule is CSSStyleRule style) ScanSelectors(style.Selectors, nested: false);
                 else if (rule is CSSScopeRule scope)
@@ -203,8 +208,8 @@ namespace NecronomiDom.Css.Cascade
                     if (scope.Start != null) ScanSelectors(scope.Start, nested: true);
                     if (scope.End != null) ScanSelectors(scope.End, nested: true);
                 }
-                else if (rule is CSSImportRule { StyleSheet: { } imported }) ScanSheet(imported, visited);
-                if (rule is CSSGroupingRule group) ScanRules(group.CssRules, visited);
+                else if (rule is CSSImportRule { StyleSheet: { } imported }) ScanSheet(imported, root, visited);
+                if (rule is CSSGroupingRule group) ScanRules(group.CssRules, root, visited);
             }
         }
         private void ScanSelectors(SelectorList list, bool nested)

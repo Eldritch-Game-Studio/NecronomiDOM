@@ -17,6 +17,13 @@ internal sealed class TypedPolygonSlot : CssValue
     internal CSSPolygonValue Current => _current;
     internal long Revision { get; private set; }
     internal bool SameShape(CSSPolygonValue value) => _points.Length == value.Points.Count;
+    internal bool SameValue(CSSPolygonValue value)
+    {
+        if (!SameShape(value)) return false;
+        for (int i = 0; i < _points.Length; i++)
+            if (_points[i] != value.Points[i]) return false;
+        return true;
+    }
     internal void Update(CSSPolygonValue value)
     {
         for (int i = 0; i < _points.Length; i++) _points[i] = value.Points[i];

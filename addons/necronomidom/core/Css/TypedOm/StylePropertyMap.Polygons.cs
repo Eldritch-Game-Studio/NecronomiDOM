@@ -14,6 +14,7 @@ public sealed partial class StylePropertyMap
         value.Validate();
         var declaration = Declaration;
         var old = Find(declaration, name) as TypedPolygonSlot;
+        if (old != null && old.SameValue(value) && declaration.GetPropertyPriority(name).Length == 0) return;
         declaration.BeforeChange?.Invoke();
         TypedPolygonSlot slot;
         if (old != null && old.SameShape(value)) { slot = old; slot.Update(value); }

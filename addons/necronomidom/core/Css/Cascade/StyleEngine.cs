@@ -111,7 +111,7 @@ namespace NecronomiDom.Css.Cascade
         public Func<Element, ComputedValueContext>? ValueContext { get; set; }
         public IDictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Re-cascades every element and rebuilds the style sources.</summary>
-        public void Invalidate() { _sourceGeneration++; RestyleAll(); _sourcesDirty = true; }
+        public void Invalidate() { _sourceGeneration++; RestyleAll(); _sourcesDirty = _invalidationFeaturesDirty = true; }
         /// <summary>Number of element style recomputations so far (diagnostics and invalidation tests).</summary>
         internal long ComputedEntryCount { get; private set; }
         internal long RestyleGeneration => _generation;
@@ -197,7 +197,15 @@ namespace NecronomiDom.Css.Cascade
                     AddSheets(shadow.AdoptedStyleSheets, shadow, depth);
                 }
             // Structural changes rebuild the sources; only a different sheet set or edited rules re-cascade everything.
-            if (!revised && hadShadowTrees == _hasShadowTrees && SameSources()) return;
+            if (!revised && hadShadowTrees == _hasShadowTrees && SameSources())
+            {
+                if (_invalidationFeaturesDirty)
+                {
+                    _observedMediaMatches.Clear();
+                    ScanInvalidationFeatures();
+                }
+                return;
+            }
             _sourceGeneration++;
             _observedMediaMatches.Clear();
             RestyleAll();

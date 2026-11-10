@@ -262,7 +262,7 @@ element.AttributeStyleMap.Set("clip-path", polygon);
 Assignment validates all coordinates before mutation and copies them into declaration-owned storage.
 Changing the caller's list alone does not change any declaration; multiple elements can safely share
 that scratch list. Same-vertex-count writes reuse retained storage without parsing or allocating a
-new declaration value. `Get("clip-path")` exposes an isolated snapshot through `TryGetPolygon`.
+new declaration value; unchanged coordinates do not invalidate paint. `Get("clip-path")` exposes an isolated snapshot through `TryGetPolygon`.
 The extension uses the default nonzero fill rule and at least three vertices; percentages resolve
 against the final border box. Painting retains the existing convex-polygon validation and immutable
 paint/hit geometry, including viewport resizing and retained in-place clip updates. Parsed string
@@ -432,6 +432,11 @@ instead of discarding their snapshots merely because rule matching changed. Whol
 restyles from relational selectors (`:has()`) or shadow trees do not advance the source epoch.
 Added and removed declarations, inheritance, direction, and context-dependent values still
 recompute; stylesheet and explicit environment changes retire the old source-generation proof.
+
+Inactive `@media` branches do not widen ordinary mutations into whole-document restyles.
+Their query results remain observed: crossing a viewport breakpoint or explicitly invalidating
+media features rescans selector dependencies before the next style read. Dynamic media providers
+retain conservative invalidation.
 
 `StyleComputedReuseTests` compares incremental results with full computation, including class/hover
 toggles, structural selectors, sibling numeric inputs, and source/media invalidation. Run the focused

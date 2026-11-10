@@ -37,6 +37,52 @@ public sealed class StyleInvalidationTests
     private static string Background(StyleEngine styles, Document doc, string id)
         => styles.GetComputedStyle(doc.GetElementById(id)!).GetPropertyValue("background-color");
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void InactiveRelationalMediaDoesNotRestyleUnrelatedElementsAndReactivatesAfterResize(bool nested)
+    {
+        string conditional = "@media(max-height:600px){#panel:has(.feedback:not(.hidden)) .legend{display:none}}";
+        if (nested) conditional = "@media(min-width:900px){" + conditional + "}";
+        var (doc, styles) = Load(".legend{display:block}.on{color:red}" + conditional,
+            "<section id=panel><span id=feedback class='feedback hidden'></span><p id=legend class=legend>Hint</p></section><p id=other>Other</p>");
+        var feedback = doc.GetElementById("feedback")!;
+        var legend = doc.GetElementById("legend")!;
+        styles.UpdateViewport(1000, 800);
+        StyleAll(doc, styles);
+        feedback.ClassName = "feedback";
+        Assert.That(Restyled(doc, styles), Is.EqualTo(1), "An inactive relational rule must not invalidate the entire inventory.");
+        Assert.That(styles.GetComputedStyle(legend).GetPropertyValue("display"), Is.EqualTo("block"));
+
+        styles.UpdateViewport(1000, 500);
+        Assert.That(styles.GetComputedStyle(legend).GetPropertyValue("display"), Is.EqualTo("none"));
+        feedback.ClassName = "feedback hidden";
+        Assert.That(styles.GetComputedStyle(legend).GetPropertyValue("display"), Is.EqualTo("block"),
+            "Activating the query must restore its ancestor-dependent invalidation.");
+
+        styles.UpdateViewport(1000, 800);
+        StyleAll(doc, styles);
+        doc.GetElementById("other")!.ClassName = "on";
+        Assert.That(Restyled(doc, styles), Is.EqualTo(1));
+        Assert.That(Color(styles, doc, "other"), Is.EqualTo(Red));
+    }
+
+    [Test]
+    public void ExplicitMediaFeatureInvalidationRescansUnchangedStylesheetSelectors()
+    {
+        var (doc, styles) = Load(".legend{display:block}@media(prefers-color-scheme:dark){#panel:has(.feedback:not(.hidden)) .legend{display:none}}",
+            "<section id=panel><span id=feedback class='feedback hidden'></span><p id=legend class=legend>Hint</p></section><p>Other</p>");
+        styles.Media.Features["prefers-color-scheme"] = "light";
+        styles.Invalidate();
+        StyleAll(doc, styles);
+        doc.GetElementById("feedback")!.ClassName = "feedback";
+        Assert.That(Restyled(doc, styles), Is.EqualTo(1));
+        styles.Media.Features["prefers-color-scheme"] = "dark";
+        styles.Invalidate();
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("legend")!).GetPropertyValue("display"), Is.EqualTo("none"));
+        doc.GetElementById("feedback")!.ClassName = "feedback hidden";
+        Assert.That(styles.GetComputedStyle(doc.GetElementById("legend")!).GetPropertyValue("display"), Is.EqualTo("block"));
+    }
+
     [Test]
     public void UnchangedDocumentRestylesNothing()
     {
