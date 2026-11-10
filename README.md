@@ -239,6 +239,36 @@ A host under a `CanvasLayer` fills the viewport; a host under another `Control` 
 `LoadDocument(path)` to switch documents. DOM changes made from C# re-layout on the next frame (or immediately via
 `FlushPendingLayout()`).
 
+### Managed Typed OM geometry
+
+`HTMLElement.AttributeStyleMap` accepts numeric and transform values without formatting CSS text.
+For frequently changing convex clips, the managed `CSSPolygonValue` extension accepts a reusable
+`IReadOnlyList<CSSPolygonPoint>` containing finite `CSSUnitValue` coordinates in `px` or `percent`:
+
+```csharp
+using NecronomiDom.Css.TypedOm;
+
+var points = new[] {
+    new CSSPolygonPoint(new(0, "px"), new(0, "px")),
+    new CSSPolygonPoint(new(100, "percent"), new(0, "px")),
+    new CSSPolygonPoint(new(50, "percent"), new(100, "percent"))
+};
+var polygon = new CSSPolygonValue(points);
+element.AttributeStyleMap.Set("clip-path", polygon);
+points[1] = new(new(80, "percent"), new(0, "px"));
+element.AttributeStyleMap.Set("clip-path", polygon);
+```
+
+Assignment validates all coordinates before mutation and copies them into declaration-owned storage.
+Changing the caller's list alone does not change any declaration; multiple elements can safely share
+that scratch list. Same-vertex-count writes reuse retained storage without parsing or allocating a
+new declaration value. `Get("clip-path")` exposes an isolated snapshot through `TryGetPolygon`.
+The extension uses the default nonzero fill rule and at least three vertices; percentages resolve
+against the final border box. Painting retains the existing convex-polygon validation and immutable
+paint/hit geometry, including viewport resizing and retained in-place clip updates. Parsed string
+`polygon(...)` values remain supported through the existing CSS API.
+
+
 ### `DocumentHost` settings (C# names)
 
 | Member | Default | Purpose |

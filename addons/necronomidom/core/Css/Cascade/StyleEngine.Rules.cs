@@ -111,6 +111,8 @@ namespace NecronomiDom.Css.Cascade
             CascadeLayers layers, CascadeLayers.Layer layer, CascadeOrigin origin,
             SelectorMatchContext context, SelectorList? nesting, int proximity)
         {
+            // Most style rules have no nested rules; do not allocate an enumerator per leaf and element.
+            if (rules.Count == 0) return;
             MediaEnvironment environment = SourceMedia(source.Root);
             foreach (CSSRule rule in rules)
             {

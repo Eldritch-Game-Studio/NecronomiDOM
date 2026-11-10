@@ -1,4 +1,5 @@
 using System;
+using NecronomiDom.Css.TypedOm;
 using NecronomiDom.Css.Values;
 
 namespace NecronomiDom.Paint;
@@ -10,6 +11,14 @@ public static class PolygonClipResolver
     {
         PaintGeometryValidation.Bounds(referenceBounds);
         ArgumentNullException.ThrowIfNull(value);
+        if (value is TypedPolygonSlot typed)
+        {
+            var typedPoints = typed.Current.Points;
+            var used = new PaintPoint[typedPoints.Count];
+            for (int i = 0; i < used.Length; i++)
+                used[i] = new PaintPoint(Coordinate(typedPoints[i].X, referenceBounds.Width), Coordinate(typedPoints[i].Y, referenceBounds.Height));
+            return ConvexPolygon.FromOwned(used);
+        }
         // The default geometry box for clip-path is border-box. Other boxes require their own used rect.
         if (value is CssListValue { Separator: CssListSeparator.Space, Items.Count: 2 } boxed)
         {
@@ -39,6 +48,9 @@ public static class PolygonClipResolver
         }
         return ConvexPolygon.FromOwned(points);
     }
+
+    private static double Coordinate(CSSUnitValue value, double reference) =>
+        value.Unit == "percent" ? value.Value * reference / 100 : value.Value;
 
     private static double Coordinate(CssValue value, double reference) => value switch
     {

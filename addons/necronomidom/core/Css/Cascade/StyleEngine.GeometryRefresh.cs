@@ -16,7 +16,12 @@ public sealed partial class StyleEngine
             : this(declaration, won, ValueRevision(declaration.Value)) { }
         internal bool Matches(CssValue value) =>
             ReferenceEquals(value, Declaration.Value) && Revision == ValueRevision(value);
-        private static long ValueRevision(CssValue value) => value is TypedTransformSlot typed ? typed.Revision : 0;
+        private static long ValueRevision(CssValue value) => value switch
+        {
+            TypedTransformSlot transform => transform.Revision,
+            TypedPolygonSlot polygon => polygon.Revision,
+            _ => 0
+        };
     }
     internal long GeometryRefreshCount { get; private set; }
 
@@ -163,6 +168,7 @@ public sealed partial class StyleEngine
     private static bool StableInlineValue(CssValue value)
     {
         if (value is TypedTransformSlot typed) return typed.IsIndependentGeometry;
+        if (value is TypedPolygonSlot) return true;
         if (IndependentColor(value)) return true;
         if (value is CssKeywordValue || value.GetType() == typeof(CssNumberValue) ||
             value.GetType() == typeof(CssIntegerValue) || value.GetType() == typeof(CssPercentageValue)) return true;
@@ -190,7 +196,8 @@ public sealed partial class StyleEngine
     {
         if (property == "background-color") return IndependentColor(value);
         if (property == "clip-path")
-            return value is CssFunctionValue { Name: "polygon", Arguments: { } points } && StableInlineValue(points);
+            return value is TypedPolygonSlot ||
+                value is CssFunctionValue { Name: "polygon", Arguments: { } points } && StableInlineValue(points);
         // The guarded transform subset contains no inherited or external unit bases.
         if (TransformProperty(property)) return StableInlineValue(value);
         if (property is not ("left" or "right" or "top" or "bottom" or "width" or "height" or "opacity" or "rotate")) return false;

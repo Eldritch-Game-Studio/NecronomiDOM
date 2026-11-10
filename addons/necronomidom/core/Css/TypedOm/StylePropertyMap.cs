@@ -7,7 +7,7 @@ using NecronomiDom.Dom;
 
 namespace NecronomiDom.Css.TypedOm
 {
-    /// <summary>CSS Typed OM 1 § 6 mutable map; warmed numeric and same-shape transform writes reuse declaration-owned slots.</summary>
+    /// <summary>CSS Typed OM 1 § 6 mutable map; warmed numeric, transform and managed polygon writes reuse declaration-owned slots.</summary>
     public sealed partial class StylePropertyMap : StylePropertyMapReadOnly
     {
         private readonly Dictionary<(string, string), CssValue> _keywords = new();
@@ -69,6 +69,7 @@ namespace NecronomiDom.Css.TypedOm
         {
             if (value.TryGetUnit(out var unit)) { Set(property, unit); return; }
             if (value.TryGetTransform(out var transform)) { Set(property, transform); return; }
+            if (value.TryGetPolygon(out var polygon)) { Set(property, polygon); return; }
             if (value.TryGetNumeric(out var numeric)) { Set(property, numeric); return; }
             string name = PropertyName(property);
             if (value.Property != null && value.Property != name) throw new DomTypeError("The unsupported style value is associated with another property.");

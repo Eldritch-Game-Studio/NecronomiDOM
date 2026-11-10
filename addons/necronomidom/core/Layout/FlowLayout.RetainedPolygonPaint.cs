@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NecronomiDom.Css.TypedOm;
 using NecronomiDom.Css.Values;
 using NecronomiDom.Dom;
 using NecronomiDom.Paint;
@@ -8,13 +9,14 @@ namespace NecronomiDom.Layout;
 
 /// <summary>A prepared paint-only replacement; no flow boxes or containing blocks change.</summary>
 public readonly record struct LeafPolygonPaintUpdate(Element Element, int RunIndex, int BoxIndex,
-    BeginPolygonClipRun Clip, PolygonRun Fill, CssValue ClipValue);
+    BeginPolygonClipRun Clip, PolygonRun Fill, CssValue ClipValue, long ClipRevision);
 
 public sealed partial class FlowLayout
 {
     private readonly Dictionary<PaintRun, Element> _polygonPaintOwners = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Element, PolygonPaintSlot> _polygonPaintSlots = new();
-    private readonly record struct PolygonPaintSlot(int RunIndex, int BoxIndex, CssValue? ClipValue);
+    private readonly record struct PolygonPaintSlot(int RunIndex, int BoxIndex, CssValue? ClipValue, long ClipRevision);
+    private static long PolygonRevision(CssValue? value) => value is TypedPolygonSlot typed ? typed.Revision : 0;
 
     private void ResetPolygonPaint()
     {
@@ -33,15 +35,18 @@ public sealed partial class FlowLayout
                 clip.Bounds != fill.Bounds || !clip.Geometry.Equals(fill.Geometry)) continue;
             // Fragmented or multiply painted elements retain the full layout path.
             _polygonPaintSlots[element] = _polygonPaintSlots.ContainsKey(element)
-                ? new(-1, -2, null) : new(i, -1, null);
+                ? new(-1, -2, null, 0) : new(i, -1, null, 0);
         }
         for (int i = 0; i < _result.Boxes.Count; i++)
         {
             var element = _result.Boxes[i].Element;
             if (!_polygonPaintSlots.TryGetValue(element, out var slot) || slot.RunIndex < 0) continue;
-            _polygonPaintSlots[element] = slot.BoxIndex == -1
-                ? slot with { BoxIndex = i, ClipValue = ComputedValue(_styles.GetComputedStyle(element), "clip-path") }
-                : slot with { BoxIndex = -2 };
+            if (slot.BoxIndex == -1)
+            {
+                var value = ComputedValue(_styles.GetComputedStyle(element), "clip-path");
+                _polygonPaintSlots[element] = slot with { BoxIndex = i, ClipValue = value, ClipRevision = PolygonRevision(value) };
+            }
+            else _polygonPaintSlots[element] = slot with { BoxIndex = -2 };
         }
         _polygonPaintOwners.Clear();
     }
@@ -60,12 +65,14 @@ public sealed partial class FlowLayout
             _result.Runs[slot.RunIndex + 2] is not EndPolygonClipRun) return false;
         var style = _styles.GetComputedStyle(element);
         var value = ComputedValue(style, "clip-path");
-        var polygon = ReferenceEquals(value, slot.ClipValue) ? previousPolygon : PolygonClipResolver.Resolve(value, box.Bounds);
+        long revision = PolygonRevision(value);
+        var polygon = ReferenceEquals(value, slot.ClipValue) && revision == slot.ClipRevision
+            ? previousPolygon : PolygonClipResolver.Resolve(value, box.Bounds);
         var color = SampleBackgroundColor(element, Color(style, "background-color"));
         if (color.A <= 0) return false;
         update = new(element, slot.RunIndex, slot.BoxIndex,
             ReferenceEquals(polygon, previousPolygon) ? clip : new BeginPolygonClipRun(box.Bounds, polygon),
-            ReferenceEquals(polygon, previousPolygon) && color == fill.Color ? fill : new PolygonRun(box.Bounds, polygon, color), value);
+            ReferenceEquals(polygon, previousPolygon) && color == fill.Color ? fill : new PolygonRun(box.Bounds, polygon, color), value, revision);
         return true;
     }
 
@@ -90,7 +97,7 @@ public sealed partial class FlowLayout
                 CompleteHitGeometryAt(update.BoxIndex);
                 geometryChanged = true;
             }
-            _polygonPaintSlots[update.Element] = new(update.RunIndex, update.BoxIndex, update.ClipValue);
+            _polygonPaintSlots[update.Element] = new(update.RunIndex, update.BoxIndex, update.ClipValue, update.ClipRevision);
         }
         return geometryChanged;
     }

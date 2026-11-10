@@ -6,16 +6,17 @@ using NecronomiDom.Dom;
 
 namespace NecronomiDom.Css.TypedOm
 {
-    public enum CSSStyleValueKind { Generic, Unit, Keyword, Unparsed, Transform, Numeric }
+    public enum CSSStyleValueKind { Generic, Unit, Keyword, Unparsed, Transform, Numeric, Polygon }
     /// <summary>Typed OM specified/computed value view; parsing delegates to the single property grammar implementation.</summary>
     public readonly struct CSSStyleValue
     {
         private readonly CssValue? _value;
         private readonly string? _serialization;
         private readonly CSSUnitValue _unitSnapshot;
-        private readonly bool _isUnit, _isTransform, _isNumeric;
+        private readonly bool _isUnit, _isTransform, _isNumeric, _isPolygon;
         private readonly CSSTransformValue _transformSnapshot;
         private readonly CSSNumericValue _numericSnapshot;
+        private readonly CSSPolygonValue _polygonSnapshot;
         internal CSSStyleValue(CssValue value, string? property = null, string? serialization = null)
         {
             if (property is "object-position" or "perspective-origin")
@@ -29,10 +30,12 @@ namespace NecronomiDom.Css.TypedOm
             _isTransform = value is TypedTransformSlot;
             if (value is TypedTransformSlot transform) _transformSnapshot = transform.Snapshot();
             else _isTransform = Property == "transform" && TypedTransformDecoder.TryDecode(value, out _transformSnapshot);
+            _isPolygon = value is TypedPolygonSlot;
+            _polygonSnapshot = value is TypedPolygonSlot polygon ? polygon.Snapshot() : default;
         }
         internal CssValue Value => _value ?? throw new DomTypeError("An uninitialized CSSStyleValue cannot be assigned.");
         internal string? Property { get; }
-        public CSSStyleValueKind Kind => _isTransform ? CSSStyleValueKind.Transform : Value switch
+        public CSSStyleValueKind Kind => _isPolygon ? CSSStyleValueKind.Polygon : _isTransform ? CSSStyleValueKind.Transform : Value switch
         {
             CssNumberValue or CssDimensionValue or CssPercentageValue => CSSStyleValueKind.Unit,
             CssKeywordValue or CssWideKeyword => CSSStyleValueKind.Keyword,
@@ -45,6 +48,7 @@ namespace NecronomiDom.Css.TypedOm
         public bool TryGetUnit(out CSSUnitValue value) { value = _unitSnapshot; return _isUnit; }
         public bool TryGetTransform(out CSSTransformValue value) { value = _transformSnapshot; return _isTransform; }
         public bool TryGetNumeric(out CSSNumericValue value) { value = _numericSnapshot; return _isNumeric; }
+        public bool TryGetPolygon(out CSSPolygonValue value) { value = _polygonSnapshot; return _isPolygon; }
         public bool TryGetUnparsed(out CSSUnparsedValue? value)
         {
             IReadOnlyList<ComponentValue>? tokens = Value switch
@@ -85,6 +89,7 @@ namespace NecronomiDom.Css.TypedOm
         }
         internal static CssValue? Find(ParsedProperty parsed, string name)
         { foreach (var item in parsed.Longhands) if (item.Longhand == name) return item.Value; return null; }
-        public override string ToString() => _serialization ?? (_isUnit ? _unitSnapshot.ToString() : _isTransform ? _transformSnapshot.ToString() : Value.Serialize());
+        public override string ToString() => _serialization ?? (_isUnit ? _unitSnapshot.ToString() : _isTransform ? _transformSnapshot.ToString()
+            : _isPolygon ? _polygonSnapshot.ToString() : Value.Serialize());
     }
 }

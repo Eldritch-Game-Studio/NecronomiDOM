@@ -163,4 +163,105 @@ public sealed class FlowRetainedPolygonPaintTests
         Assert.That(observed.GetPropertyValue("clip-path"), Is.EqualTo(parent.GetPropertyValue("clip-path")));
         Assert.That(observed.GetPropertyValue("background-color"), Is.EqualTo(parent.GetPropertyValue("background-color")));
     }
+    [Test]
+    public void ReusedTypedPolygonStorageUpdatesPaintAndHitsAndKeepsPublishedGeometryImmutable()
+    {
+        var (doc, styles, flow, target) = Load();
+        var (referenceDoc, referenceStyles, referenceFlow, referenceTarget) = Load();
+        var points = new[]
+        {
+            new CSSPolygonPoint(new(0, "px"), new(0, "px")),
+            new CSSPolygonPoint(new(90, "percent"), new(2, "px")),
+            new CSSPolygonPoint(new(90, "percent"), new(90, "percent"))
+        };
+        var value = new CSSPolygonValue(points);
+        target.AttributeStyleMap.Set("clip-path", value);
+        var list = flow.Layout(doc, 240, 160);
+        var slot = target.Style.GetSpecifiedValue("clip-path");
+        var unrelated = list.Boxes.Where(box => box.Element != target).ToArray();
+        for (int frame = 0; frame < 20; frame++)
+        {
+            var before = list.Boxes.Single(box => box.Element == target).UsedGeometry!.Value.Polygon!;
+            var oldPoint = before[1];
+            points[1] = new(new(30 + frame, "percent"), new(2, "px"));
+            target.AttributeStyleMap.Set("clip-path", value);
+            referenceTarget.Style.SetProperty("clip-path", value.ToString());
+            Assert.That(target.Style.GetSpecifiedValue("clip-path"), Is.SameAs(slot));
+            Assert.That(styles.TryConsumeInlinePolygonPaintChange(target), Is.True);
+            Assert.That(styles.TryConsumeInlinePolygonPaintChange(target), Is.False);
+            Assert.That(flow.TryPreparePolygonPaintUpdate(target, out var update), Is.True);
+            Assert.That(flow.ApplyPolygonPaintUpdates(new[] { update }), Is.True);
+            Assert.That(before[1], Is.EqualTo(oldPoint), "Previously published paint geometry must not alias the declaration.");
+            Assert.That(update.Clip.Geometry[1], Is.Not.EqualTo(oldPoint));
+            foreach (var box in unrelated)
+                Assert.That(list.Boxes.Single(candidate => candidate.Element == box.Element), Is.SameAs(box));
+            referenceStyles.Invalidate();
+            var expected = referenceFlow.Layout(referenceDoc, 240, 160);
+            Assert.That(list.Runs, Is.EqualTo(expected.Runs));
+            for (int y = 0; y < 160; y += 4)
+                for (int x = 0; x < 240; x += 4)
+                    Assert.That(list.HitTest(x, y)?.Id, Is.EqualTo(expected.HitTest(x, y)?.Id), $"frame={frame} {x},{y}");
+        }
+    }
+
+    [Test]
+    public void TypedPercentPolygonResolvesAgainWhenViewportChanges()
+    {
+        const string css = "#outer{left:0;top:0;width:100%;height:100%;transform:none}#p{left:0;top:0;width:50%;height:50%}";
+        var (doc, styles, flow, target) = Load(css);
+        var (referenceDoc, referenceStyles, referenceFlow, referenceTarget) = Load(css);
+        var points = new[]
+        {
+            new CSSPolygonPoint(new(0, "percent"), new(0, "percent")),
+            new CSSPolygonPoint(new(80, "percent"), new(0, "percent")),
+            new CSSPolygonPoint(new(80, "percent"), new(90, "percent"))
+        };
+        var value = new CSSPolygonValue(points);
+        target.AttributeStyleMap.Set("clip-path", value);
+        referenceTarget.Style.SetProperty("clip-path", value.ToString());
+        var first = flow.Layout(doc, 240, 160).Boxes.Single(box => box.Element == target).UsedGeometry!.Value.Polygon!;
+        var original = first[2];
+        foreach (int width in new[] { 480, 320, 240 })
+        {
+            var list = flow.Layout(doc, width, 240);
+            var box = list.Boxes.Single(candidate => candidate.Element == target);
+            var polygon = box.UsedGeometry!.Value.Polygon!;
+            Assert.That(polygon[2].X, Is.EqualTo(box.Bounds.Width * 80 / 100));
+            Assert.That(polygon[2].Y, Is.EqualTo(box.Bounds.Height * 90 / 100));
+            Assert.That(first[2], Is.EqualTo(original));
+            var expected = referenceFlow.Layout(referenceDoc, width, 240);
+            Assert.That(list.Runs, Is.EqualTo(expected.Runs));
+            for (int y = 0; y < 240; y += 8)
+                for (int x = 0; x < width; x += 8)
+                    Assert.That(list.HitTest(x, y)?.Id, Is.EqualTo(expected.HitTest(x, y)?.Id), $"{width}: {x},{y}");
+        }
+    }
+
+    [Test]
+    public void PreparedPolygonUpdateCapturesItsRevisionNotTheLaterMutableSlot()
+    {
+        var (doc, styles, flow, target) = Load();
+        var points = new[]
+        {
+            new CSSPolygonPoint(new(0, "px"), new(0, "px")),
+            new CSSPolygonPoint(new(90, "px"), new(0, "px")),
+            new CSSPolygonPoint(new(90, "px"), new(70, "px"))
+        };
+        var value = new CSSPolygonValue(points);
+        target.AttributeStyleMap.Set("clip-path", value);
+        flow.Layout(doc, 240, 160);
+        points[1] = new(new(60, "px"), new(0, "px"));
+        target.AttributeStyleMap.Set("clip-path", value);
+        Assert.That(styles.TryConsumeInlinePolygonPaintChange(target), Is.True);
+        Assert.That(flow.TryPreparePolygonPaintUpdate(target, out var first), Is.True);
+        points[1] = new(new(40, "px"), new(0, "px"));
+        target.AttributeStyleMap.Set("clip-path", value);
+        Assert.That(styles.TryConsumeInlinePolygonPaintChange(target), Is.True);
+        flow.ApplyPolygonPaintUpdates(new[] { first });
+        Assert.That(flow.TryPreparePolygonPaintUpdate(target, out var second), Is.True);
+        Assert.That(first.Clip.Geometry[1].X, Is.EqualTo(60));
+        Assert.That(second.Clip.Geometry[1].X, Is.EqualTo(40));
+        Assert.That(flow.ApplyPolygonPaintUpdates(new[] { second }), Is.True);
+    }
+
 }
