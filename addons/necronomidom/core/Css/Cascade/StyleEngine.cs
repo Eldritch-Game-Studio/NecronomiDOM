@@ -88,6 +88,7 @@ namespace NecronomiDom.Css.Cascade
         private readonly List<SheetSource> _sources = new();
         private readonly Dictionary<CSSStyleSheet, long> _revisions = new();
         private long _generation;
+        private long _sourceGeneration;
         private long _observedSheetEpoch = -1;
         private bool _sourcesDirty = true;
         private MediaEnvironment _media = new();
@@ -110,7 +111,7 @@ namespace NecronomiDom.Css.Cascade
         public Func<Element, ComputedValueContext>? ValueContext { get; set; }
         public IDictionary<string, string> EnvironmentVariables { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Re-cascades every element and rebuilds the style sources.</summary>
-        public void Invalidate() { RestyleAll(); _sourcesDirty = true; }
+        public void Invalidate() { _sourceGeneration++; RestyleAll(); _sourcesDirty = true; }
         /// <summary>Number of element style recomputations so far (diagnostics and invalidation tests).</summary>
         internal long ComputedEntryCount { get; private set; }
         internal long RestyleGeneration => _generation;
@@ -197,6 +198,7 @@ namespace NecronomiDom.Css.Cascade
                 }
             // Structural changes rebuild the sources; only a different sheet set or edited rules re-cascade everything.
             if (!revised && hadShadowTrees == _hasShadowTrees && SameSources()) return;
+            _sourceGeneration++;
             _observedMediaMatches.Clear();
             RestyleAll();
             ScanInvalidationFeatures();

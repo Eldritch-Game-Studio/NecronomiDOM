@@ -39,6 +39,7 @@ public sealed partial class StyleEngine
         private ComputedValueContext _context;
         private string? _documentHref;
         private bool _hasSnapshot, _previousSnapshot, _sourcesStable;
+        private long _sourceGeneration = -1;
         private CssValue? _stroke, _shadow;
 
         private sealed class Dependencies
@@ -59,12 +60,13 @@ public sealed partial class StyleEngine
             private static bool SameValue(CssValue? before, CssValue? after) => before == null
                 ? after == null : ImmutableScalar(before) && ReferenceEquals(before, after);
         }
-        internal void Begin(Entry entry, bool sourcesStable)
+        internal void Begin(Entry entry, long sourceGeneration)
         {
             entry.Values.Clear();
             _stroke = entry.InheritedStrokeColor; _shadow = entry.InheritedTextShadow;
             _previousSnapshot = _hasSnapshot; _hasSnapshot = false;
-            _sourcesStable = sourcesStable; _property = null; _active = null;
+            _sourcesStable = _sourceGeneration == sourceGeneration;
+            _sourceGeneration = sourceGeneration; _property = null; _active = null;
         }
         internal bool Admit(in ComputedValueContext context)
         {
@@ -149,10 +151,10 @@ public sealed partial class StyleEngine
     private void BeginComputedRefresh(Entry entry)
     {
         if (IncrementalReconciliation && ValueContext == null && ContainerEnvironment == null)
-            // Selector matching may change without changing the source generation (class/state/tree edits).
-            // Recollect those rules normally. Specified reuse revisits old and new explicit declarations
-            // plus inheritance; computed reuse proves the resulting inputs and context independently.
-            (entry.ComputedReuse ??= new()).Begin(entry, entry.RuleGeneration == _generation);
+            // Relational selectors and shadow trees can restyle the whole document without
+            // changing its sheets. Rematch rules, but retain values whose inputs/context still
+            // match; source edits and explicit environment invalidations retire the snapshot.
+            (entry.ComputedReuse ??= new()).Begin(entry, _sourceGeneration);
         else
         {
             entry.ComputedReuse = null;

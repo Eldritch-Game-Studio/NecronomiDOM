@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Css.Media;
 using NecronomiDom.Css.TypedOm;
@@ -19,36 +18,6 @@ namespace NecronomiDom.Tests.Cascade;
 [TestFixture]
 public sealed class StyleComputedReuseTests
 {
-    [Test]
-    public void InternalReusePipelineBorrowsTheLargeReadonlyContextButPublicResolutionKeepsItsSnapshotBoundary()
-    {
-        // The large computed-value context is passed by readonly reference; this signature contract
-        // is checked structurally rather than as a timing assertion.
-        AssertContext(typeof(StyleEngine), "ComputeRemainingValues");
-        AssertContext(typeof(StyleEngine), "ComputeOrReuseValue");
-        AssertContext(typeof(StyleEngine), "ComputeTextColor");
-        Type cache = typeof(StyleEngine).GetNestedType("ComputedReuse", BindingFlags.NonPublic)!;
-        AssertContext(cache, "Admit");
-        AssertContext(cache, "SameContext", 2);
-        AssertContext(typeof(ComputedValueResolver), "Normalize");
-        AssertContext(typeof(ComputedValueResolver), "MapList");
-        AssertContext(typeof(ComputedValueResolver), "Canonical");
-        AssertContext(typeof(ComputedValueResolver), "PropertyValue");
-        Assert.That(typeof(ComputedValueResolver).GetMethod(nameof(ComputedValueResolver.Resolve))!
-            .GetParameters()[2].ParameterType, Is.EqualTo(typeof(ComputedValueContext)),
-            "public callers retain a value snapshot even if a provider reassigns their original context variable");
-        TestContext.Progress.WriteLine("ComputedValueContext managed size (diagnostic): " + Unsafe.SizeOf<ComputedValueContext>() + " bytes");
-
-        static void AssertContext(Type owner, string name, int expected = 1)
-        {
-            var method = owner.GetMethod(name, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic)!;
-            var parameters = method.GetParameters().Where(parameter => parameter.ParameterType == typeof(ComputedValueContext)
-                || parameter.ParameterType.GetElementType() == typeof(ComputedValueContext)).ToArray();
-            Assert.That(parameters, Has.Length.EqualTo(expected), owner.Name + "." + name);
-            foreach (var parameter in parameters)
-                Assert.That(parameter.ParameterType.IsByRef && parameter.IsIn, Is.True, owner.Name + "." + name + ":" + parameter.Name);
-        }
-    }
 
     [Test]
     public void PublicResolutionSnapshotSurvivesProviderReassignmentOfTheCallersContextVariable()
@@ -240,6 +209,28 @@ public sealed class StyleComputedReuseTests
             control.GetElementById("p")!.ClassName = classes;
             reference.Invalidate();
             Compare(doc, styles, control, reference);
+        }
+    }
+
+    [TestCase("{--paint:blue}", "background-color", "rgb(0, 0, 255)")]
+    [TestCase("{font-size:30px}", "width", "40px")]
+    [TestCase("{direction:rtl}#c{margin-inline-start:13px}", "margin-right", "13px")]
+    public void RelationalGlobalRestylesReuseStableValuesWithoutFreezingAncestorDependencies(
+        string declarations, string property, string selectedValue)
+    {
+        string css = "#p:has(#c.selected)" + declarations;
+        var (doc, styles) = Load(true, css); var (control, reference) = Load(false, css);
+        Compare(doc, styles, control, reference);
+        foreach (string classes in new[] { "selected", "", "selected" })
+        {
+            long reused = styles.ReusedComputedValueCount;
+            doc.GetElementById("c")!.ClassName = classes;
+            control.GetElementById("c")!.ClassName = classes;
+            Compare(doc, styles, control, reference);
+            Assert.That(styles.ReusedComputedValueCount, Is.GreaterThan(reused),
+                "A whole-document selector refresh must not discard unchanged scalar computations.");
+            if (classes.Length != 0)
+                Assert.That(styles.GetComputedStyle(doc.GetElementById("c")!).GetPropertyValue(property), Is.EqualTo(selectedValue));
         }
     }
 

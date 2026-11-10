@@ -398,9 +398,10 @@ completion/documentation; they do not suppress every unsupported browser suggest
 
 Class, pseudo-state (including hover), and tree changes still rematch selectors. When stylesheet
 sources remain unchanged, specified and computed values can independently reuse proven inputs
-instead of discarding their snapshots merely because rule matching changed. Added and removed
-declarations, inheritance, direction, and context-dependent values remain subject to recomputation;
-stylesheet and media changes retire the old source-generation proof.
+instead of discarding their snapshots merely because rule matching changed. Whole-document
+restyles from relational selectors (`:has()`) or shadow trees do not advance the source epoch.
+Added and removed declarations, inheritance, direction, and context-dependent values still
+recompute; stylesheet and explicit environment changes retire the old source-generation proof.
 
 `StyleComputedReuseTests` compares incremental results with full computation, including class/hover
 toggles, structural selectors, sibling numeric inputs, and source/media invalidation. Run the focused
