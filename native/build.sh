@@ -8,6 +8,10 @@
 # Requires the .NET 10 SDK and the platform C toolchain NativeAOT needs (clang on Linux, Xcode on macOS,
 # MSVC build tools on Windows).
 set -euo pipefail
+# Never attach to compiler/build servers owned by another persistent-runner job.
+export UseSharedCompilation=false
+export MSBUILDDISABLENODEREUSE=1
+export DOTNET_CLI_USE_MSBUILD_SERVER=0
 HOST_OS="$(uname -s)"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ADDON="$HERE/../addons/necronomidom"
