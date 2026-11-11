@@ -6,18 +6,81 @@ This directory compiles the shared addon runtime against the Godot .NET GDExtens
 native/build.sh linux-x64
 ```
 
-NativeAOT builds for the host operating system. The desktop distribution targets are Linux x64/arm64, Windows x64, and macOS x64/arm64; each must be built and installed-package-qualified on its own native runner with official standard Godot 4.7.2. Those targets are not evidence that any unexercised platform/export works. Android, iOS and Web are outside this distribution scope.
+NativeAOT builds for the host operating system. The complete desktop distribution targets are Linux x64/arm64, Windows x64, and macOS x64/arm64; Windows is currently explicitly deferred, so CI qualifies the four Linux/macOS targets and cannot publish a complete five-target release. Each enabled target must be built and installed-package-qualified with official standard Godot 4.7.2. macOS uses one Apple silicon host: the ARM64 .NET SDK crosscompiles the Intel library, and Rosetta runs the actual Intel Godot process. Those targets are not evidence that any unexercised platform/export works. Android, iOS and Web are outside this distribution scope.
 
 ## CI policy
 
 | Event/change | Required work |
 | --- | --- |
 | Ordinary code PR | Unit tests, capability checks, Linux x64 NativeAOT build and all existing native/.NET runtime smokes |
-| Code push to `main` (including native/tooling code) | The same fast checks; no five-platform matrix or distribution ZIP |
-| Native bindings, SDK pin/patch, build or packaging PR | Fast checks **plus all five native builds and freshly installed final-ZIP qualification on each target**, before merge |
+| Code push to `main` (including native/tooling code) | The same fast checks; no cross-platform matrix or distribution ZIP |
+| Native bindings, SDK pin/patch, build or packaging PR | Fast checks **plus every enabled native target and freshly installed final-ZIP qualification on each**, before merge |
 | Documentation/media-only PR or `main` push | Offline documentation/link/content checks, capability freshness and Python helper regressions; no .NET, engine or native build |
-| `v*` tag push | All five native builds, runtime smokes and exact final-ZIP qualification on every target before GitHub release publication |
-| Manual dispatch | Full five-platform qualification by default; `partial=true` is Linux-only diagnostic packaging, never publication |
+| `v*` tag push | Every enabled native target, runtime smokes and exact final-ZIP qualification; publication disabled while Windows is deferred |
+| Manual dispatch | All enabled targets by default; `partial=true` is Linux-only diagnostic packaging, never publication |
+
+All CI/CD executes on local runners, including PRs; there is no hosted fallback.
+The thin `ci.yml` calls `ci-local.yml@main`, which owns the trusted job definitions.
+Every local runner group must allow only
+`Eldritch-Game-Studio/NecronomiDOM/.github/workflows/ci-local.yml@refs/heads/main`,
+not PR-controlled workflow files. Its checkout-free admission verifies the caller's
+repository, event type and exact event SHA (the immutable merge snapshot for PRs).
+Every checkout uses that same SHA and does not persist credentials.
+
+Internal-head PRs are admitted directly. External PRs require the protected
+`local-runner-external-pr` environment with required reviewers and self-review
+disabled. Only after configuring that protection should an administrator set
+`LOCAL_EXTERNAL_PR_APPROVAL_ENABLED=true`. Without the flag admission fails before
+checkout even if the environment is absent; approval cannot be supplied as a
+workflow input. The `local-runner-internal` environment needs no approval.
+These runner-group/environment protections are deployment prerequisites, not
+properties an untrusted PR can enforce for itself.
+
+Classification, documentation, unit tests, ZIP assembly and release publication use
+`[self-hosted, macOS, ARM64, eldritch-apple]`, as do both macOS native builds and
+final-ZIP qualifications. The provisioned runner supplies Python at
+`$HOME/.local/share/eldritch-macos/tools/bin`, .NET 10 at `$HOME/.dotnet`,
+Apple Command Line Tools and Rosetta. No hosted macOS runner or `setup-python`
+download is used. Native compilation and .NET unit tests run with the ARM64 SDK;
+`osx-x64` is an explicit NativeAOT same-OS crossarchitecture target, not an
+ARM binary relabeled as Intel. `lipo` checks each produced library. Every stock
+Godot invocation is bound with `/usr/bin/arch -arm64` or `-x86_64`, and the fresh
+project reports its real process feature before the existing lifecycle/DOM checks.
+Standard Godot qualification does not require an Intel .NET runtime.
+
+Expensive Apple commands run through `scripts/apple-locked.py`, which holds the
+shared `$HOME/.local/state/eldritch-macos/producer.lock` with exclusive `fcntl`
+locking in the foreground and forwards termination to the command process group.
+It shares capacity with engine/game SSH workers without sharing source checkouts.
+
+Linux x64 (`[self-hosted,Linux,X64,eldritch-linux]`) produces the pinned managed SDK
+feed and executes all Linux native/.NET/graphical smokes. Linux ARM64
+(`[self-hosted,Linux,ARM64,eldritch-linux-arm64]`) remains a required native build and
+exact final-ZIP runtime check. Windows is omitted from both matrices by default:
+no nonexistent Windows runner is queued and enabled-target PR checks can finish.
+Only after provisioning a real `[self-hosted,Windows,X64,eldritch-windows]` runner
+may an administrator set `NECRONOMIDOM_WINDOWS_ENABLED=true`. This restores both
+Windows build and runtime gates, and permits publication only after all five targets
+qualify. It is not a caller-controlled workflow input.
+
+With Windows deferred, filenames carry `-no-windows`, the ZIP contains no Windows
+DLL or Windows descriptor entry, and `addons/necronomidom/ci-package-scope.json`
+plus the job summary list the exact included/omitted targets. Scope metadata is
+not a runtime qualification receipt. GitHub release publication remains disabled.
+The four enabled Linux/macOS targets cannot be skipped or substituted by hosted
+capacity. Actual Linux ARM64 execution is still a local provisioning prerequisite.
+Linux needs .NET 10, Python as `python`/`python3`, Clang/zlib, and x64 additionally
+Xvfb/Mesa and the net8 demo runtime; future Windows needs .NET 10, Python as `python`,
+Git Bash and MSVC/Windows SDK. CI does not assume an apt-based Linux distribution.
+
+ZIP assembly no longer constitutes Linux runtime proof: `qualify-linux-x64`
+downloads and installs the same uploaded `NecronomiDOM` artifact as every other
+enabled target. All three qualification jobs (Linux x64, enabled platform matrix,
+and both Apple architectures) remain required. The manual partial diagnostic
+still qualifies its Linux-only ZIP on Linux x64 and cannot release. The obsolete
+Linux Docker `act` launcher was removed because it cannot reproduce the required
+Apple runner contract; use manual `partial=true` for that diagnostic, or
+`native/build.sh linux-x64` for a local native build.
 
 `scripts/ci-policy.py` classifies complete Git diffs: PRs compare their head with the
 base/head merge base; pushes compare before/after, including an empty-tree first push.
@@ -43,7 +106,7 @@ binaries. The exact `ndom-sdk-v1-Linux-X64-<sha256>` key and persistent work dir
 hash the complete lock/patch/build/workflow inputs plus actual .NET, compiler/linker,
 Python/Git, OS/runner-image, installed-package and compiler-flag identity. There are
 no broad restore keys; a changed identity gets a different directory. The SDK's own
-full commit/patch identity checks still run. Hosted targets consume that run's
+full commit/patch identity checks still run. Other local targets consume that run's
 portable managed-feed artifact and build their own native libraries.
 All binary handoffs use run-scoped GitHub artifacts, including self-hosted Linux:
 failed-job-only reruns can retrieve the original producer's artifact instead of
