@@ -99,14 +99,6 @@ public partial class PolygonComposite : Node2D
                     rect = group._logicalBounds;
                     break;
                 case INativePaintBounds ink: rect = ink.PaintBounds; break;
-                case MultiMeshInstance2D multi when multi.Multimesh != null:
-                    Aabb box = multi.Multimesh.CustomAabb;
-                    rect = new Rect2(box.Position.X, box.Position.Y, box.Size.X, box.Size.Y);
-                    break;
-                case MeshInstance2D mesh when mesh.Mesh != null:
-                    Aabb geometry = mesh.Mesh.GetAabb();
-                    rect = new Rect2(geometry.Position.X, geometry.Position.Y, geometry.Size.X, geometry.Size.Y);
-                    break;
                 case Node2D container when container.GetType() == typeof(Node2D):
                     // A transform-only carrier has no ink of its own, including an empty subtree.
                     Collect(container, local, ref bounds, ref hasPaint); continue;

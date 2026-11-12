@@ -212,33 +212,52 @@ Generated from explicit `BindMethod(Name=...)` declarations in the NativeAOT com
 | GDScript method | Managed declaration | Source |
 | --- | --- | --- |
 | `add_class` | `void AddClass(string selector, string className)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `append_html` | `void AppendHtml(string selector, string html)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `apply_text_scale` | `void ScriptApplyTextScale(float scale)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `begin_inspector_pick` | `void BeginInspectorPick()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `click` | `void ClickElement(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `close_inspector` | `void CloseInspector()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
+| `element_from_point` | `string ElementFromPoint(double x, double y)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `focus_element` | `void FocusElement(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `force_reload` | `int ScriptForceReload()` | [addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs](../addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs) |
+| `get_active_element_id` | `string GetActiveElementId()` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `get_attribute` | `string GetAttribute(string selector, string name)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `get_checked` | `bool GetChecked(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `get_element_rect` | `Rect2 GetElementRect(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `get_inspector_report` | `string GetInspectorReport()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `get_inspector_selection` | `string GetInspectorSelection()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
+| `get_scroll` | `Vector2 GetScroll(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `get_selected_index` | `int GetSelectedIndex(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `get_style` | `string GetStyle(string selector, string property)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `get_text` | `string GetText(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `get_value` | `string GetValue(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `has_class` | `bool HasClass(string selector, string className)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `has_element` | `bool HasElement(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `has_pointer_capture` | `bool HasPointerCapture(string selector, int pointerId)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `insert_html_before` | `void InsertHtmlBefore(string selector, string html)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `is_input_enabled` | `bool IsInputEnabled()` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `is_inspector_open` | `bool IsInspectorOpen()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `listen` | `void Listen(string type)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `load_document` | `void ScriptLoadDocument(string path)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `move_element` | `void MoveElement(string selector, string parentSelector, string beforeSelector = "")` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `open_inspector` | `void OpenInspector()` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `pick_inspector_element` | `bool PickInspectorElement(double x, double y)` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `query_ids` | `PackedStringArray QueryIds(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `release_pointer_capture` | `void ReleasePointerCapture(string selector, int pointerId)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `reload_changed_files` | `int ScriptReloadChangedFiles()` | [addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs](../addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs) |
 | `remove_attribute` | `void RemoveAttribute(string selector, string name)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `remove_class` | `void RemoveClass(string selector, string className)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `remove_element` | `void RemoveElement(string selector)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `scroll_to` | `void ScrollTo(string selector, double x, double y)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `select_inspector_element` | `bool SelectInspectorElement(string selector)` | [addons/necronomidom/runtime/DocumentHost.Inspector.cs](../addons/necronomidom/runtime/DocumentHost.Inspector.cs) |
 | `set_application_navigation` | `void SetApplicationNavigation(bool enabled)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `set_attribute` | `void SetAttribute(string selector, string name, string value)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `set_checked` | `void SetChecked(string selector, bool value)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `set_inner_html` | `void SetInnerHtml(string selector, string html)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `set_input_enabled` | `void SetInputEnabled(bool enabled)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `set_pointer_capture` | `void SetPointerCapture(string selector, int pointerId)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `set_selected_index` | `void SetSelectedIndex(string selector, int value)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `set_style` | `void SetStyle(string selector, string property, string value)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `set_text` | `void SetText(string selector, string text)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `set_value` | `void SetValue(string selector, string value)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `toggle_class` | `bool ToggleClass(string selector, string className)` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
@@ -252,6 +271,7 @@ Generated from explicit `BindMethod(Name=...)` declarations in the NativeAOT com
 | `clicked` | `string elementId` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 | `developer_reloaded` | `int kind, bool documentReplaced, string error` | [addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs](../addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs) |
 | `dom_event` | `string type, string elementId` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
+| `dom_event_detail` | `string type, string elementId, GodotDictionary details` | [native/src/DocumentHost.Scripting.cs](../native/src/DocumentHost.Scripting.cs) |
 
 Signal declarations do not imply every DOM event is automatically emitted by the host. `listen(type)` forwards requested DOM events via `dom_event`; arbitrary dispatchable event names are not a finite built-in input-event inventory. `clicked`, `cancel` and developer-tool signals follow their source contracts.
 
@@ -282,4 +302,4 @@ This list is **not renderable support** and is not a universal rejection list: i
 - `addons/necronomidom/core/Css/Data/supported-properties.json`: `0a27a16b96c76540a646af8df7257cc809e8bc07395198dc5632842862626492`
 - `addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs`: `751b5ad50572929471a244281ba8259c7c2e1506aad49b34f15ec5f2016d64b3`
 - `addons/necronomidom/runtime/DocumentHost.Inspector.cs`: `6a177d3ff9d3f435d9b20ea0c486a9abf3f8498c01f20fe68b0320618dfb44ab`
-- `native/src/DocumentHost.Scripting.cs`: `ec69fecc22141e9462d50aa3623f42cccb07204d081b99468fe1db2648d7202d`
+- `native/src/DocumentHost.Scripting.cs`: `5fdda1074fb520cc84d36e63df861d0d5051bfb799b8dcb388a66c99239a5d96`

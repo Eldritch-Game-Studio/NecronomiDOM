@@ -6,7 +6,7 @@
     "addons/necronomidom/core/Css/Data/supported-properties.json": "0a27a16b96c76540a646af8df7257cc809e8bc07395198dc5632842862626492",
     "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs": "751b5ad50572929471a244281ba8259c7c2e1506aad49b34f15ec5f2016d64b3",
     "addons/necronomidom/runtime/DocumentHost.Inspector.cs": "6a177d3ff9d3f435d9b20ea0c486a9abf3f8498c01f20fe68b0320618dfb44ab",
-    "native/src/DocumentHost.Scripting.cs": "ec69fecc22141e9462d50aa3623f42cccb07204d081b99468fe1db2648d7202d"
+    "native/src/DocumentHost.Scripting.cs": "5fdda1074fb520cc84d36e63df861d0d5051bfb799b8dcb388a66c99239a5d96"
   },
   "description": "Admission is not unrestricted implementation of a property's CSS grammar. Computed values, formatting context, resources and the constraints below determine renderability. Hidden display:none subtrees do not exercise rendering validation.",
   "elements": [
@@ -2070,6 +2070,13 @@
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
+        "name": "append_html",
+        "managedName": "AppendHtml",
+        "returnType": "void",
+        "parameters": "string selector, string html",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "apply_text_scale",
         "managedName": "ScriptApplyTextScale",
         "returnType": "void",
@@ -2098,6 +2105,13 @@
         "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
       },
       {
+        "name": "element_from_point",
+        "managedName": "ElementFromPoint",
+        "returnType": "string",
+        "parameters": "double x, double y",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "focus_element",
         "managedName": "FocusElement",
         "returnType": "void",
@@ -2112,10 +2126,31 @@
         "source": "addons/necronomidom/runtime/DocumentHost.DeveloperReload.cs"
       },
       {
+        "name": "get_active_element_id",
+        "managedName": "GetActiveElementId",
+        "returnType": "string",
+        "parameters": "",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "get_attribute",
         "managedName": "GetAttribute",
         "returnType": "string",
         "parameters": "string selector, string name",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_checked",
+        "managedName": "GetChecked",
+        "returnType": "bool",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_element_rect",
+        "managedName": "GetElementRect",
+        "returnType": "Rect2",
+        "parameters": "string selector",
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
@@ -2131,6 +2166,27 @@
         "returnType": "string",
         "parameters": "",
         "source": "addons/necronomidom/runtime/DocumentHost.Inspector.cs"
+      },
+      {
+        "name": "get_scroll",
+        "managedName": "GetScroll",
+        "returnType": "Vector2",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_selected_index",
+        "managedName": "GetSelectedIndex",
+        "returnType": "int",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "get_style",
+        "managedName": "GetStyle",
+        "returnType": "string",
+        "parameters": "string selector, string property",
+        "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
         "name": "get_text",
@@ -2158,6 +2214,20 @@
         "managedName": "HasElement",
         "returnType": "bool",
         "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "has_pointer_capture",
+        "managedName": "HasPointerCapture",
+        "returnType": "bool",
+        "parameters": "string selector, int pointerId",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "insert_html_before",
+        "managedName": "InsertHtmlBefore",
+        "returnType": "void",
+        "parameters": "string selector, string html",
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
@@ -2189,6 +2259,13 @@
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
+        "name": "move_element",
+        "managedName": "MoveElement",
+        "returnType": "void",
+        "parameters": "string selector, string parentSelector, string beforeSelector = \"\"",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "open_inspector",
         "managedName": "OpenInspector",
         "returnType": "void",
@@ -2207,6 +2284,13 @@
         "managedName": "QueryIds",
         "returnType": "PackedStringArray",
         "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "release_pointer_capture",
+        "managedName": "ReleasePointerCapture",
+        "returnType": "void",
+        "parameters": "string selector, int pointerId",
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
@@ -2231,6 +2315,20 @@
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
+        "name": "remove_element",
+        "managedName": "RemoveElement",
+        "returnType": "void",
+        "parameters": "string selector",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "scroll_to",
+        "managedName": "ScrollTo",
+        "returnType": "void",
+        "parameters": "string selector, double x, double y",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "select_inspector_element",
         "managedName": "SelectInspectorElement",
         "returnType": "bool",
@@ -2252,10 +2350,45 @@
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
+        "name": "set_checked",
+        "managedName": "SetChecked",
+        "returnType": "void",
+        "parameters": "string selector, bool value",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_inner_html",
+        "managedName": "SetInnerHtml",
+        "returnType": "void",
+        "parameters": "string selector, string html",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
         "name": "set_input_enabled",
         "managedName": "SetInputEnabled",
         "returnType": "void",
         "parameters": "bool enabled",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_pointer_capture",
+        "managedName": "SetPointerCapture",
+        "returnType": "void",
+        "parameters": "string selector, int pointerId",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_selected_index",
+        "managedName": "SetSelectedIndex",
+        "returnType": "void",
+        "parameters": "string selector, int value",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "set_style",
+        "managedName": "SetStyle",
+        "returnType": "void",
+        "parameters": "string selector, string property, string value",
         "source": "native/src/DocumentHost.Scripting.cs"
       },
       {
@@ -2314,6 +2447,13 @@
         "managedName": "DomEventEventHandler",
         "returnType": "void",
         "parameters": "string type, string elementId",
+        "source": "native/src/DocumentHost.Scripting.cs"
+      },
+      {
+        "name": "dom_event_detail",
+        "managedName": "DomEventDetailEventHandler",
+        "returnType": "void",
+        "parameters": "string type, string elementId, GodotDictionary details",
         "source": "native/src/DocumentHost.Scripting.cs"
       }
     ]

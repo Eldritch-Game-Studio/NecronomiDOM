@@ -3,6 +3,22 @@ using Godot;
 using NecronomiDom.Paint;
 
 namespace NecronomiDom.Runtime;
+
+/// <summary>Borrow the painter-owned batch directly: native resource getters acquire
+/// references, so bounds and retained updates must not read Multimesh back from Godot.</summary>
+[GodotClass]
+public partial class NativeBoxPaint : MultiMeshInstance2D, INativePaintBounds
+{
+    internal MultiMesh Batch { get; }
+    public Rect2 PaintBounds { get; internal set; }
+    internal NativeBoxPaint(MultiMesh batch, Rect2 bounds)
+    {
+        Batch = batch;
+        Multimesh = batch;
+        PaintBounds = bounds;
+    }
+}
+
 [GodotClass]
 public partial class ShapedTextPaint : Node2D, INativePaintBounds
 {

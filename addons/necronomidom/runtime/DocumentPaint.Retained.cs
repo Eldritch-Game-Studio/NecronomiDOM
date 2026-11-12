@@ -13,7 +13,7 @@ public partial class DocumentPaint
     // MultiMesh back from the RenderingServer (that read synchronizes with the render thread every call).
     private readonly record struct RetainedBinding(PaintRun Run, CanvasItem? Item, int Slot, int StyleRow = 0);
     private readonly List<RetainedBinding> _retainedBindings = new();
-    private readonly HashSet<MultiMeshInstance2D> _changedBatches = new();
+    private readonly HashSet<NativeBoxPaint> _changedBatches = new();
     private readonly HashSet<PolygonComposite> _dirtyTargets = new();
     private void PrepareRetainedBindings(DisplayList list)
     {
@@ -136,16 +136,16 @@ public partial class DocumentPaint
                 case (TextRun, ShapedTextPaint):
                 case (TextEffectsRun, NativeGlyphEffectsPaint):
                     binding = UpdateRetainedText(binding, next, fonts); break;
-                case (BoxRun run, MultiMeshInstance2D item):
+                case (BoxRun run, NativeBoxPaint item):
                     var prior = (BoxRun)binding.Run;
                     if (prior.Style != run.Style) { WriteBoxStyle(binding.StyleRow, run.Style); stylesChanged = true; }
                     if (prior.Bounds != run.Bounds)
                     {
                         var b = run.Bounds;
                         var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
-                        item.Multimesh.SetInstanceTransform2D(binding.Slot, new Transform2D(
+                        item.Batch.SetInstanceTransform2D(binding.Slot, new Transform2D(
                             new Vector2((float)b.Width, 0), new Vector2(0, (float)b.Height), rect.GetCenter()));
-                        item.Multimesh.SetInstanceCustomData(binding.Slot, BoxCustomData(binding.StyleRow, b.Width, b.Height));
+                        item.Batch.SetInstanceCustomData(binding.Slot, BoxCustomData(binding.StyleRow, b.Width, b.Height));
                         _changedBatches.Add(item);
                     }
                     break;
@@ -162,7 +162,8 @@ public partial class DocumentPaint
                     var rect = new Rect2((float)b.X, (float)b.Y, (float)b.Width, (float)b.Height);
                     bounds = first ? rect : bounds.Merge(rect); first = false;
                 }
-            item.Multimesh.CustomAabb = new Aabb(new Vector3(bounds.Position.X, bounds.Position.Y, 0),
+            item.PaintBounds = bounds;
+            item.Batch.CustomAabb = new Aabb(new Vector3(bounds.Position.X, bounds.Position.Y, 0),
                 new Vector3(bounds.Size.X, bounds.Size.Y, 0));
         }
         _changedBatches.Clear();

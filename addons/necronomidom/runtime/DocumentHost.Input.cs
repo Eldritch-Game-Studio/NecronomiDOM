@@ -139,8 +139,11 @@ public partial class DocumentHost
             _documentInput!.Navigate(cardinal.X < 0 ? "left" : cardinal.X > 0 ? "right" : cardinal.Y > 0 ? "up" : "down");
         }
     }
+    // Native script bridge observes the original event's modifiers; managed builds erase this hook.
+    partial void ObserveScriptModifiers(InputEvent input);
     public override void _Input(InputEvent input)
     {
+        ObserveScriptModifiers(input);
         // DOM/modal callbacks may synchronously withdraw this host. Consume on the borrowed
         // viewport and commit press state before dispatch; teardown's ResetInput must win.
         var viewport = GetViewport();
@@ -188,6 +191,7 @@ public partial class DocumentHost
     private void CancelIntent() => CancelRequested?.Invoke();
     public override void _GuiInput(InputEvent input)
     {
+        ObserveScriptModifiers(input);
         var viewport = GetViewport();
         if (WheelObserved != null && input is InputEventMouseButton
             { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown or MouseButton.WheelLeft or MouseButton.WheelRight } observedWheel)
