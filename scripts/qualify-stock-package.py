@@ -71,7 +71,8 @@ def qualify(godot, package, version, architecture=None):
         (project / "native/tests").mkdir(parents=True)
         for relative in ("demo/gdscript/demo.gd", "demo/gdscript/demo.tscn",
                          "demo/grimoire.html", "demo/grimoire.css",
-                         "native/tests/lifecycle.gd", "native/tests/lifecycle.html"):
+                         "native/tests/lifecycle.gd", "native/tests/lifecycle.html",
+                         "native/tests/bridge.gd", "native/tests/bridge.html"):
             shutil.copyfile(repository / relative, project / relative)
         (project / "project.godot").write_text(
             'config_version=5\n\n[application]\n'
@@ -104,6 +105,11 @@ def qualify(godot, package, version, architecture=None):
         marker = "native-lifecycle: cycles=4 reloads=4 withdrawn=3 final-host-mounted=true"
         if marker not in lifecycle.splitlines():
             raise RuntimeError("Native lifecycle did not complete mount/reload/withdrawal coverage")
+        marker = "native-bridge: incremental DOM, state, geometry, keyboard, wheel, pointer capture and resource lifetime passed"
+        for mode in ([], ["--editor"]):
+            bridge = run(command + mode + ["--script", "res://native/tests/bridge.gd"])
+            if marker not in bridge.splitlines():
+                raise RuntimeError("Native GDScript bridge did not complete runtime/editor qualification")
     print("STOCK_PACKAGE_RESULT PASS")
 
 

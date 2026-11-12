@@ -228,6 +228,10 @@ bridge revision. HTML fragments use the existing parser and DOM mutation machine
 Unchanged elements retain their identity, focus, scroll and pointer capture.
 The native `DocumentHost` is registered for both runtime and editor use, so `@tool` GDScript
 plugins can use this same bridge in the standard, non-.NET Godot editor.
+Installed-package qualification exercises the incremental bridge in both standard Godot runtime
+and editor processes on every selected platform, including architecture-bound Apple silicon and
+Intel processes. It checks preserved focus, dirty form values, scroll, pointer capture, event
+details and native paint-resource release rather than accepting library loading alone.
 
 ### From C#
 

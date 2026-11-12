@@ -54,6 +54,10 @@ class ArchitectureTests(unittest.TestCase):
                             return 'count="One shape stirs beneath the page."'
                         if "res://native/tests/lifecycle.gd" in command:
                             return "native-lifecycle: cycles=4 reloads=4 withdrawn=3 final-host-mounted=true\n"
+                        if "res://native/tests/bridge.gd" in command:
+                            project = Path(command[command.index("--path") + 1])
+                            self.assertTrue((project / "native/tests/bridge.html").is_file())
+                            return "native-bridge: incremental DOM, state, geometry, keyboard, wheel, pointer capture and resource lifetime passed\n"
                         return ""
 
                     with self.subTest(architecture=architecture, proof=prove_architecture), \
@@ -61,7 +65,7 @@ class ArchitectureTests(unittest.TestCase):
                             patch.object(stock, "run", side_effect=run):
                         if prove_architecture:
                             stock.qualify(Path("godot"), package, "4.7.2", architecture)
-                            self.assertEqual(len(commands), 6)
+                            self.assertEqual(len(commands), 8)
                         else:
                             with self.assertRaisesRegex(RuntimeError, "process architecture"):
                                 stock.qualify(Path("godot"), package, "4.7.2", architecture)
