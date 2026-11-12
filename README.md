@@ -226,6 +226,8 @@ These incremental bridge additions are source-only until a package built from th
 Do not combine an updated manifest or scripts with older platform libraries: each target must contain the same
 bridge revision. HTML fragments use the existing parser and DOM mutation machinery, not a document reload.
 Unchanged elements retain their identity, focus, scroll and pointer capture.
+The native `DocumentHost` is registered for both runtime and editor use, so `@tool` GDScript
+plugins can use this same bridge in the standard, non-.NET Godot editor.
 
 ### From C#
 

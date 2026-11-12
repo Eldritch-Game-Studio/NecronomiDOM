@@ -15,7 +15,7 @@ internal static class ExtensionEntryPoint
     private static void Initialize(InitializationLevel level)
     {
         if (level != InitializationLevel.Scene) return;
-        GodotRegistry.RegisterRuntimeClass<DocumentHost>(DocumentHost.BindMembers);
+        GodotRegistry.RegisterClass<DocumentHost>(DocumentHost.BindMembers);
         GodotRegistry.RegisterInternalClass<DocumentInspector>(DocumentInspector.BindMembers);
         GodotRegistry.RegisterInternalClass<DocumentPaint>(DocumentPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeBoxPaint>(NativeBoxPaint.BindMembers);
