@@ -60,27 +60,29 @@ def transfer(url, destination, expected_digest):
     return total
 
 
-def install(archive_path, filename, destination):
-    if Path(filename).name != filename or not filename.endswith(".zip"):
-        raise ValueError("Expected a package ZIP basename")
+def install(archive_path, filenames, destination):
+    if not filenames or len(set(filenames)) != len(filenames) or any(
+            Path(name).name != name or "\\" in name or not name.endswith(".zip")
+            for name in filenames):
+        raise ValueError("Expected unique package ZIP basenames")
     with zipfile.ZipFile(archive_path) as outer:
-        if outer.namelist() != [filename] or outer.testzip() is not None:
-            raise ValueError("Artifact must contain exactly the expected intact package ZIP")
-        with outer.open(filename) as source, tempfile.NamedTemporaryFile(
-                dir=destination, prefix=".package-", delete=False) as output:
-            temporary = Path(output.name)
-            try:
-                shutil.copyfileobj(source, output)
-                output.close()
+        members = outer.namelist()
+        if len(members) != len(filenames) or set(members) != set(filenames) or outer.testzip() is not None:
+            raise ValueError("Artifact must contain exactly the expected intact package ZIPs")
+        with tempfile.TemporaryDirectory(dir=destination, prefix=".packages-") as staging:
+            for filename in filenames:
+                temporary = Path(staging) / filename
+                with outer.open(filename) as source, temporary.open("wb") as output:
+                    shutil.copyfileobj(source, output)
                 with zipfile.ZipFile(temporary) as inner:
                     if inner.testzip() is not None:
                         raise ValueError("Package ZIP failed CRC validation")
-                temporary.replace(destination / filename)
-            finally:
-                temporary.unlink(missing_ok=True)
+            # Validate every variant before replacing any previously accepted ZIP.
+            for filename in filenames:
+                (Path(staging) / filename).replace(destination / filename)
 
 
-def download(repository, artifact_id, expected_digest, filename, destination, token):
+def download(repository, artifact_id, expected_digest, filenames, destination, token):
     if re.fullmatch(r"[0-9a-f]{64}", expected_digest):
         expected_digest = "sha256:" + expected_digest
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", expected_digest):
@@ -99,14 +101,14 @@ def download(repository, artifact_id, expected_digest, filename, destination, to
                 if attempt == 2:
                     raise RuntimeError("Artifact transfer failed after three complete-download attempts") from None
                 time.sleep(5)
-        install(archive, filename, destination)
-        print(f"Verified artifact {artifact_id}: {size} bytes, {expected_digest}; package {filename}")
+        install(archive, filenames, destination)
+        print(f"Verified artifact {artifact_id}: {size} bytes, {expected_digest}; packages {', '.join(filenames)}")
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-id", type=int, required=True)
     parser.add_argument("--digest", required=True)
-    parser.add_argument("--name", required=True)
+    parser.add_argument("--name", action="append", required=True)
     parser.add_argument("--destination", type=Path, default=Path("dist"))
     args = parser.parse_args()
     try:

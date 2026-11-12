@@ -6,7 +6,7 @@ This directory compiles the shared addon runtime against the Godot .NET GDExtens
 native/build.sh linux-x64
 ```
 
-NativeAOT builds for the host operating system. The complete desktop distribution targets are Linux x64/arm64, Windows x64, and macOS x64/arm64; Windows is currently explicitly deferred, so CI qualifies the four Linux/macOS targets and cannot publish a complete five-target release. Each enabled target must be built and installed-package-qualified with official standard Godot 4.7.2. macOS uses one Apple silicon host: the ARM64 .NET SDK crosscompiles the Intel library, and Rosetta runs the actual Intel Godot process. Those targets are not evidence that any unexercised platform/export works. Android, iOS and Web are outside this distribution scope.
+The complete desktop distribution requires Linux x64/arm64, Windows x64, and macOS x64/arm64 libraries. NativeAOT uses each target operating system's toolchain: Windows compilation uses genuine Windows .NET/MSVC/Windows SDK binaries inside isolated Proton on Linux, not Linux .NET crosscompilation. Every full package requires final-ZIP qualification with official standard Godot 4.7.2. The Windows qualifier is a **Proton compatibility check**, not native-Windows runtime proof. macOS uses one Apple silicon host: the ARM64 .NET SDK crosscompiles the Intel library, and Rosetta runs the actual Intel Godot process. These checks are not evidence that any unexercised platform/export works. Android, iOS and Web are outside this distribution scope.
 
 ## CI policy
 
@@ -14,10 +14,10 @@ NativeAOT builds for the host operating system. The complete desktop distributio
 | --- | --- |
 | Ordinary code PR | Unit tests, capability checks, Linux x64 NativeAOT build and all existing native/.NET runtime smokes |
 | Code push to `main` (including native/tooling code) | The same fast checks; no cross-platform matrix or distribution ZIP |
-| Native bindings, SDK pin/patch, build or packaging PR | Fast checks **plus every enabled native target and freshly installed final-ZIP qualification on each**, before merge |
+| Native bindings, SDK pin/patch, build or packaging PR | Fast checks **plus all five native libraries and freshly installed full/runtime-only final-ZIP qualification on each**, with Windows executed under Proton |
 | Documentation/media-only PR or `main` push | Offline documentation/link/content checks, capability freshness and Python helper regressions; no .NET, engine or native build |
-| `v*` tag push | Every enabled native target, runtime smokes and exact final-ZIP qualification; publication disabled while Windows is deferred |
-| Manual dispatch | All enabled targets by default; `partial=true` is Linux-only diagnostic packaging, never publication |
+| `v*` tag push | All five native libraries, runtime smokes and both exact final-ZIP qualifications, including Windows-Proton; only then publication of both ZIPs |
+| Manual dispatch | All five targets by default; `partial=true` is Linux x64-only diagnostic packaging (full/runtime-only variants), never publication |
 
 All CI/CD executes on local runners, including PRs; there is no hosted fallback.
 The thin `ci.yml` calls `ci-local.yml@main`, which owns the trusted job definitions.
@@ -26,6 +26,9 @@ Every local runner group must allow only
 not PR-controlled workflow files. Its checkout-free admission verifies the caller's
 repository, event type and exact event SHA (the immutable merge snapshot for PRs).
 Every checkout uses that same SHA and does not persist credentials.
+Changes to the reusable workflow are not exercised as candidate YAML by a source PR:
+the caller uses trusted `main`. After qualified changes merge, observe a full dispatch
+from `main` before claiming the new workflow has run end to end.
 
 Internal-head PRs are admitted directly. External PRs require the protected
 `local-runner-external-pr` environment with required reviewers and self-review
@@ -56,31 +59,151 @@ It shares capacity with engine/game SSH workers without sharing source checkouts
 Linux x64 (`[self-hosted,Linux,X64,eldritch-linux]`) produces the pinned managed SDK
 feed and executes all Linux native/.NET/graphical smokes. Linux ARM64
 (`[self-hosted,Linux,ARM64,eldritch-linux-arm64]`) remains a required native build and
-exact final-ZIP runtime check. Windows is omitted from both matrices by default:
-no nonexistent Windows runner is queued and enabled-target PR checks can finish.
-Only after provisioning a real `[self-hosted,Windows,X64,eldritch-windows]` runner
-may an administrator set `NECRONOMIDOM_WINDOWS_ENABLED=true`. This restores both
-Windows build and runtime gates, and permits publication only after all five targets
-qualify. It is not a caller-controlled workflow input.
-
-With Windows deferred, filenames carry `-no-windows`, the ZIP contains no Windows
-DLL or Windows descriptor entry, and `addons/necronomidom/ci-package-scope.json`
-plus the job summary list the exact included/omitted targets. Scope metadata is
-not a runtime qualification receipt. GitHub release publication remains disabled.
-The four enabled Linux/macOS targets cannot be skipped or substituted by hosted
-capacity. Actual Linux ARM64 execution is still a local provisioning prerequisite.
+exact final-ZIP runtime check. Mandatory `native-windows-proton` and
+`qualify-windows-proton` jobs run on the existing Linux x64 labels. They never
+request a Windows runner or relabel the Linux host as Windows. A missing provider
+configuration fails closed; there is no optional/deferred Windows full-package mode.
+The Linux and native macOS gates cannot be skipped or replaced by Proton.
+Actual Linux ARM64 execution remains a local provisioning prerequisite.
 Linux needs .NET 10, Python as `python`/`python3`, Clang/zlib, and x64 additionally
-Xvfb/Mesa and the net8 demo runtime; future Windows needs .NET 10, Python as `python`,
-Git Bash and MSVC/Windows SDK. CI does not assume an apt-based Linux distribution.
+Xvfb/Mesa and the net8 demo runtime. CI does not assume an apt-based Linux distribution.
 
-ZIP assembly no longer constitutes Linux runtime proof: `qualify-linux-x64`
-downloads and installs the same uploaded `NecronomiDOM` artifact as every other
-enabled target. All three qualification jobs (Linux x64, enabled platform matrix,
-and both Apple architectures) remain required. The manual partial diagnostic
-still qualifies its Linux-only ZIP on Linux x64 and cannot release. The obsolete
-Linux Docker `act` launcher was removed because it cannot reproduce the required
-Apple runner contract; use manual `partial=true` for that diagnostic, or
-`native/build.sh linux-x64` for a local native build.
+### Externally provisioned Windows-Proton provider
+
+An administrator provisions verified, genuine vendor tools outside the checkout.
+The repository variable `NECRONOMIDOM_WINDOWS_TOOLCHAIN` contains an **absolute local
+path to a JSON configuration**, not JSON contents, a workflow input or credentials.
+The same configuration must be available to both Linux-hosted Windows jobs.
+Its schema is:
+
+| Field | Required value |
+| --- | --- |
+| `schema` | Integer `1` |
+| `proton_root` | Absolute path to the verified Proton installation |
+| `dotnet_root` | Absolute path to the genuine Windows .NET 10 SDK |
+| `dotnet_sdk_version` | Exact installed, serviced Windows .NET SDK version, such as `10.0.404` |
+| `msvc_root` | Absolute path to the genuine VC/Tools/MSVC toolset root |
+| `windows_sdk_root` | Absolute path to the genuine Windows Kits/10 root |
+| `windows_sdk_version` | Installed SDK version, such as `10.0.26100.0` |
+| `work_root` | Existing writable disk-backed scratch directory, not tmpfs |
+| `fingerprints` | Objects with absolute provider-file `path` and actual 64-hex `sha256` |
+| `qualification` | Object with `kind: "windows-proton"`, absolute proof-JSON `receipt` path and its actual 64-hex `sha256` |
+
+Fingerprint coverage includes the Wine executable and Proton version file,
+`dotnet.exe`, `cl.exe`, `link.exe`, `lib.exe`, SDK `kernel32.lib`/`ucrt.lib`, and
+MSVC `oldnames.lib`/`libcmt.lib`/`libvcruntime.lib`. Both
+`dotnet_root/sdk/<dotnet_sdk_version>/trustedroots/codesignctl.pem` and
+`dotnet_root/sdk/<dotnet_sdk_version>/trustedroots/timestampctl.pem` require
+authenticated SHA-256 fingerprints from the genuine Microsoft SDK distribution.
+The receipt records actual provider proof; neither it nor package-scope metadata
+substitutes for final-package runtime qualification. Provider files, hashes and
+receipt are provisioned externally, never invented by CI. Keep machine-specific
+paths and credentials out of tracked files.
+
+The Linux host also supplies bubblewrap and private Xvfb support. Each invocation
+uses a fresh materialized vendor default prefix and a private copied workspace on
+the configured disk-backed storage. Provider roots are mounted read-only; only
+owned job storage is writable. No job installs compiler prerequisites, modifies
+shared Proton files, or falls back to unsandboxed Wine. Owned wineserver shutdown
+must complete before its namespace is torn down. The helper uses
+`DOTNET_SYSTEM_GLOBALIZATION_USENLS=true`, not invariant globalization.
+CI execution stays inside the authenticated runner admission and its inherited
+CPU/memory cgroup limits; the helper does not detach into a separate resource scope.
+Local invocations likewise require the host's authorized bounded workload wrapper.
+
+Before the Windows build, the helper restores only these two approved roots,
+each present in **both** authenticated SDK trustedroots bundles:
+
+| Root | Certificate SHA-256 |
+| --- | --- |
+| DigiCert Assured ID Root CA | `3e9099b5015e8f486c00bcea9d111ee721faba355a89bcf1df69561e3dc6325c` |
+| VeriSign Universal Root CA | `2399561127a57125de8cefea610ddf2fa078b5c8067f4e828290bfb860e84b3c` |
+
+The genuine MSVC-compiled `windows-signing-roots` utility uses CryptoAPI to validate
+the certificate hashes and restore them into CurrentUser ROOT in the fresh owned
+Wine prefix, restricted to CodeSigning and TimeStamp EKUs. It emits fingerprint
+evidence before and after restoration and fails unless the resulting trust is valid.
+This grants no TLS trust and changes neither host trust nor shared Proton trust.
+Signature verification and CRL/revocation checks remain enabled; there is no bypass.
+
+The workflow invokes the same CLI available for provisioned local use:
+
+```sh
+python3 scripts/windows-proton.py build \
+  --toolchain "$NECRONOMIDOM_WINDOWS_TOOLCHAIN" \
+  --sdk-feed "$SDK_FEED" \
+  --output addons/necronomidom/bin/win-x64/necronomidom.dll
+python3 scripts/windows-proton.py qualify \
+  --toolchain "$NECRONOMIDOM_WINDOWS_TOOLCHAIN" \
+  --package "$FINAL_PACKAGE" --godot-version 4.7.2
+```
+
+`SDK_FEED` is the current portable managed SDK feed produced by the Linux build;
+`FINAL_PACKAGE` is the exact downloaded distribution ZIP. The build reuses
+`native/build.sh` and its locked feed/patch identity and copies only the resulting
+Windows DLL back. The qualifier downloads official Windows Godot with official
+checksum verification and runs the existing strict runtime/editor/demo/lifecycle/
+incremental-bridge oracles, requiring Windows and x86_64 process features.
+Successful toolchain bring-up or a standalone NativeAOT probe is not addon
+qualification and is not native-Windows runtime proof.
+
+Qualification executes the authenticated engine EXE directly, not its separate
+console process-tree wrapper. Version identity uses the engine's stdout and exit
+status; all version stderr is printed unchanged and retained byte-for-byte beneath
+`work_root/qualification-logs`, including failed attempts. Runtime, import and
+editor commands retain combined diagnostic capture and every existing oracle.
+
+The Linux provider also requires fontconfig's `fc-list` and its ordinary
+`/etc/fonts/fonts.conf`. Qualification copies the available system/vendor fonts
+into the owned Windows font directory and registers those actual faces, retaining
+fontconfig aliases while avoiding unusable host NT paths. Host fonts and font
+configuration remain read-only. Consumer qualification exposes no compiler or
+.NET SDK drive, PATH, or environment; only builds receive those producer tools.
+
+### Final-package and release gates
+
+Full assembly fails if any of the five libraries is absent or empty, including the
+Windows DLL. Only explicit manual `partial=true` dispatches may produce a
+`-partial.zip`: the assembler retains only Linux x64 and prunes other descriptor
+entries. `addons/necronomidom/ci-package-scope.json` and the job summary state
+included/omitted targets and diagnostic status; scope is not a runtime receipt.
+Godot `ERROR:`/`SCRIPT ERROR:` output and RID/ObjectDB leak diagnostics fail
+qualification even if the process exits zero and prints a success marker. The
+editor bridge runs the same complete oracle through a real `EditorPlugin`,
+preserving the editor's native SceneTree and normal teardown instead of replacing
+its main loop with `--editor --script`.
+
+
+After assembly, CI derives `<full-stem>-runtime.zip` from that exact ZIP using:
+
+```sh
+python3 scripts/project-runtime-package.py --package "$FULL_PACKAGE" --output "$RUNTIME_PACKAGE"
+```
+
+The full ZIP is for Godot .NET/C# integration and remains the Godot Asset Store
+package. The runtime-only variant supports GDScript and Dirge1.1's standard-Godot
+dependency installer without managed source/build inputs. Projection preserves
+native binaries, the GDExtension descriptor, GDScript/assets, licenses/notices and
+`ci-package-scope.json` byte-for-byte. The added
+`addons/necronomidom/runtime-package.json`, schema `necronomidom.runtime-package/1`,
+records the original ZIP filename/SHA256 and retained native binary hashes.
+Scope is inherited, never upgraded: a partial or no-Windows source stays so.
+Manual diagnostics yield `-partial.zip` and `-partial-runtime.zip`, both Linux
+x64-only; projection cannot make them releasable.
+
+ZIP assembly or projection does not constitute runtime proof. `qualify-linux-x64`,
+`qualify-platforms` (Linux ARM64), `qualify-apple` (both architecture-bound processes)
+and `qualify-windows-proton` all run the same strict existing final-package oracles
+on **both** ZIPs. The ZIPs are uploaded together in the `NecronomiDOM` artifact;
+every qualifier and the release step download by immutable artifact ID and SHA256
+digest, requiring the exact two filenames and complete outer/inner ZIP validation
+before installation. A tag release requires success for both ZIPs from all
+qualifiers and publishes those exact bytes, with no post-release projection.
+Failure of either ZIP blocks publication of both. Manual diagnostics still
+qualify both on Linux x64 and can never release, even when dispatched against a
+tag. The obsolete Linux Docker `act` launcher cannot reproduce the Apple or
+Windows-Proton contract; use manual `partial=true` for diagnostics or
+`native/build.sh linux-x64` locally.
 
 `scripts/ci-policy.py` classifies complete Git diffs: PRs compare their head with the
 base/head merge base; pushes compare before/after, including an empty-tree first push.
@@ -169,13 +292,13 @@ Short physical names bound Windows compiler/package paths. A `.source-identity` 
 
 For local SDK preparation, the script validates the source commit, changed-file set and corrected bridge checksum before reuse, and preserves a copy of the lock and patch alongside a successfully prepared feed. Altered or partially prepared source is refused and retained for inspection. It never patches the old/shared `.work/godot-dotnet` checkout, deletes old feeds or removes packages from the global NuGet cache. An existing `NECRONOMIDOM_WORK` root can continue to be used without reinterpreting its older SDK cache as patched.
 
-Windows builds run under Git Bash with `cygpath` available. The script normalizes `NECRONOMIDOM_WORK` and any external feed path, passes Windows-native paths to Python/.NET and `NUGET_PACKAGES`, preserves `/p:` MSBuild arguments against MSYS conversion, and enables long-path support for a locally prepared dependency checkout. A short CI work root such as `${runner.temp}/nd` is recommended. Local SDK preparation invokes the pinned SDK's cross-platform `eng/common/build.py` entry point directly, avoiding its shell wrapper's argument re-splitting. No custom Godot binary or private API is required.
+Direct native-Windows builds use Git Bash with `cygpath` available. The script normalizes `NECRONOMIDOM_WORK` and any external feed path, passes Windows-native paths to Python/.NET and `NUGET_PACKAGES`, preserves `/p:` MSBuild arguments against MSYS conversion, and enables long-path support for a locally prepared dependency checkout. Linux-hosted Windows-Proton builds instead use the helper's scoped Windows .NET launcher and path mapping while retaining the same build script, feed identity and publish settings. Local SDK preparation invokes the pinned SDK's cross-platform `eng/common/build.py` entry point directly, avoiding its shell wrapper's argument re-splitting. No custom Godot binary or private API is required.
 
 Native publication uses an isolated `nuget.config` under the source-identity cache, containing exactly the selected local managed feed and `https://api.nuget.org/v3/index.json`. XML serialization escapes filesystem paths, and `RestoreConfigFile` selects that configuration instead of passing mixed filesystem/URI `--source` arguments. Windows CI treated the HTTPS CLI source as a local path even with MSYS conversion disabled; this records the observed failure without attributing it to an unproven layer. The `dotnet publish` process still disables MSYS argument conversion because its filesystem arguments are already native; ordinary shell/Git operations keep their normal behavior.
 
 ### Managed feed handoff between native hosts
 
-CI generates the platform-independent managed SDK packages once on Linux, then uses those exact packages for NativeAOT compilation on each real target host. This separates the build-time bindings generator's native dependency from the final addon's target ABI. The observed macOS Intel SDK-generation failure was a missing `libclang.dylib` in the ClangSharp generator dependency; sharing its already generated managed output does not skip native compilation or runtime acceptance.
+CI generates the platform-independent managed SDK packages once on Linux, then uses those exact packages for target-specific NativeAOT compilation, including the genuine Windows toolchain under Proton. This separates the build-time bindings generator's native dependency from the final addon's target ABI. The observed macOS Intel SDK-generation failure was a missing `libclang.dylib` in the ClangSharp generator dependency; sharing its already generated managed output does not skip native compilation or runtime acceptance.
 
 To consume a trusted prebuilt feed instead of cloning/building the SDK:
 
@@ -199,19 +322,19 @@ Payload evidence from the pinned corrected feed:
 | `Godot.Bindings` | `lib/net10.0/Godot.Bindings.dll` and XML documentation | Empty `net10.0` group |
 | `Godot.SourceGeneration` | `analyzers/dotnet/cs/Godot.SourceGeneration.dll` | Empty `.NETStandard2.0` group |
 
-Both DLLs have CLR flags `0x1` (`ILONLY`), with neither `32BITREQUIRED` nor `32BITPREFERRED` set. The inspected archives contain no RID-specific `runtimes/` or native-library payloads. Thus the shared inputs are architecture-independent managed assemblies, not Linux native libraries. `dotnet publish -r <rid>` and the host C toolchain still produce every final addon library on its matching operating system/architecture, followed by installed-package stock-Godot qualification there.
+Both DLLs have CLR flags `0x1` (`ILONLY`), with neither `32BITREQUIRED` nor `32BITPREFERRED` set. The inspected archives contain no RID-specific `runtimes/` or native-library payloads. Thus the shared inputs are architecture-independent managed assemblies, not Linux native libraries. `dotnet publish -r <rid>` and the target platform's C toolchain still produce every final addon library. Linux and macOS execute natively; genuine Windows tools and stock Godot execute under isolated Proton, with installed-package qualification explicitly limited to that compatibility environment.
 
 
 ## Verification contract and regression inputs
 
-The public-shutdown candidate built successfully on Linux x64 and passed `scripts/qualify-stock-package.py` with official standard Godot `4.7.2.stable.official.ed1daf0bf`: fresh installed-ZIP font import and shutdown, editor launch/quit, the Grimoire Summon DOM output, and four native host mount/reload cycles with three explicit withdrawals and the final host/inspector still mounted at process shutdown. The debugger evidence above concerns the original binary, not this replacement. Linux x64 does not establish the other four desktop targets; the complete candidate must satisfy the following gates on its matching native hosts:
+The public-shutdown candidate built successfully on Linux x64 and passed `scripts/qualify-stock-package.py` with official standard Godot `4.7.2.stable.official.ed1daf0bf`: fresh installed-ZIP font import and shutdown, editor launch/quit, the Grimoire Summon DOM output, and four native host mount/reload cycles with three explicit withdrawals and the final host/inspector still mounted at process shutdown. The debugger evidence above concerns the original binary, not this replacement. Linux x64 does not establish the other four desktop targets; the complete candidate must satisfy the following gates in every declared qualification environment:
 
 Additional Linux x64 checks passed the native authoring/shared-resource smoke and the stock .NET workbench, inspector/reload and typed-binding smokes. A real standard-Godot Vulkan/Forward+ Grimoire run under isolated headless gamescope rendered the expected Summon text, saved a viewport image and exited cleanly; that image was inspected. This is functional rendering evidence, not performance, HDR, export-template or other-platform acceptance.
 
 Keep standard and .NET editor import caches separate. Reopening the source tree in standard Godot after a .NET editor import reproduced a different script-documentation worker crash; the same native scene in both a fresh installed package and a clean source copy imported/opened/exited successfully. That mixed-cache case is not qualified. It does not justify changing this SDK ownership patch or claiming the engine's script-documentation worker is fixed.
 
-1. Build the five desktop runtime identifiers on their corresponding native hosts and assemble/package the actual produced libraries.
-2. On each target host, install that package in a genuinely fresh project with no `.godot` directory. Run standard Godot 4.7.2 `--headless --audio-driver Dummy --import`, requiring success **including shutdown**. Do not reuse the debugger's warmed project and do not ignore a failed import.
+1. Build the five desktop runtime identifiers with their corresponding platform toolchains, using isolated Proton for the genuine Windows toolchain, and assemble/package the actual produced libraries.
+2. In each declared qualification environment, install that package in a genuinely fresh project with no `.godot` directory. Run standard Godot 4.7.2 `--headless --audio-driver Dummy --import`, requiring success **including shutdown**. Do not reuse the debugger's warmed project and do not ignore a failed import. Windows-Proton success is compatibility evidence, not native-Windows runtime proof.
 3. Launch/quit the standard editor on the installed project, requiring a clean shutdown.
 4. Run the packaged GDScript demo smoke, checking its real Summon count text and process status.
 5. Exercise native host withdrawal, inspector ownership and reload with the input below, then run the existing native/.NET authoring and runtime regressions. A clean import alone does not establish runtime correctness, rendering or other platforms.

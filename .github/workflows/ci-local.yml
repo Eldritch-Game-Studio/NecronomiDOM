@@ -37,7 +37,6 @@ jobs:
         env:
           SOURCE_SHA: ${{ inputs.source-sha }}
           EXTERNAL_APPROVAL_ENABLED: ${{ vars.LOCAL_EXTERNAL_PR_APPROVAL_ENABLED }}
-          WINDOWS_ENABLED: ${{ vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' }}
         run: |
           "$HOME/.local/share/eldritch-macos/tools/bin/python3" - <<'PY'
           import json
@@ -64,8 +63,6 @@ jobs:
               if head["full_name"] != repository and os.environ.get("EXTERNAL_APPROVAL_ENABLED") != "true":
                   raise SystemExit("External PRs require configured protected-environment approval; no fork code was checked out")
           print("Validated immutable source and local runner admission")
-          if os.environ.get("WINDOWS_ENABLED") != "true":
-              print("Windows is explicitly deferred and unqualified; no Windows jobs or five-target release publication.")
           PY
 
   changes:
@@ -203,24 +200,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows is explicitly deferred until an administrator enables a provisioned local runner.
-        include: ${{ fromJSON(vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' && '[{"runner":["self-hosted","Linux","ARM64","eldritch-linux-arm64"],"rid":"linux-arm64"},{"runner":["self-hosted","Windows","X64","eldritch-windows"],"rid":"win-x64"}]' || '[{"runner":["self-hosted","Linux","ARM64","eldritch-linux-arm64"],"rid":"linux-arm64"}]') }}
+        include:
+          - runner: [self-hosted, Linux, ARM64, eldritch-linux-arm64]
+            rid: linux-arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.source-sha }}
           persist-credentials: false
-      - name: Enable Windows long paths
-        if: runner.os == 'Windows'
-        run: git config --global core.longpaths true
       - name: Require provisioned .NET SDK
         run: dotnet --info
       - name: Require installed local native tools
         shell: bash
         run: |
           command -v python
-          if [ "$RUNNER_OS" = Linux ]; then command -v clang; fi
+          command -v clang
       - name: Receive portable managed SDK feed
         uses: actions/download-artifact@v4
         with:
@@ -235,6 +230,34 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.rid }}
+          path: addons/necronomidom/bin/
+          if-no-files-found: error
+
+  native-windows-proton:
+    needs: [changes, native-linux-x64]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: [self-hosted, Linux, X64, eldritch-linux]
+    env:
+      NECRONOMIDOM_WINDOWS_TOOLCHAIN: ${{ vars.NECRONOMIDOM_WINDOWS_TOOLCHAIN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - name: Receive portable managed SDK feed
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-managed-feed
+          path: ${{ runner.temp }}/sf
+      - name: Build Windows NativeAOT using isolated Proton on Linux
+        run: |
+          python3 scripts/windows-proton.py build \
+            --toolchain "$NECRONOMIDOM_WINDOWS_TOOLCHAIN" \
+            --sdk-feed "$RUNNER_TEMP/sf" \
+            --output addons/necronomidom/bin/win-x64/necronomidom.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-win-x64
           path: addons/necronomidom/bin/
           if-no-files-found: error
 
@@ -341,12 +364,13 @@ jobs:
             --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
 
   package:
-    needs: [changes, docs, test, native-linux-x64, native-platforms, native-apple, smoke]
-    # Skipped target matrices are acceptable only for the explicitly requested manual Linux diagnostic.
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.package == 'true' && needs.docs.result == 'success' && needs.test.result == 'success' && needs.native-linux-x64.result == 'success' && needs.smoke.result == 'success' && ((needs.native-platforms.result == 'success' && needs.native-apple.result == 'success') || (github.event_name == 'workflow_dispatch' && inputs.partial == true && needs.native-platforms.result == 'skipped' && needs.native-apple.result == 'skipped')) }}
+    needs: [changes, docs, test, native-linux-x64, native-platforms, native-apple, native-windows-proton, smoke]
+    # Skipped target jobs are acceptable only for the explicitly requested manual Linux diagnostic.
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.package == 'true' && needs.docs.result == 'success' && needs.test.result == 'success' && needs.native-linux-x64.result == 'success' && needs.smoke.result == 'success' && ((needs.changes.outputs.full == 'true' && needs.native-platforms.result == 'success' && needs.native-apple.result == 'success' && needs.native-windows-proton.result == 'success') || (github.event_name == 'workflow_dispatch' && inputs.partial == true && needs.changes.outputs.mode == 'partial' && needs.native-platforms.result == 'skipped' && needs.native-apple.result == 'skipped' && needs.native-windows-proton.result == 'skipped')) }}
     runs-on: [self-hosted, macOS, ARM64, eldritch-apple]
     outputs:
       name: ${{ steps.zip.outputs.name }}
+      runtime-name: ${{ steps.runtime.outputs.name }}
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
       artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
@@ -365,14 +389,26 @@ jobs:
         id: zip
         env:
           PARTIAL: ${{ github.event_name == 'workflow_dispatch' && inputs.partial == true }}
-          WINDOWS_ENABLED: ${{ vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' }}
+          # Bootstrap existing assembler API; remove after main full qualification.
+          WINDOWS_ENABLED: 'true'
         run: python3 scripts/assemble-package.py
-      - name: Upload addon ZIP
+      - name: Project runtime-only addon from assembled ZIP
+        id: runtime
+        env:
+          FULL_PACKAGE: ${{ steps.zip.outputs.name }}
+        run: |
+          runtime_name="${FULL_PACKAGE%.zip}-runtime.zip"
+          python3 scripts/project-runtime-package.py \
+            --package "dist/$FULL_PACKAGE" --output "dist/$runtime_name"
+          echo "name=$runtime_name" >> "$GITHUB_OUTPUT"
+      - name: Upload full and runtime-only addon ZIPs
         id: upload
         uses: actions/upload-artifact@v4
         with:
           name: NecronomiDOM
-          path: dist/${{ steps.zip.outputs.name }}
+          path: |
+            dist/${{ steps.zip.outputs.name }}
+            dist/${{ steps.runtime.outputs.name }}
           if-no-files-found: error
 
   qualify-linux-x64:
@@ -390,7 +426,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
-            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
+            --digest "${{ needs.package.outputs.artifact-digest }}" \
+            --name "${{ needs.package.outputs.name }}" --name "${{ needs.package.outputs.runtime-name }}"
       - name: Install official standard Godot
         run: |
           base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
@@ -398,11 +435,13 @@ jobs:
           curl --fail --location --silent --show-error "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o "$archive"
           unzip -oq "$archive" -d "$RUNNER_TEMP/godot-package"
           echo "GODOT_PACKAGE=$RUNNER_TEMP/godot-package/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
-      - name: Qualify final installed ZIP on Linux x64
+      - name: Qualify both final installed ZIPs on Linux x64
         run: |
-          python3 scripts/qualify-stock-package.py \
-            --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
-            --package "dist/${{ needs.package.outputs.name }}"
+          for package in "${{ needs.package.outputs.name }}" "${{ needs.package.outputs.runtime-name }}"; do
+            python3 scripts/qualify-stock-package.py \
+              --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
+              --package "dist/$package"
+          done
 
   qualify-platforms:
     needs: [changes, package]
@@ -410,7 +449,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' && '[{"runner":["self-hosted","Linux","ARM64","eldritch-linux-arm64"],"archive":"linux.arm64","executable":"Godot_vVERSION-stable_linux.arm64"},{"runner":["self-hosted","Windows","X64","eldritch-windows"],"archive":"win64.exe","executable":"Godot_vVERSION-stable_win64_console.exe"}]' || '[{"runner":["self-hosted","Linux","ARM64","eldritch-linux-arm64"],"archive":"linux.arm64","executable":"Godot_vVERSION-stable_linux.arm64"}]') }}
+        include:
+          - runner: [self-hosted, Linux, ARM64, eldritch-linux-arm64]
+            archive: linux.arm64
+            executable: Godot_vVERSION-stable_linux.arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -426,7 +468,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
-            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
+            --digest "${{ needs.package.outputs.artifact-digest }}" \
+            --name "${{ needs.package.outputs.name }}" --name "${{ needs.package.outputs.runtime-name }}"
       - name: Install official standard Godot
         shell: bash
         env:
@@ -440,12 +483,41 @@ jobs:
           binary="$RUNNER_TEMP/godot-stock/${EXECUTABLE//VERSION/$GODOT_VERSION}"
           chmod +x "$binary"
           echo "GODOT_PACKAGE=$binary" >> "$GITHUB_ENV"
-      - name: Qualify final installed ZIP on target architecture
+      - name: Qualify both final installed ZIPs on target architecture
         shell: bash
         run: |
-          python scripts/qualify-stock-package.py \
-            --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
-            --package "dist/${{ needs.package.outputs.name }}"
+          for package in "${{ needs.package.outputs.name }}" "${{ needs.package.outputs.runtime-name }}"; do
+            python scripts/qualify-stock-package.py \
+              --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
+              --package "dist/$package"
+          done
+
+  qualify-windows-proton:
+    needs: [changes, package]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: [self-hosted, Linux, X64, eldritch-linux]
+    env:
+      NECRONOMIDOM_WINDOWS_TOOLCHAIN: ${{ vars.NECRONOMIDOM_WINDOWS_TOOLCHAIN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - name: Download and verify complete package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
+            --digest "${{ needs.package.outputs.artifact-digest }}" \
+            --name "${{ needs.package.outputs.name }}" --name "${{ needs.package.outputs.runtime-name }}"
+      - name: Qualify both final installed Windows ZIPs under Proton on Linux
+        run: |
+          for package in "${{ needs.package.outputs.name }}" "${{ needs.package.outputs.runtime-name }}"; do
+            python3 scripts/windows-proton.py qualify \
+              --toolchain "$NECRONOMIDOM_WINDOWS_TOOLCHAIN" \
+              --package "dist/$package" \
+              --godot-version "$GODOT_VERSION"
+          done
 
   qualify-apple:
     needs: [changes, package]
@@ -467,7 +539,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
-            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
+            --digest "${{ needs.package.outputs.artifact-digest }}" \
+            --name "${{ needs.package.outputs.name }}" --name "${{ needs.package.outputs.runtime-name }}"
       - name: Install official universal standard Godot
         run: |
           base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
@@ -478,27 +551,41 @@ jobs:
           chmod +x "$binary"
           /usr/bin/lipo -verify_arch "${{ matrix.architecture }}" "$binary"
           echo "GODOT_PACKAGE=$binary" >> "$GITHUB_ENV"
-      - name: Qualify exact final ZIP with architecture-bound stock Godot
+      - name: Qualify both exact final ZIPs with architecture-bound stock Godot
         run: |
-          python3 scripts/apple-locked.py python3 scripts/qualify-stock-package.py \
-            --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
-            --architecture "${{ matrix.architecture }}" \
-            --package "dist/${{ needs.package.outputs.name }}"
+          for package in "${{ needs.package.outputs.name }}" "${{ needs.package.outputs.runtime-name }}"; do
+            python3 scripts/apple-locked.py python3 scripts/qualify-stock-package.py \
+              --godot "$GODOT_PACKAGE" --godot-version "$GODOT_VERSION" \
+              --architecture "${{ matrix.architecture }}" \
+              --package "dist/$package"
+          done
 
   release:
-    needs: [package, qualify-linux-x64, qualify-platforms, qualify-apple]
-    if: ${{ vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.package.result == 'success' && needs.qualify-linux-x64.result == 'success' && needs.qualify-platforms.result == 'success' && needs.qualify-apple.result == 'success' }}
+    needs: [changes, package, qualify-linux-x64, qualify-platforms, qualify-apple, qualify-windows-proton]
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.changes.outputs.full == 'true' && needs.package.result == 'success' && needs.qualify-linux-x64.result == 'success' && needs.qualify-platforms.result == 'success' && needs.qualify-apple.result == 'success' && needs.qualify-windows-proton.result == 'success' }}
     runs-on: [self-hosted, macOS, ARM64, eldritch-apple]
     permissions:
       contents: write
+      actions: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          name: NecronomiDOM
-          path: dist
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - name: Select installed Apple tools
+        run: echo "$HOME/.local/share/eldritch-macos/tools/bin" >> "$GITHUB_PATH"
+      - name: Download and verify qualified package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
+            --digest "${{ needs.package.outputs.artifact-digest }}" \
+            --name "${{ needs.package.outputs.name }}" --name "${{ needs.package.outputs.runtime-name }}"
       - name: GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ needs.package.outputs.name }}
+          files: |
+            dist/${{ needs.package.outputs.name }}
+            dist/${{ needs.package.outputs.runtime-name }}
           fail_on_unmatched_files: true
           generate_release_notes: true
