@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
@@ -346,6 +347,8 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, eldritch-apple]
     outputs:
       name: ${{ steps.zip.outputs.name }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -365,6 +368,7 @@ jobs:
           WINDOWS_ENABLED: ${{ vars.NECRONOMIDOM_WINDOWS_ENABLED == 'true' }}
         run: python3 scripts/assemble-package.py
       - name: Upload addon ZIP
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: NecronomiDOM
@@ -381,10 +385,12 @@ jobs:
           persist-credentials: false
       - name: Require installed local Python
         run: command -v python3
-      - uses: actions/download-artifact@v4
-        with:
-          name: NecronomiDOM
-          path: dist
+      - name: Download and verify complete package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
+            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
       - name: Install official standard Godot
         run: |
           base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
@@ -414,10 +420,13 @@ jobs:
       - name: Require installed local Python
         shell: bash
         run: command -v python
-      - uses: actions/download-artifact@v4
-        with:
-          name: NecronomiDOM
-          path: dist
+      - name: Download and verify complete package artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
+            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
       - name: Install official standard Godot
         shell: bash
         env:
@@ -453,10 +462,12 @@ jobs:
           persist-credentials: false
       - name: Select installed Apple tools
         run: echo "$HOME/.local/share/eldritch-macos/tools/bin" >> "$GITHUB_PATH"
-      - uses: actions/download-artifact@v4
-        with:
-          name: NecronomiDOM
-          path: dist
+      - name: Download and verify complete package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/download-package.py --artifact-id "${{ needs.package.outputs.artifact-id }}" \
+            --digest "${{ needs.package.outputs.artifact-digest }}" --name "${{ needs.package.outputs.name }}"
       - name: Install official universal standard Godot
         run: |
           base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable

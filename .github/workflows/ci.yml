@@ -15,6 +15,7 @@ on:
 # The called workflow reduces permissions to read except for its tag release job.
 permissions:
   contents: write
+  actions: read
 
 jobs:
   local:

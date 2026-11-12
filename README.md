@@ -232,6 +232,9 @@ Installed-package qualification exercises the incremental bridge in both standar
 and editor processes on every selected platform, including architecture-bound Apple silicon and
 Intel processes. It checks preserved focus, dirty form values, scroll, pointer capture, event
 details and native paint-resource release rather than accepting library loading alone.
+Package qualification downloads the immutable producer artifact with its SHA256 digest, verifies
+the complete outer and inner ZIPs, and installs it atomically before starting Godot. Interrupted
+transfers are retried from the beginning at most three times; partial files are never qualified.
 
 ### From C#
 
