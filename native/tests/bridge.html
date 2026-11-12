@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><style>
+html, body, div, input, button, select { display: block; box-sizing: border-box; margin: 0; font-family: "Noto Sans"; font-size: 16px; line-height: 24px; }
+body { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+input, button, select { appearance: none; width: 200px; height: 32px; border: 1px solid #ffffff; background: #223344; color: #ffffff; }
+/* Checkbox/select DOM state exists, but this native render profile does not
+   render those controls. Dirge uses buttons/popups for visible choices. */
+#check, #choice { display: none; }
+#rows { width: 300px; height: 100px; overflow: auto; }
+.row { height: 40px; width: 280px; background: #334455; }
+#drag { width: 100px; height: 32px; }
+</style></head><body>
+<input id="editor" value="initial">
+<input id="check" type="checkbox">
+<select id="choice"><option value="a">A</option><option value="b">B</option></select>
+<button id="drag">Drag</button>
+<div id="rows"><div class="row" id="row_01">One</div><div class="row" id="row_02">Two</div><div class="row" id="row_03">Three</div><div class="row" id="row_04">Four</div><div class="row" id="row_05">Five</div></div>
+</body></html>

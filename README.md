@@ -206,13 +206,26 @@ nearest ancestor with one.
 | `get_text` / `set_text(selector, text)` | Element text content. |
 | `get_attribute` / `set_attribute` / `remove_attribute(selector, name, …)` | Attributes. |
 | `has_class` / `add_class` / `remove_class` / `toggle_class(selector, class)` | Classes, which drive your CSS. |
-| `get_value` / `set_value(selector, value)` | `<input>` / `<textarea>` values. |
+| `get_value` / `set_value(selector, value)` | `<input>` / `<textarea>` / `<select>` values. |
 | `focus_element(selector)`, `has_element(selector)`, `query_ids(selector)` | Focus, existence, ids of all matches. |
 | `listen(type)` + signal `dom_event(type, element_id)` | Any other DOM event, e.g. `"input"`, `"focusin"`. |
 | signals `clicked(element_id)`, `cancel()` | Clicks; Escape or the cancel action. |
 | `set_input_enabled(bool)`, `set_application_navigation(bool)`, `apply_text_scale(float)` | Input and scaling (see the table below). |
 | `font_path`, `font_family`, `font_paths`, `fallback_font_paths` | Fonts (see the table below). |
 | `submit_action`, `cancel_action`, `navigate_*_action` | Input actions. |
+| `append_html(selector, html)`, `insert_html_before(selector, html)`, `set_inner_html(selector, html)` | Parse fragments into the live document; only `set_inner_html` replaces existing descendants. |
+| `remove_element(selector)`, `move_element(selector, parent_selector, before_selector = "")` | Remove or reorder existing elements without replacing unrelated rows. |
+| `get_checked` / `set_checked(selector, bool)`, `get_selected_index` / `set_selected_index(selector, int)` | Live checkbox/radio and select state. |
+| `get_style` / `set_style(selector, property, value)` | Inline CSS properties, including custom properties. |
+| `get_scroll(selector)`, `scroll_to(selector, x, y)`, `get_element_rect(selector)` | Live scroll offset and published border-box bounds in host-local CSS pixels. Await layout after structural edits. |
+| `get_active_element_id()`, `element_from_point(x, y)` | Focus identity and physical hit-test identity (nearest ancestor with an ID). |
+| `set_pointer_capture` / `release_pointer_capture` / `has_pointer_capture(selector, pointer_id)` | Capture the active pointer reported by `pointerdown`. |
+| `listen(type)` + `dom_event_detail(type, element_id, details)` | Event payload: modifiers, pointer position/buttons/ID/type, keyboard key/code/repeat and target form state as applicable. Existing signals are unchanged. |
+
+These incremental bridge additions are source-only until a package built from this revision is supplied.
+Do not combine an updated manifest or scripts with older platform libraries: each target must contain the same
+bridge revision. HTML fragments use the existing parser and DOM mutation machinery, not a document reload.
+Unchanged elements retain their identity, focus, scroll and pointer capture.
 
 ### From C#
 

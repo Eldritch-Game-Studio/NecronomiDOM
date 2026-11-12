@@ -176,7 +176,7 @@ public partial class DocumentPaint : Node2D
                 bounds = j == i ? rect : bounds.Merge(rect); BoxInstanceCount++;
             }
             multi.CustomAabb = new Aabb(new Vector3(bounds.Position.X, bounds.Position.Y, 0), new Vector3(bounds.Size.X, bounds.Size.Y, 0));
-            var item2 = new MultiMeshInstance2D { Multimesh = multi, Material = material };
+            var item2 = new NativeBoxPaint(multi, bounds) { Material = material };
             parent.AddChild(item2); _items.Add(item2); _resources.Add(multi); _resources.Add(mesh);
             for (int j = i; j < end; j++) BindRetained(j, item2, j - i, firstStyleRow + j - i);
             i = end;

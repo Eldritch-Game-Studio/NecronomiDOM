@@ -18,6 +18,7 @@ internal static class ExtensionEntryPoint
         GodotRegistry.RegisterRuntimeClass<DocumentHost>(DocumentHost.BindMembers);
         GodotRegistry.RegisterInternalClass<DocumentInspector>(DocumentInspector.BindMembers);
         GodotRegistry.RegisterInternalClass<DocumentPaint>(DocumentPaint.BindMembers);
+        GodotRegistry.RegisterInternalClass<NativeBoxPaint>(NativeBoxPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<ShapedTextPaint>(ShapedTextPaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeImagePaint>(NativeImagePaint.BindMembers);
         GodotRegistry.RegisterInternalClass<NativeGradientPaint>(NativeGradientPaint.BindMembers);
