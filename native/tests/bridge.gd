@@ -1,5 +1,6 @@
-extends SceneTree
-## Run alongside the built native addon: godot --path <scratch> --script bridge.gd.
+@tool
+extends Node
+## Shared runtime and standard-editor oracle, mounted in the runner's viewport.
 ## Uses actual native DOM/input/layout; no managed runtime or synthetic DOM events.
 
 var host: Variant
@@ -7,8 +8,12 @@ var failures: int = 0
 var events: Array[Dictionary] = []
 var captured: bool = false
 var pointer_id: int = -1
+var root: Variant
+## Editor runner only: reopens an autofocus scene while this document holds focus.
+var reopen_edited_scene: Callable
 
-func _initialize() -> void:
+func _ready() -> void:
+    root = get_viewport()
     _run.call_deferred()
 
 func check(condition: bool, message: String) -> void:
@@ -18,7 +23,7 @@ func check(condition: bool, message: String) -> void:
 
 func settle() -> void:
     for frame in 3:
-        await process_frame
+        await get_tree().process_frame
 
 func _run() -> void:
     root.size = Vector2i(640, 480)
@@ -49,6 +54,9 @@ func _run() -> void:
     host.move_element("#row_generated_0006", "#rows", "#row_02")
     host.remove_element("#row_inserted")
     host.set_style("#row_02", "background-color", "#abcdef")
+    if reopen_edited_scene.is_valid():
+        # An edited-scene preview must not take the window's native key focus.
+        reopen_edited_scene.call()
     await settle()
     check(host.get_active_element_id() == "editor", "unaffected focus survives all mutations")
     check(host.get_value("#editor") == "dirty retained value", "dirty control state survives (not reconstructed from markup)")
@@ -123,7 +131,7 @@ func _run() -> void:
         check(resource.get_ref() == null, "paint resource released when native host is freed")
     if failures == 0:
         print("native-bridge: incremental DOM, state, geometry, keyboard, wheel, pointer capture and resource lifetime passed")
-    quit(1 if failures else 0)
+    get_tree().quit(1 if failures else 0)
 
 func _mouse(point: Vector2, pressed: bool) -> void:
     var mouse = InputEventMouseButton.new()

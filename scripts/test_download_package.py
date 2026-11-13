@@ -39,7 +39,7 @@ class PackageDownloadTests(unittest.TestCase):
                 patch.object(download.urllib.request, "urlopen", side_effect=responses) as request, \
                 patch.object(download.time, "sleep"):
             destination = Path(temporary)
-            download.download("owner/repo", 123, digest, "package.zip", destination, "secret")
+            download.download("owner/repo", 123, digest, ["package.zip"], destination, "secret")
             self.assertEqual((destination / "package.zip").read_bytes(), inner)
             self.assertEqual(request.call_count, 2)
             self.assertEqual(list(destination.iterdir()), [destination / "package.zip"])
@@ -54,7 +54,7 @@ class PackageDownloadTests(unittest.TestCase):
             destination = Path(temporary)
             (destination / "package.zip").write_bytes(b"previous")
             with self.assertRaisesRegex(RuntimeError, "three complete-download attempts"):
-                download.download("owner/repo", 123, "sha256:" + "0" * 64, "package.zip", destination, "secret")
+                download.download("owner/repo", 123, "sha256:" + "0" * 64, ["package.zip"], destination, "secret")
             self.assertEqual((destination / "package.zip").read_bytes(), b"previous")
 
     def test_matching_digest_does_not_accept_invalid_inner_zip(self):
@@ -64,7 +64,7 @@ class PackageDownloadTests(unittest.TestCase):
             archive = destination / "artifact.zip"
             archive.write_bytes(outer)
             with self.assertRaises(zipfile.BadZipFile):
-                download.install(archive, "package.zip", destination)
+                download.install(archive, ["package.zip"], destination)
             self.assertFalse((destination / "package.zip").exists())
             self.assertEqual(list(destination.iterdir()), [archive])
 
@@ -74,7 +74,46 @@ class PackageDownloadTests(unittest.TestCase):
             archive = destination / "artifact.zip"
             archive.write_bytes(zipped("../package.zip", b"unexpected"))
             with self.assertRaisesRegex(ValueError, "exactly the expected"):
-                download.install(archive, "package.zip", destination)
+                download.install(archive, ["package.zip"], destination)
+
+    def test_both_variants_are_verified_and_installed_from_one_artifact(self):
+        full = zipped("addon.txt", b"full package")
+        runtime = zipped("addon.txt", b"runtime package")
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as outer:
+            outer.writestr("full.zip", full)
+            outer.writestr("runtime.zip", runtime)
+        payload = stream.getvalue()
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(download, "artifact_url", return_value=Response.url), \
+                patch.object(download.urllib.request, "urlopen", return_value=Response(payload)):
+            destination = Path(temporary)
+            download.download("owner/repo", 123, hashlib.sha256(payload).hexdigest(),
+                              ["runtime.zip", "full.zip"], destination, "secret")
+            self.assertEqual((destination / "full.zip").read_bytes(), full)
+            self.assertEqual((destination / "runtime.zip").read_bytes(), runtime)
+            self.assertEqual(len(list(destination.iterdir())), 2)
+
+    def test_invalid_second_variant_never_replaces_first(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary)
+            archive = destination / "artifact.zip"
+            previous = destination / "full.zip"
+            previous.write_bytes(b"previous")
+            with zipfile.ZipFile(archive, "w") as outer:
+                outer.writestr("full.zip", zipped("addon.txt", b"new"))
+                outer.writestr("runtime.zip", b"not a ZIP")
+            with self.assertRaises(zipfile.BadZipFile):
+                download.install(archive, ["full.zip", "runtime.zip"], destination)
+            self.assertEqual(previous.read_bytes(), b"previous")
+            self.assertFalse((destination / "runtime.zip").exists())
+
+    def test_duplicate_or_unsafe_expected_names_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary)
+            for names in ([], ["full.zip", "full.zip"], ["../full.zip"], ["dir\\full.zip"]):
+                with self.subTest(names=names), self.assertRaisesRegex(ValueError, "unique"):
+                    download.install(destination / "absent.zip", names, destination)
 
 
 if __name__ == "__main__":

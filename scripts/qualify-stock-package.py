@@ -3,30 +3,54 @@
 
 import argparse
 import configparser
+import contextlib
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
 
+# Match Godot diagnostics, not Wine/Xvfb chatter or a fixture quoting "ERROR:".
+# Strip terminal decoration only for detection; the original output is retained.
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+GODOT_FAILURE = re.compile(
+    r"^[ \t]*(?:SCRIPT ERROR:|ERROR:|"
+    r"(?:WARNING:[ \t]*)?(?:\d+[ \t]+)?"
+    r"(?:RIDs?\b[^\r\n]*\bleaked\b|ObjectDB\b[^\r\n]*\bleaked\b))",
+    re.MULTILINE)
 
-def run(command, timeout=180):
+
+def run(command, timeout=180, *, stderr_path=None):
     print("+ " + " ".join(map(str, command)), flush=True)
-    try:
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, timeout=timeout)
-    except subprocess.TimeoutExpired as error:
-        output = error.stdout
-        if isinstance(output, bytes):
-            output = output.decode("utf-8", errors="replace")
-        if output:
-            print(output, end="", flush=True)
-        raise
+    capture = stderr_path.open("wb") if stderr_path is not None else contextlib.nullcontext(subprocess.STDOUT)
+    with capture as stderr:
+        try:
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=stderr,
+                                    text=True, timeout=timeout)
+        except subprocess.TimeoutExpired as error:
+            output = error.stdout
+            if isinstance(output, bytes):
+                output = output.decode("utf-8", errors="replace")
+            if output:
+                print(output, end="", flush=True)
+            raise
+        finally:
+            if stderr_path is not None:
+                stderr.flush()
+                # Keep every diagnostic byte; only version identity uses stdout.
+                sys.stderr.buffer.write(stderr_path.read_bytes())
+                sys.stderr.buffer.flush()
     print(result.stdout, end="", flush=True)
     if result.returncode:
         raise RuntimeError(f"Godot exited with status {result.returncode}")
+    diagnostics = result.stdout
+    if stderr_path is not None:
+        diagnostics += "\n" + stderr_path.read_bytes().decode("utf-8", errors="replace")
+    if GODOT_FAILURE.search(ANSI_ESCAPE.sub("", diagnostics)):
+        raise RuntimeError("Godot reported an error or leaked resources; see complete output above")
     return result.stdout
 
 
@@ -40,9 +64,10 @@ def godot_command(godot, architecture=None):
     return ["/usr/bin/arch", "-" + architecture, str(godot)]
 
 
-def qualify(godot, package, version, architecture=None):
+def qualify(godot, package, version, architecture=None, required_features=(), version_stderr=None):
     executable = godot_command(godot, architecture)
-    engine_version = run(executable + ["--version"]).strip()
+    version_capture = {"stderr_path": version_stderr} if version_stderr is not None else {}
+    engine_version = run(executable + ["--version"], **version_capture).strip()
     if not engine_version.startswith(version + ".stable.official."):
         raise RuntimeError(f"Expected official standard Godot {version}, got {engine_version!r}")
 
@@ -72,7 +97,8 @@ def qualify(godot, package, version, architecture=None):
         for relative in ("demo/gdscript/demo.gd", "demo/gdscript/demo.tscn",
                          "demo/grimoire.html", "demo/grimoire.css",
                          "native/tests/lifecycle.gd", "native/tests/lifecycle.html",
-                         "native/tests/bridge.gd", "native/tests/bridge.html"):
+                         "native/tests/bridge.gd", "native/tests/bridge.html",
+                         "native/tests/bridge_runtime.gd"):
             shutil.copyfile(repository / relative, project / relative)
         (project / "project.godot").write_text(
             'config_version=5\n\n[application]\n'
@@ -86,6 +112,22 @@ def qualify(godot, package, version, architecture=None):
         command = executable + ["--headless", "--audio-driver", "Dummy", "--path", str(project)]
         # Editor import includes a clean process shutdown. A crash here must block packaging.
         run(command + ["--import"])
+        if required_features:
+            # Execution adapters must prove the guest process, not the host's labels.
+            if any(feature not in {"windows", "x86_64"} for feature in required_features):
+                raise ValueError("Unsupported required stock Godot feature")
+            checks = "".join(
+                f'    if not OS.has_feature("{feature}"):\n'
+                f'        push_error("Missing process feature: {feature}")\n'
+                '        quit(1)\n        return\n'
+                for feature in required_features)
+            marker = "STOCK_PACKAGE_FEATURES " + " ".join(required_features)
+            (project / "platform.gd").write_text(
+                'extends SceneTree\nfunc _initialize():\n' + checks
+                + f'    print("{marker}")\n    quit(0)\n', encoding="utf-8")
+            proof = run(command + ["--script", "res://platform.gd"])
+            if marker not in proof.splitlines():
+                raise RuntimeError("Stock Godot did not prove the requested process features")
         if architecture is not None:
             (project / "architecture.gd").write_text(
                 'extends SceneTree\nfunc _initialize():\n'
@@ -106,10 +148,25 @@ def qualify(godot, package, version, architecture=None):
         if marker not in lifecycle.splitlines():
             raise RuntimeError("Native lifecycle did not complete mount/reload/withdrawal coverage")
         marker = "native-bridge: incremental DOM, state, geometry, keyboard, wheel, pointer capture and resource lifetime passed"
-        for mode in ([], ["--editor"]):
-            bridge = run(command + mode + ["--script", "res://native/tests/bridge.gd"])
-            if marker not in bridge.splitlines():
-                raise RuntimeError("Native GDScript bridge did not complete runtime/editor qualification")
+        bridge = run(command + ["--script", "res://native/tests/bridge_runtime.gd"])
+        if marker not in bridge.splitlines():
+            raise RuntimeError("Native GDScript bridge did not complete runtime qualification")
+        # Do not replace the editor's native SceneTree with --script. A stock,
+        # addon-free custom SceneTree reproduces editor shutdown RID/ObjectDB
+        # leaks. A real EditorPlugin hosts the same oracle in its own viewport.
+        plugin = project / "addons/bridge_qualification"
+        plugin.mkdir()
+        shutil.copyfile(repository / "native/tests/bridge_editor.gd", plugin / "plugin.gd")
+        (plugin / "plugin.cfg").write_text(
+            '[plugin]\nname="Native bridge qualification"\n'
+            'description="Shared native DOM and resource lifetime oracle"\n'
+            'author="NecronomiDOM"\nversion="1.0"\nscript="plugin.gd"\n', encoding="utf-8")
+        with (project / "project.godot").open("a", encoding="utf-8") as settings:
+            settings.write('\n[editor_plugins]\n'
+                           'enabled=PackedStringArray("res://addons/bridge_qualification/plugin.cfg")\n')
+        bridge = run(command + ["--editor"])
+        if marker not in bridge.splitlines():
+            raise RuntimeError("Native GDScript bridge did not complete editor qualification")
     print("STOCK_PACKAGE_RESULT PASS")
 
 

@@ -37,6 +37,11 @@ case "$HOST_OS" in
 esac
 
 native_path() {
+  # A scoped launcher may run a genuine Windows SDK from an isolated Linux job.
+  if [[ -n "${NECRONOMIDOM_NATIVE_PATH_MAPPER:-}" ]]; then
+    "$NECRONOMIDOM_NATIVE_PATH_MAPPER" "$1"
+    return
+  fi
   case "$HOST_OS" in
     MINGW*|MSYS*|CYGWIN*) cygpath -m "$1" ;;
     *) printf '%s\n' "$1" ;;
@@ -148,8 +153,13 @@ if [[ -z "${NECRONOMIDOM_SDK_FEED+x}" ]]; then
 fi
 FEED_NATIVE="$(native_path "$FEED")"
 RESTORE_CONFIG_NATIVE="$(native_path "$SDK_ROOT/nuget.config")"
+RESTORE_CONFIG_LOCAL="$RESTORE_CONFIG_NATIVE"
+if [[ -n "${NECRONOMIDOM_NATIVE_PATH_MAPPER:-}" ]]; then
+  # Python remains a host process; only NuGet consumes the mapped Windows path.
+  RESTORE_CONFIG_LOCAL="$SDK_ROOT/nuget.config"
+fi
 # Keep source URIs in NuGet's own format rather than transporting a mixed path/URI CLI list.
-python - "$FEED_NATIVE" "$RESTORE_CONFIG_NATIVE" <<'PY'
+python - "$FEED_NATIVE" "$RESTORE_CONFIG_LOCAL" <<'PY'
 import sys
 from xml.etree import ElementTree as ET
 

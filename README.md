@@ -113,7 +113,7 @@ subset of HTML and CSS (see [Supported profile](#supported-profile)) and reports
 |---|---|---|
 | Godot edition | Standard or .NET | .NET |
 | Access | `DocumentHost` node, selector methods and signals | DOM, CSSOM, layout and typed state bindings |
-| Setup | Install the release ZIP and restart Godot | Also import `NecronomiDom.targets` into your project and build |
+| Setup | Install the runtime-only release ZIP and restart Godot | Install the full ZIP, import `NecronomiDom.targets` into your project and build |
 
 The native GDExtension is compiled ahead of time, so GDScript users do not need a .NET runtime or SDK.
 Android, iOS and Web native exports are not supported.
@@ -122,11 +122,22 @@ Android, iOS and Web native exports are not supported.
 
 ### 1. Download and install
 
-Download the **NecronomiDOM addon ZIP** from the [latest GitHub release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest).
-Choose the attached `NecronomiDOM-v….zip` file under **Assets**, not GitHub's automatic **Source code** archives.
+Download the addon from the [latest GitHub release](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases/latest).
+Under **Assets**, choose the package for your project, not GitHub's automatic **Source code** archives:
+
+- **GDScript or Dirge1.1's standard-Godot dependency installer:** `NecronomiDOM-v…-runtime.zip`.
+  This runtime-only ZIP omits managed source and build inputs; no .NET installation is required.
+- **Godot .NET / C# DOM API:** the full `NecronomiDOM-v….zip`, including managed source and build integration.
+  The Godot Asset Store distribution remains this full ZIP.
 
 Extract its `addons/necronomidom/` folder into your project as `res://addons/necronomidom/`, then restart
-Godot to load the extension. The release ZIP includes the native libraries for all five desktop architectures.
+Godot to load the extension. Both release ZIPs include the native libraries for all five desktop architectures.
+
+The runtime-only ZIP is projected from the exact assembled full ZIP before qualification, not transformed after
+release. Its native libraries, extension descriptor, GDScript/assets, licenses/notices and `ci-package-scope.json`
+are byte-identical to the source package. `addons/necronomidom/runtime-package.json`
+(`necronomidom.runtime-package/1`) records the source ZIP filename and SHA256 plus retained native binary hashes.
+It preserves the source target scope; projection cannot promote a partial or no-Windows package to a full release.
 
 A repository clone or automatic source archive does not include those binaries. Use the release ZIP
 for installation; see [Building from source](#building-from-source) if you want to compile them yourself.
@@ -222,19 +233,24 @@ nearest ancestor with one.
 | `set_pointer_capture` / `release_pointer_capture` / `has_pointer_capture(selector, pointer_id)` | Capture the active pointer reported by `pointerdown`. |
 | `listen(type)` + `dom_event_detail(type, element_id, details)` | Event payload: modifiers, pointer position/buttons/ID/type, keyboard key/code/repeat and target form state as applicable. Existing signals are unchanged. |
 
-These incremental bridge additions are source-only until a package built from this revision is supplied.
+The incremental bridge requires native libraries built from this revision.
 Do not combine an updated manifest or scripts with older platform libraries: each target must contain the same
 bridge revision. HTML fragments use the existing parser and DOM mutation machinery, not a document reload.
 Unchanged elements retain their identity, focus, scroll and pointer capture.
 The native `DocumentHost` is registered for both runtime and editor use, so `@tool` GDScript
-plugins can use this same bridge in the standard, non-.NET Godot editor.
-Installed-package qualification exercises the incremental bridge in both standard Godot runtime
+plugins can use this same bridge in the standard, non-.NET Godot editor. Hosts inside the edited
+scene render as previews but never take the editor window's keyboard focus, even with `autofocus`.
+Installed-package qualification exercises both exact ZIPs' incremental bridge in standard Godot runtime
 and editor processes on every selected platform, including architecture-bound Apple silicon and
 Intel processes. It checks preserved focus, dirty form values, scroll, pointer capture, event
 details and native paint-resource release rather than accepting library loading alone.
-Package qualification downloads the immutable producer artifact with its SHA256 digest, verifies
-the complete outer and inner ZIPs, and installs it atomically before starting Godot. Interrupted
-transfers are retried from the beginning at most three times; partial files are never qualified.
+The editor check uses a real `EditorPlugin` and the editor's native scene tree, and reopens an
+`autofocus` scene while the tool document holds focus.
+Godot errors and RID/ObjectDB leak diagnostics fail qualification even when a success marker appears.
+Both ZIPs share one immutable producer artifact; qualification downloads it by ID and SHA256 digest,
+verifies the complete outer and every inner ZIP before replacing any accepted package, then starts Godot.
+Interrupted transfers are retried from the beginning at most three times; partial files are never qualified.
+Release publication requires every platform gate for both ZIPs and publishes those exact qualified bytes.
 
 ### From C#
 
@@ -556,6 +572,39 @@ Source watching is optional and starts off. Inspector and reload controls are av
 Prebuilt binaries are included in the [release downloads](https://github.com/Eldritch-Game-Studio/NecronomiDOM/releases).
 To build a native library yourself, see the [native build guide](native/README.md) for toolchain requirements
 and platform-specific instructions.
+
+Full native packages require all five desktop libraries, including the Windows x64 DLL.
+CI builds that DLL with the genuine Windows .NET/MSVC/Windows SDK toolchain inside
+isolated Proton on a Linux host (`native-windows-proton`). The separate
+`qualify-windows-proton` job must exercise both exact final ZIPs in official Windows
+Godot 4.7.2 under Proton before release, alongside Linux x64/ARM64 and both native
+macOS architecture qualifiers. This is **Windows-target compilation and Proton
+compatibility qualification**, not proof of runtime behavior on native Windows.
+A successful compiler probe alone does not qualify the addon or its final package.
+
+Administrators provision the verified toolchain externally and set the repository
+variable `NECRONOMIDOM_WINDOWS_TOOLCHAIN` to its local JSON configuration path; missing
+or invalid configuration fails the full build rather than omitting Windows.
+See the [native build guide](native/README.md) for the provider schema and isolation
+requirements. Only an explicit manual `partial=true` dispatch may produce Linux
+x64-only `-partial.zip` and `-partial-runtime.zip` diagnostics; neither can ever publish a release.
+
+The provider pins `dotnet_sdk_version` and authenticated SHA-256 fingerprints for
+both SDK `trustedroots/codesignctl.pem` and `trustedroots/timestampctl.pem` bundles.
+Only DigiCert Assured ID Root CA and VeriSign Universal Root CA are restored through
+CryptoAPI into the fresh owned Wine prefix, restricted to CodeSigning and TimeStamp
+purposes. The [native build guide](native/README.md#externally-provisioned-windows-proton-provider)
+lists their exact certificate fingerprints. No TLS trust, host/shared-Proton trust,
+signature verification or CRL/revocation policy is weakened.
+
+**Normal-PR bootstrap:** the candidate PR still executes the existing reusable
+workflow at `@main`; its checks do not demonstrate execution of the new Windows
+jobs. This first PR retains the existing assembler API so those trusted-main gates
+remain compatible. After normal merge, the new workflow passes literal
+`WINDOWS_ENABLED: 'true'`, requires the Windows build and final-package qualifier,
+and includes all five libraries in full packages without optional repository-variable
+Windows routing. Only after a full qualification on that new `main` will a second
+normal PR remove the legacy assembler flag/API and temporary environment setting.
 
 ## License
 

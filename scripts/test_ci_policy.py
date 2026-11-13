@@ -23,6 +23,7 @@ class PolicyTests(unittest.TestCase):
             ("push", "refs/heads/main", ["native/build.sh"], False, "fast"),
             ("push", "refs/heads/main", ["README.md", "unknown/new.code"], False, "fast"),
             ("pull_request", "refs/pull/1/merge", ["README.md", "native/godot-dotnet.lock"], False, "full"),
+            ("pull_request", "refs/pull/1/merge", ["scripts/windows-proton.py"], True, "full"),
             ("push", "refs/tags/v1.2.3", ["README.md"], False, "full"),
             ("push", "refs/tags/v1.2.3", [], True, "full"),
             ("workflow_dispatch", "refs/heads/main", [], False, "full"),
@@ -42,7 +43,11 @@ class PolicyTests(unittest.TestCase):
                  "addons/necronomidom/runtime/DocumentHost.cs", ".github/workflows/ci.yml",
                  "Directory.Build.props", "Directory.Packages.props", "global.json", "NuGet.Config",
                  "packages.lock.json", "Some.csproj", "test.targets", "NecronomiDOM.slnx",
-                 "scripts/qualify-stock-package.py", "future/build.sh", "extension.gdextension",
+                 "scripts/qualify-stock-package.py", "scripts/windows-proton.py",
+                 "scripts/assemble-package.py", ".github/workflows/ci-local.yml",
+                 "scripts/project-runtime-package.py", "scripts/test_runtime_package.py",
+                 "scripts/download-package.py",
+                 "future/build.sh", "extension.gdextension",
                  ".gitattributes", ".gitignore", "addons/necronomidom/.gitattributes",
                  "addons/necronomidom/.gitignore"]
         for path in paths:

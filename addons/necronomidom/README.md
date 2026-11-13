@@ -6,11 +6,15 @@ Build Godot interfaces with HTML and CSS, from GDScript or C#. NecronomiDOM rend
 
 ## Installation
 
-1. Download the attached **NecronomiDOM addon ZIP** from the latest GitHub release. Use the addon ZIP under **Assets**, not the automatic **Source code** archives.
+1. Download an attached addon ZIP under **Assets** from the latest GitHub release, not an automatic **Source code** archive. Choose **`NecronomiDOM-v…-runtime.zip`** for GDScript or Dirge1.1's standard-Godot dependency installer, or the **full `NecronomiDOM-v….zip`** for Godot .NET/C# integration. The Godot Asset Store package remains the full ZIP.
 2. Copy its `addons/necronomidom/` folder into your project.
 3. Restart Godot to load the native extension.
 
-The release ZIP includes native libraries for Windows x64, Linux x64/ARM64, and macOS Intel/Apple silicon. GDScript projects do not need .NET.
+Both release ZIPs include native libraries for Windows x64, Linux x64/ARM64, and macOS Intel/Apple silicon. GDScript projects do not need .NET; the runtime-only ZIP omits managed source and build inputs.
+
+The runtime-only ZIP is derived before qualification from the exact full ZIP, retaining identical native library, GDExtension descriptor, GDScript/asset, license/notice and `ci-package-scope.json` bytes. Its `runtime-package.json` (schema `necronomidom.runtime-package/1`) records the source ZIP filename/SHA256 and retained native binary hashes. Source target scope is preserved: partial/no-Windows packages are never promoted to full releases.
+
+Both exact ZIPs must pass the same strict installed-package checks on Linux x64/ARM64, native macOS ARM64/x64 and Windows under Proton before either is released. Windows-Proton is compatibility qualification, not native-Windows runtime proof. Manual partial diagnostics are not releases.
 
 ## GDScript
 
@@ -18,7 +22,7 @@ Add a **DocumentHost** node under a `CanvasLayer` and set **Document Path** to y
 
 ## C# DOM API
 
-Use Godot .NET. Add this line to your project's `.csproj`, before `</Project>`, and build:
+Install the **full ZIP** and use Godot .NET. Add this line to your project's `.csproj`, before `</Project>`, and build:
 
 ```xml
 <Import Project="addons/necronomidom/NecronomiDom.targets" />

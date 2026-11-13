@@ -70,6 +70,15 @@ class PackageScopeTests(unittest.TestCase):
         self.assertTrue(scope["diagnostic"])
         self.assertFalse(scope["target_set_complete"])
 
+    def test_bootstrap_manual_diagnostic_with_windows_enabled(self):
+        root = self.fixture(["linux-x64"])
+        name, scope = package.assemble(root, "NecronomiDOM-test", partial=True, windows=True)
+        self.assertEqual(name, "NecronomiDOM-test-partial.zip")
+        self.assertEqual(scope["included_targets"], ["linux-x64"])
+        self.assertTrue(scope["diagnostic"])
+        self.assertFalse(scope["windows_deferred"])
+        self.assertFalse(scope["target_set_complete"])
+
 
 if __name__ == "__main__":
     unittest.main()
