@@ -9,6 +9,8 @@ var events: Array[Dictionary] = []
 var captured: bool = false
 var pointer_id: int = -1
 var root: Variant
+## Editor runner only: reopens an autofocus scene while this document holds focus.
+var reopen_edited_scene: Callable
 
 func _ready() -> void:
     root = get_viewport()
@@ -52,6 +54,9 @@ func _run() -> void:
     host.move_element("#row_generated_0006", "#rows", "#row_02")
     host.remove_element("#row_inserted")
     host.set_style("#row_02", "background-color", "#abcdef")
+    if reopen_edited_scene.is_valid():
+        # An edited-scene preview must not take the window's native key focus.
+        reopen_edited_scene.call()
     await settle()
     check(host.get_active_element_id() == "editor", "unaffected focus survives all mutations")
     check(host.get_value("#editor") == "dirty retained value", "dirty control state survives (not reconstructed from markup)")

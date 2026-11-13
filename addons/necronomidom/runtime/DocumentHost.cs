@@ -203,7 +203,7 @@ public partial class DocumentHost : Control
         GeometryRevision++;
         BindOpacityGroups();
         _documentInput!.UpdateGeometry(DisplayList, Size.X, Size.Y);
-        if (Document.FocusedElement != null && InputEnabled && !HasFocus()) GrabFocus();
+        if (Document.FocusedElement != null && InputEnabled && !HasFocus() && !EditedScenePreview) GrabFocus();
         _invalidation!.CaptureStyleSheets();
         return true;
     }

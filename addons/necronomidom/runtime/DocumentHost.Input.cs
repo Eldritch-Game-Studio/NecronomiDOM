@@ -66,6 +66,10 @@ public partial class DocumentHost
                 && Document?.DocumentElement is { } root && !NecronomiDom.Dom.Document.IsInert(root);
         }
     }
+    // Edited-scene previews render in the editor but never take its native key focus:
+    // Godot focus is per window, so autofocus there would blur tool documents and editor controls.
+    private bool EditedScenePreview => Godot.Engine.IsEditorHint()
+        && GetTree()?.EditedSceneRoot is { } scene && (scene == this || scene.IsAncestorOf(this));
     private void InitializeInput()
     {
         FocusExited += LostHostFocus;

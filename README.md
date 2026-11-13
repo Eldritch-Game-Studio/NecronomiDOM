@@ -238,12 +238,14 @@ Do not combine an updated manifest or scripts with older platform libraries: eac
 bridge revision. HTML fragments use the existing parser and DOM mutation machinery, not a document reload.
 Unchanged elements retain their identity, focus, scroll and pointer capture.
 The native `DocumentHost` is registered for both runtime and editor use, so `@tool` GDScript
-plugins can use this same bridge in the standard, non-.NET Godot editor.
+plugins can use this same bridge in the standard, non-.NET Godot editor. Hosts inside the edited
+scene render as previews but never take the editor window's keyboard focus, even with `autofocus`.
 Installed-package qualification exercises both exact ZIPs' incremental bridge in standard Godot runtime
 and editor processes on every selected platform, including architecture-bound Apple silicon and
 Intel processes. It checks preserved focus, dirty form values, scroll, pointer capture, event
 details and native paint-resource release rather than accepting library loading alone.
-The editor check uses a real `EditorPlugin` and the editor's native scene tree.
+The editor check uses a real `EditorPlugin` and the editor's native scene tree, and reopens an
+`autofocus` scene while the tool document holds focus.
 Godot errors and RID/ObjectDB leak diagnostics fail qualification even when a success marker appears.
 Both ZIPs share one immutable producer artifact; qualification downloads it by ID and SHA256 digest,
 verifies the complete outer and every inner ZIP before replacing any accepted package, then starts Godot.
