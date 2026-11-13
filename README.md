@@ -137,7 +137,7 @@ The runtime-only ZIP is projected from the exact assembled full ZIP before quali
 release. Its native libraries, extension descriptor, GDScript/assets, licenses/notices and `ci-package-scope.json`
 are byte-identical to the source package. `addons/necronomidom/runtime-package.json`
 (`necronomidom.runtime-package/1`) records the source ZIP filename and SHA256 plus retained native binary hashes.
-It preserves the source target scope; projection cannot promote a partial or no-Windows package to a full release.
+It preserves the source target scope; projection cannot promote a partial package to a full release.
 
 A repository clone or automatic source archive does not include those binaries. Use the release ZIP
 for installation; see [Building from source](#building-from-source) if you want to compile them yourself.
@@ -596,15 +596,6 @@ CryptoAPI into the fresh owned Wine prefix, restricted to CodeSigning and TimeSt
 purposes. The [native build guide](native/README.md#externally-provisioned-windows-proton-provider)
 lists their exact certificate fingerprints. No TLS trust, host/shared-Proton trust,
 signature verification or CRL/revocation policy is weakened.
-
-**Normal-PR bootstrap:** the candidate PR still executes the existing reusable
-workflow at `@main`; its checks do not demonstrate execution of the new Windows
-jobs. This first PR retains the existing assembler API so those trusted-main gates
-remain compatible. After normal merge, the new workflow passes literal
-`WINDOWS_ENABLED: 'true'`, requires the Windows build and final-package qualifier,
-and includes all five libraries in full packages without optional repository-variable
-Windows routing. Only after a full qualification on that new `main` will a second
-normal PR remove the legacy assembler flag/API and temporary environment setting.
 
 ## License
 

@@ -389,8 +389,6 @@ jobs:
         id: zip
         env:
           PARTIAL: ${{ github.event_name == 'workflow_dispatch' && inputs.partial == true }}
-          # Bootstrap existing assembler API; remove after main full qualification.
-          WINDOWS_ENABLED: 'true'
         run: python3 scripts/assemble-package.py
       - name: Project runtime-only addon from assembled ZIP
         id: runtime
