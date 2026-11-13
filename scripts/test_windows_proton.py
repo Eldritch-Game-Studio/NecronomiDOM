@@ -155,10 +155,20 @@ class ProviderTests(unittest.TestCase):
     def test_rejects_tool_escape_and_ambiguous_case(self):
         tool = Path(self.config["msvc_root"]) / "bin/Hostx64/x64/CL.EXE"
         alias = tool.with_name("cl.exe")
-        alias.write_text("ambiguous")
-        with self.assertRaisesRegex(ValueError, "ambiguous"):
-            self.read_provider()
-        alias.unlink()
+        if alias.exists():
+            # A case-insensitive host (macOS APFS) cannot hold both spellings;
+            # list the case-sensitive Linux provider directory they model.
+            listing = Path.iterdir
+            def iterdir(directory):
+                entries = list(listing(directory))
+                return [*entries, alias] if directory.samefile(tool.parent) else entries
+            with patch.object(Path, "iterdir", iterdir), self.assertRaisesRegex(ValueError, "ambiguous"):
+                self.read_provider()
+        else:
+            alias.write_text("ambiguous")
+            with self.assertRaisesRegex(ValueError, "ambiguous"):
+                self.read_provider()
+            alias.unlink()
         tool.unlink()
         tool.symlink_to(self.receipt)
         with self.assertRaisesRegex(ValueError, "real provider file"):
@@ -181,7 +191,7 @@ class ProviderTests(unittest.TestCase):
         copied.write_bytes(b"private")
         self.assertEqual(target.read_bytes(), b"vendor")
         self.assertFalse((destination / "dosdevices/z:").exists())
-        self.assertEqual((destination / "dosdevices/c:").resolve(), destination / "drive_c")
+        self.assertEqual((destination / "dosdevices/c:").resolve(), (destination / "drive_c").resolve())
 
     def test_rejects_vendor_profile_link_into_host_userdata(self):
         source = Path(self.config["proton_root"] ) / "files/share/default_pfx"

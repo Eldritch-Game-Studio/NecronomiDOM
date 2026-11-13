@@ -218,6 +218,9 @@ def validate_storage(work):
 
 
 def materialize_prefix(proton, destination):
+    # Compare resolved links against the resolved provider: its configured
+    # spelling may itself traverse a host symlink (macOS /var, OSTree /home).
+    proton = proton.resolve(strict=True)
     source = proton / "files/share/default_pfx"
     # Do not follow dosdevices/z: or userdata symlinks. Every copied vendor link
     # must resolve inside the read-only provider; copytree then dereferences it.
@@ -238,6 +241,7 @@ def materialize_prefix(proton, destination):
 
 def require_private_prefix(prefix, work):
     """Wine startup must not recreate shared DLL or user-profile links."""
+    owned = work.resolve(strict=True)
     if not (prefix / "drive_c").is_dir():
         raise ValueError("Owned prefix has no Windows drive")
     host_drive = prefix / "dosdevices/z:"
@@ -245,7 +249,7 @@ def require_private_prefix(prefix, work):
         raise ValueError("Wine unexpectedly exposed the host Z drive")
     for root in (prefix / "drive_c", work / "home"):
         for path in root.rglob("*"):
-            if path.is_symlink() and not contained(path.resolve(), work):
+            if path.is_symlink() and not contained(path.resolve(), owned):
                 raise ValueError(f"Writable Windows/profile link escapes owned job: {path}")
 
 
@@ -258,7 +262,7 @@ def provision_fonts(config, work):
     instead of those external paths; never disable system font fallback.
     """
     require_private_prefix(work / "prefix", work)
-    proton = Path(config["proton_root"])
+    proton = Path(config["proton_root"]).resolve(strict=True)
     sources = set(Path(line) for line in subprocess.check_output(
         ["fc-list", "--format=%{file}\\n"], text=True, timeout=60).splitlines() if line)
     # Include Wine's builtins and Proton's genuine Windows-named replacement
@@ -270,7 +274,8 @@ def provision_fonts(config, work):
                            if path.suffix.lower() in {".ttf", ".otf", ".ttc", ".otc", ".fon"})
     if not sources:
         raise ValueError("No fonts available for the owned Windows prefix")
-    allowed = (Path("/usr/share/fonts"), Path("/usr/local/share/fonts"), proton)
+    allowed = tuple(root.resolve() for root in (Path("/usr/share/fonts"), Path("/usr/local/share/fonts"), proton))
+    vendor_roots = tuple(vendor.resolve() for vendor in vendors)
     fonts = work / "prefix/drive_c/windows/Fonts"
     fonts.mkdir(exist_ok=True)
     for source in sorted(sources):
@@ -280,7 +285,8 @@ def provision_fonts(config, work):
             raise ValueError(f"Font source must be a read-only system/provider file: {source}")
         # Preserve vendor names used by Wine's builtin font links. Host names
         # are content-addressed to retain distinct fonts with the same basename.
-        name = source.name if any(contained(source, vendor) for vendor in vendors) else digest(resolved) + source.suffix.lower()
+        name = (source.name if any(contained(source.parent.resolve(), vendor) for vendor in vendor_roots)
+                else digest(resolved) + source.suffix.lower())
         target = fonts / name
         if target.exists():
             if target.is_symlink() or digest(target) != digest(resolved):
@@ -370,7 +376,8 @@ def native_path(path, roots):
     if not path.is_absolute():
         raise ValueError(f"Native path must be absolute: {path}")
     path = path.resolve()
-    for drive, root in sorted(roots.items(), key=lambda item: len(item[1].parts), reverse=True):
+    for drive, root in sorted(((drive, Path(root).resolve()) for drive, root in roots.items()),
+                              key=lambda item: len(item[1].parts), reverse=True):
         if contained(path, root):
             return drive + ":\\" + "\\".join(path.relative_to(root).parts)
     raise ValueError(f"Path is outside the private Windows drive mappings: {path}")
