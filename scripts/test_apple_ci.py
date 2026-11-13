@@ -142,7 +142,7 @@ class TrustTests(unittest.TestCase):
 
     def test_windows_proton_jobs_are_mandatory_linux_hosted_full_gates(self):
         workflow = (ROOT / ".github/workflows/ci-local.yml").read_text()
-        self.assertNotIn("NECRONOMIDOM_WINDOWS_ENABLED", workflow)
+        self.assertNotIn("WINDOWS_ENABLED", workflow)
         self.assertNotIn("eldritch-windows", workflow)
         for name, command in (("native-windows-proton", "build"), ("qualify-windows-proton", "qualify")):
             job = self.job(name)
@@ -183,8 +183,8 @@ class TrustTests(unittest.TestCase):
         self.assertIn("inputs.partial == true", partial)
         self.assertIn("needs.changes.outputs.mode == 'partial'", partial)
         self.assertIn("PARTIAL: ${{ github.event_name == 'workflow_dispatch' && inputs.partial == true }}", job)
-        # The bootstrap retains the trusted-main assembler API, never optional routing.
-        self.assertEqual(re.findall(r"^\s+WINDOWS_ENABLED: (.+)$", job, re.MULTILINE), ["'true'"])
+        # Windows is unconditional: no assembler flag or optional repository routing.
+        self.assertNotIn("WINDOWS_ENABLED", job)
         self.assertIn("run: python3 scripts/assemble-package.py", job)
 
     def test_runtime_projection_precedes_shared_artifact_upload(self):

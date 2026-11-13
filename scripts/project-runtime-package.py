@@ -90,7 +90,7 @@ def project(package, output):
         with zipfile.ZipFile(source) as archive:
             members = validate_members(archive)
             scope = json.loads(archive.read(SCOPE))
-            if not isinstance(scope, dict) or scope.get("schema") != "necronomidom.package-scope/1":
+            if not isinstance(scope, dict) or scope.get("schema") != "necronomidom.package-scope/2":
                 raise ValueError("Input has no supported assembled package scope")
             manifest = {
                 "schema": "necronomidom.runtime-package/1",

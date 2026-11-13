@@ -187,7 +187,7 @@ native binaries, the GDExtension descriptor, GDScript/assets, licenses/notices a
 `ci-package-scope.json` byte-for-byte. The added
 `addons/necronomidom/runtime-package.json`, schema `necronomidom.runtime-package/1`,
 records the original ZIP filename/SHA256 and retained native binary hashes.
-Scope is inherited, never upgraded: a partial or no-Windows source stays so.
+Scope is inherited, never upgraded: a partial source stays partial.
 Manual diagnostics yield `-partial.zip` and `-partial-runtime.zip`, both Linux
 x64-only; projection cannot make them releasable.
 

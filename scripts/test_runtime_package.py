@@ -27,7 +27,7 @@ PREFIX = "addons/necronomidom/"
 
 
 class RuntimePackageTests(unittest.TestCase):
-    def fixture(self, targets=None, *, partial=False, windows=False):
+    def fixture(self, targets=None, *, partial=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -70,7 +70,7 @@ class RuntimePackageTests(unittest.TestCase):
             path = root / PREFIX / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"managed build/source/cache fixture\n")
-        filename, scope = assembler.assemble(root, "NecronomiDOM-original", partial=partial, windows=windows)
+        filename, scope = assembler.assemble(root, "NecronomiDOM-original", partial=partial)
         return root / "dist" / filename, root / "dist/runtime.zip", scope
 
     def assert_projection(self, package, output, scope):
@@ -110,35 +110,23 @@ class RuntimePackageTests(unittest.TestCase):
             self.assertEqual(manifest["native_binaries"], expected_native)
         return manifest
 
-    def test_four_target_package_keeps_windows_deferred_and_exact_bytes(self):
+    def test_five_target_package_keeps_complete_target_set_and_exact_bytes(self):
         package, output, scope = self.fixture()
-        manifest = self.assert_projection(package, output, scope)
-        self.assertEqual(len(manifest["native_binaries"]), 4)
-        self.assertTrue(manifest["source_scope"]["windows_deferred"])
-        self.assertFalse(manifest["source_scope"]["target_set_complete"])
-        self.assertFalse(manifest["source_scope"]["diagnostic"])
-        self.assertEqual(manifest["source_scope"]["omitted_targets"], ["win-x64"])
-
-    def test_five_target_package_keeps_complete_target_set(self):
-        package, output, scope = self.fixture(windows=True)
         manifest = self.assert_projection(package, output, scope)
         self.assertEqual(len(manifest["native_binaries"]), 5)
         self.assertTrue(manifest["source_scope"]["target_set_complete"])
-        self.assertFalse(manifest["source_scope"]["windows_deferred"])
+        self.assertFalse(manifest["source_scope"]["diagnostic"])
         self.assertEqual(manifest["source_scope"]["omitted_targets"], [])
 
     def test_diagnostic_scope_is_never_promoted(self):
-        for windows in (False, True):
-            with self.subTest(windows=windows):
-                package, output, scope = self.fixture(["linux-x64"], partial=True, windows=windows)
-                manifest = self.assert_projection(package, output, scope)
-                self.assertEqual(manifest["source_scope"]["included_targets"], ["linux-x64"])
-                self.assertTrue(manifest["source_scope"]["diagnostic"])
-                self.assertFalse(manifest["source_scope"]["target_set_complete"])
-                self.assertEqual(manifest["source_scope"]["windows_deferred"], not windows)
+        package, output, scope = self.fixture(["linux-x64"], partial=True)
+        manifest = self.assert_projection(package, output, scope)
+        self.assertEqual(manifest["source_scope"]["included_targets"], ["linux-x64"])
+        self.assertTrue(manifest["source_scope"]["diagnostic"])
+        self.assertFalse(manifest["source_scope"]["target_set_complete"])
 
     def test_complete_but_diagnostic_scope_stays_diagnostic(self):
-        package, output, scope = self.fixture(partial=True, windows=True)
+        package, output, scope = self.fixture(partial=True)
         manifest = self.assert_projection(package, output, scope)
         self.assertTrue(manifest["source_scope"]["diagnostic"])
         self.assertTrue(manifest["source_scope"]["target_set_complete"])
@@ -286,6 +274,21 @@ class RuntimePackageTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Missing assembled|no retained native"):
                     runtime.project(incomplete, output)
                 self.assertFalse(output.exists())
+
+    def test_legacy_windows_deferred_scope_is_rejected(self):
+        package, output, _ = self.fixture()
+        legacy = package.with_name("legacy.zip")
+        with zipfile.ZipFile(package) as source, zipfile.ZipFile(legacy, "w") as target:
+            for member in source.infolist():
+                data = source.read(member)
+                if member.filename == PREFIX + "ci-package-scope.json":
+                    scope = json.loads(data)
+                    data = json.dumps({**scope, "schema": "necronomidom.package-scope/1",
+                                       "windows_deferred": True}).encode()
+                target.writestr(member, data)
+        with self.assertRaisesRegex(ValueError, "no supported assembled package scope"):
+            runtime.project(legacy, output)
+        self.assertFalse(output.exists())
 
     def test_cli_needs_no_github_environment_and_creates_output_directory(self):
         package, output, scope = self.fixture()

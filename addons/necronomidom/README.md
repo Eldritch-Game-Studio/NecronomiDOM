@@ -12,7 +12,7 @@ Build Godot interfaces with HTML and CSS, from GDScript or C#. NecronomiDOM rend
 
 Both release ZIPs include native libraries for Windows x64, Linux x64/ARM64, and macOS Intel/Apple silicon. GDScript projects do not need .NET; the runtime-only ZIP omits managed source and build inputs.
 
-The runtime-only ZIP is derived before qualification from the exact full ZIP, retaining identical native library, GDExtension descriptor, GDScript/asset, license/notice and `ci-package-scope.json` bytes. Its `runtime-package.json` (schema `necronomidom.runtime-package/1`) records the source ZIP filename/SHA256 and retained native binary hashes. Source target scope is preserved: partial/no-Windows packages are never promoted to full releases.
+The runtime-only ZIP is derived before qualification from the exact full ZIP, retaining identical native library, GDExtension descriptor, GDScript/asset, license/notice and `ci-package-scope.json` bytes. Its `runtime-package.json` (schema `necronomidom.runtime-package/1`) records the source ZIP filename/SHA256 and retained native binary hashes. Source target scope is preserved: partial packages are never promoted to full releases.
 
 Both exact ZIPs must pass the same strict installed-package checks on Linux x64/ARM64, native macOS ARM64/x64 and Windows under Proton before either is released. Windows-Proton is compatibility qualification, not native-Windows runtime proof. Manual partial diagnostics are not releases.
 
