@@ -9,23 +9,31 @@ namespace NecronomiDom.Css.Selectors
             => element.ParentElement ?? (element.ParentNode is ShadowRoot shadow && ReferenceEquals(shadow, context.ShadowScope) ? shadow.Host : null);
         private static bool ContainsHostSelector(CompoundSelector compound)
         {
-            foreach (var selector in compound.SimpleSelectors)
-                if (selector is PseudoClassSelector pseudo)
+            var simples = compound.SimpleSelectors;
+            for (int i = 0; i < simples.Count; i++)
+                if (simples[i] is PseudoClassSelector pseudo)
                 {
                     if (pseudo.Name is "host" or "host-context") return true;
                     if (pseudo.Name is "is" or "where" && pseudo.Arguments != null)
-                        foreach (var nested in pseudo.Arguments.Selectors)
-                            foreach (var nestedCompound in nested.Compounds) if (ContainsHostSelector(nestedCompound)) return true;
+                    {
+                        var nested = pseudo.Arguments.Selectors;
+                        for (int j = 0; j < nested.Count; j++)
+                        {
+                            var compounds = nested[j].Compounds;
+                            for (int k = 0; k < compounds.Count; k++) if (ContainsHostSelector(compounds[k])) return true;
+                        }
+                    }
                 }
             return false;
         }
         private static Element? OriginatingElement(Element element, CompoundSelector compound, SelectorMatchContext context)
         {
             if (!context.MatchShadowElements) return null;
-            foreach (var selector in compound.SimpleSelectors)
+            var simples = compound.SimpleSelectors;
+            for (int i = 0; i < simples.Count; i++)
             {
-                if (selector is PseudoElementSelector { Name: "slotted" }) return element.AssignedSlotInternal;
-                if (selector is PseudoElementSelector { Name: "part" }) return BoundaryShadow(element.Root, context.TreeScope)?.Host;
+                if (simples[i] is PseudoElementSelector { Name: "slotted" }) return element.AssignedSlotInternal;
+                if (simples[i] is PseudoElementSelector { Name: "part" }) return BoundaryShadow(element.Root, context.TreeScope)?.Host;
             }
             return null;
         }

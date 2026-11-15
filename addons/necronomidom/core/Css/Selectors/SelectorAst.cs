@@ -39,7 +39,7 @@ namespace NecronomiDom.Css.Selectors
         public bool HasInvalidSelectors { get; }
         public Specificity Specificity
         {
-            get { var result = default(Specificity); foreach (var selector in Selectors) result = Specificity.Max(result, selector.Specificity); return result; }
+            get { var result = default(Specificity); for (int i = 0; i < Selectors.Count; i++) result = Specificity.Max(result, Selectors[i].Specificity); return result; }
         }
         public string Serialize()
         {
@@ -66,7 +66,7 @@ namespace NecronomiDom.Css.Selectors
         public Combinator? LeadingCombinator { get; }
         public Specificity Specificity
         {
-            get { var result = default(Specificity); foreach (var compound in Compounds) result += compound.Specificity; return result; }
+            get { var result = default(Specificity); for (int i = 0; i < Compounds.Count; i++) result += Compounds[i].Specificity; return result; }
         }
         public string Serialize()
         {
@@ -91,7 +91,7 @@ namespace NecronomiDom.Css.Selectors
         internal bool PreserveUniversal { get; init; }
         public Specificity Specificity
         {
-            get { var result = default(Specificity); foreach (var simple in SimpleSelectors) result += simple.Specificity; return result; }
+            get { var result = default(Specificity); for (int i = 0; i < SimpleSelectors.Count; i++) result += SimpleSelectors[i].Specificity; return result; }
         }
         public string Serialize()
         {

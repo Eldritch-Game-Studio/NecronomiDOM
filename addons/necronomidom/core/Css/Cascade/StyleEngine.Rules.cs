@@ -211,8 +211,10 @@ namespace NecronomiDom.Css.Cascade
         {
             bool matched = false;
             specificity = default;
-            foreach (var selector in list.Selectors)
+            var selectors = list.Selectors;
+            for (int i = 0; i < selectors.Count; i++)
             {
+                var selector = selectors[i];
                 if (!SelectorMatcher.MatchesComplex(element, selector, selector.Compounds.Count - 1, context)) continue;
                 specificity = Specificity.Max(specificity, selector.Specificity);
                 matched = true;
@@ -224,8 +226,10 @@ namespace NecronomiDom.Css.Cascade
         {
             long sourceOrder = order ?? ++result.Order;
             result.InspectionSources?.TryAdd(sourceOrder, declarations);
-            foreach (var declaration in declarations.EnumerateLonghands())
+            var longhands = declarations.Declarations;
+            for (int i = 0; i < longhands.Count; i++)
             {
+                var declaration = longhands[i];
                 var priority = new CascadePriority(origin, declaration.Important, 0, inline, specificity, proximity, sourceOrder, depth);
                 result.Candidates.Add(new Candidate(declaration.Name, declaration.Value, priority, layer, root));
             }
