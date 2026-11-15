@@ -22,6 +22,8 @@ namespace NecronomiDom.Css.Cascade
             internal readonly string? Pseudo;
             internal readonly CSSStyleDeclaration Declaration = new();
             internal CSSStyleDeclaration? ComputedDeclaration;
+            // A refresh only marks the views; each rebuilds its slots from Values on its next read.
+            internal bool DeclarationStale = true, ComputedDeclarationStale = true;
             internal Dictionary<string, CssValue> Values = new(StringComparer.Ordinal);
             // Scratch belongs to this entry: ancestor refreshes may recurse while computing a child.
             internal readonly Dictionary<string, CssValue> Specified = new(StringComparer.Ordinal);
@@ -30,7 +32,6 @@ namespace NecronomiDom.Css.Cascade
             internal readonly Dictionary<string, CssValue> PassedCustom = new(StringComparer.Ordinal);
             internal CustomPropertyResolver? Variables;
             internal Dictionary<(CssPendingSubstitutionValue, string), ParsedProperty?>? SubstitutedDeclarations;
-            internal readonly List<CssDeclaration> Projection = new();
             internal readonly RuleCollection Rules = new();
             internal readonly Dictionary<string, List<Candidate>> Groups = new(StringComparer.Ordinal);
             internal readonly List<List<Candidate>> GroupBuffers = new();
@@ -51,9 +52,32 @@ namespace NecronomiDom.Css.Cascade
             {
                 _owner = owner; Element = element; Pseudo = pseudo;
                 Declaration.ReadOnly = true; Declaration.IsComputed = true;
-                Declaration.BeforeRead = Read;
+                Declaration.BeforeRead = ReadResolved;
             }
-            private void Read() => _owner.Refresh(this);
+            internal CSSStyleDeclaration ComputedView()
+            {
+                if (ComputedDeclaration == null)
+                {
+                    ComputedDeclaration = new CSSStyleDeclaration { ReadOnly = true, IsComputed = true, BeforeRead = ReadComputed };
+                    ComputedDeclarationStale = true;
+                }
+                return ComputedDeclaration;
+            }
+            // A read during this entry's own computation keeps the previous view, never half-computed Values.
+            private void ReadResolved()
+            {
+                _owner.Refresh(this);
+                if (!DeclarationStale || Refreshing) return;
+                _owner.SyncView(this, Declaration, resolved: true);
+                DeclarationStale = false;
+            }
+            private void ReadComputed()
+            {
+                _owner.Refresh(this);
+                if (!ComputedDeclarationStale || Refreshing) return;
+                _owner.SyncView(this, ComputedDeclaration!, resolved: false);
+                ComputedDeclarationStale = false;
+            }
         }
         private sealed class EntrySet
         {
@@ -159,8 +183,7 @@ namespace NecronomiDom.Css.Cascade
                 entry.ForegroundInherited = false;
                 entry.ForegroundExpression = null;
                 if (entry.Element.IsConnected) Compute(entry);
-                entry.Declaration.ReplaceComputed(Declarations(entry, resolved: true));
-                entry.ComputedDeclaration?.ReplaceComputed(Declarations(entry, resolved: false));
+                entry.DeclarationStale = entry.ComputedDeclarationStale = true;
                 entry.Generation = _generation;
             }
             finally { entry.Refreshing = false; }

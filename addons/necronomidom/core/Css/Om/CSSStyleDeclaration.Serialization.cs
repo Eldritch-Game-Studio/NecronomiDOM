@@ -23,7 +23,7 @@ namespace NecronomiDom.Css.Om
                 if (IsComputed) return "";
                 var result = new StringBuilder();
                 var serialized = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var declaration in _declarations)
+                foreach (var declaration in Records())
                 {
                     if (serialized.Contains(declaration.Name)) continue;
                     var name = declaration.Name;
@@ -42,7 +42,7 @@ namespace NecronomiDom.Css.Om
                                 includes |= longhand == declaration.Name;
                                 if (serialized.Contains(longhand)) { available = false; break; }
                             }
-                            if (!available || !includes || !CanSerializeShorthand(candidateLonghands) || !SamePriority(candidateLonghands, out _) || !ShorthandSerializer.TrySerialize(candidate.Name, longhand => Find(longhand)?.Value, out var shorthand)) continue;
+                            if (!available || !includes || !CanSerializeShorthand(candidateLonghands) || !SamePriority(candidateLonghands, out _) || !ShorthandSerializer.TrySerialize(candidate.Name, FindValue, out var shorthand)) continue;
                             bestLonghands = candidateLonghands;
                             name = candidate.Name;
                             value = shorthand;
@@ -64,7 +64,7 @@ namespace NecronomiDom.Css.Om
                 replacement.Load(CssParser.ParseBlockContents(value));
                 if (CssText == replacement.CssText) return;
                 BeforeChange?.Invoke();
-                _computedIndex = null;
+                DropComputedLayout();
                 _declarations.Clear();
                 _declarations.AddRange(replacement._declarations);
                 Changed?.Invoke();

@@ -10,7 +10,7 @@ namespace NecronomiDom.Css.Om
         {
             EnsureWritable();
             Read();
-            _computedIndex = null;
+            DropComputedLayout();
             for (var i = 0; i < _declarations.Count; i++)
             {
                 var previous = _declarations[i];
@@ -48,8 +48,8 @@ namespace NecronomiDom.Css.Om
         {
             EnsureWritable();
             Read();
+            DropComputedLayout();
             if (_declarations.Count == 0) return;
-            _computedIndex = null;
             BeforeChange?.Invoke();
             _declarations.Clear();
             Changed?.Invoke();
