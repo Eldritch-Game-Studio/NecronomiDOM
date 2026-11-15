@@ -14,6 +14,8 @@ namespace NecronomiDom.Css.Cascade
     /// match. Selector features without a sound subtree bound (:has(), form-owner validity/default, unknown
     /// pseudo-classes) and shadow trees restyle everything.
     /// Changes are recorded as they happen and resolved at the next style read, against the then-current selectors.
+    /// A change whose restyle region already lies inside a pending inserted or child-changed ancestor's region is absorbed
+    /// when recorded (see <see cref="Absorbed"/>), so a batch built under one parent stays one subtree restyle.
     /// </summary>
     public sealed partial class StyleEngine
     {
@@ -21,13 +23,15 @@ namespace NecronomiDom.Css.Cascade
         private readonly record struct PendingChange(Node Node, Node? OldParent, ChangeKind Kind);
         private const ElementPseudoState InTreeStates = ElementPseudoState.Hover | ElementPseudoState.Active | ElementPseudoState.Focus;
         private readonly List<PendingChange> _pendingChanges = new();
+        private readonly HashSet<Element> _pendingChildren = new(), _pendingInserted = new();
         private readonly HashSet<Element> _restyleRoots = new();
         private readonly List<SheetSource> _previousSources = new();
         private readonly List<CompoundSelector> _inTreeCompounds = new();
         private bool _hasShadowTrees, _restyleAllOnChange, _siblingSensitive, _inTreeUnbounded, _directionSensitive;
         private bool _invalidationFeaturesDirty;
 
-        /// <summary>Changes a reader has not drained yet; a larger backlog collapses into one full restyle.</summary>
+        /// <summary>Distinct change roots a reader has not drained yet; a larger backlog collapses into one full restyle.
+        /// This bounds bookkeeping, not correctness: changes nested in a pending subtree are absorbed before they count.</summary>
         private const int MaxPendingChanges = 1024;
 
         private void RecordChange(Node node, ChangeKind kind, Node? oldParent = null)
@@ -36,8 +40,43 @@ namespace NecronomiDom.Css.Cascade
             if (!(oldParent ?? node).IsConnected) return;
             // Repeated writes to one element (style animation, typed OM) record once and stay allocation-free.
             if (_pendingChanges.Count > 0 && _pendingChanges[^1] == new PendingChange(node, oldParent, kind)) return;
+            if (node is Element element && Absorbed(element, kind)) return;
             if (_pendingChanges.Count >= MaxPendingChanges) { RestyleAll(); return; }
             _pendingChanges.Add(new PendingChange(node, oldParent, kind));
+            if (node is Element root)
+            {
+                if (kind == ChangeKind.Children) _pendingChildren.Add(root);
+                else if (kind == ChangeKind.Inserted) _pendingInserted.Add(root);
+            }
+        }
+
+        /// <summary>
+        /// Whether a pending record already restyles everything this one would, at whatever read resolves both.
+        /// Children(q) restyles at least q's subtree and q's direction scope; Inserted(a) at least a's subtree.
+        /// An element inserted below either restyles only its own subtree, unless it already holds :hover/:active/:focus
+        /// (later state changes are recorded as State and resolved on their own). A child change of x below a pending
+        /// Children(q) widens at most to x's parent and to the nearest dir=auto/bdi ancestor, both inside q's subtree or
+        /// q's own direction scope; options and select optgroups widen to their select, which may lie above q.
+        /// Moving an absorbed node away records its own removal and insertion, so the coverage holds at the read.
+        /// </summary>
+        private bool Absorbed(Element element, ChangeKind kind)
+        {
+            if (_pendingChildren.Count == 0 && _pendingInserted.Count == 0) return false;
+            switch (kind)
+            {
+                case ChangeKind.Inserted:
+                    for (Element? ancestor = element.ParentElement; ancestor != null; ancestor = ancestor.ParentElement)
+                        if (_pendingChildren.Contains(ancestor) || _pendingInserted.Contains(ancestor)) return !HoldsInTreeState(element);
+                    return false;
+                case ChangeKind.Children:
+                    if (_pendingChildren.Contains(element)) return true;
+                    if (element is HTMLOptionElement || element.LocalName == "optgroup") return false;
+                    for (Element? ancestor = element.ParentElement; ancestor != null; ancestor = ancestor.ParentElement)
+                        if (_pendingChildren.Contains(ancestor)) return true;
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         private void FlushChanges()
@@ -92,7 +131,7 @@ namespace NecronomiDom.Css.Cascade
                         break;
                 }
             }
-            _pendingChanges.Clear();
+            ClearPendingChanges();
             // Ordinary selector/DOM invalidation dominates overlapping inline scopes, independent of mutation order.
             foreach (var root in _restyleRoots) MarkSubtreeStale(root, reuseRules: false);
             _restyleRoots.Clear();
@@ -106,8 +145,14 @@ namespace NecronomiDom.Css.Cascade
         private void RestyleAll()
         {
             _generation++;
-            _pendingChanges.Clear();
+            ClearPendingChanges();
             _restyleRoots.Clear();
+        }
+        private void ClearPendingChanges()
+        {
+            _pendingChanges.Clear();
+            _pendingChildren.Clear();
+            _pendingInserted.Clear();
         }
         /// <summary>Sibling combinators and :nth-child(of S) reach only the parent's other children and their subtrees.</summary>
         private Element SiblingScope(Element root) => _siblingSensitive && root.ParentElement is { } parent ? parent : root;

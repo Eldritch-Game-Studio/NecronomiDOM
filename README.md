@@ -476,6 +476,18 @@ Their query results remain observed: crossing a viewport breakpoint or explicitl
 media features rescans selector dependencies before the next style read. Dynamic media providers
 retain conservative invalidation.
 
+Rule matching hashes each style rule by the rightmost compound of its selectors (id, class, attribute
+name, then tag; others stay universal), after WebKit's `RuleSet` and Stylo's `SelectorMap`. An element
+tests only the rules filed under its own keys plus the universal and conditional rules, while source
+order, specificity, `!important`, layers, scopes and nesting resolve exactly as in a full walk.
+Insertions and child changes nested below an already pending inserted or child-changed element are
+absorbed into that subtree's restyle, so building a long list under one parent does not restyle the
+document; more than 1,024 distinct pending change roots still collapse into one full restyle, which
+bounds bookkeeping rather than correctness. `StyleRuleIndexTests` compares indexed and linear
+cascades over fixed and randomized selectors and documents and counts rule tests per element on a
+4,300-element station document. Run the whole suite with `NECRONOMIDOM_CROSSCHECK_RULE_INDEX=1` to
+compare every rule collection against the linear walk.
+
 `StyleComputedReuseTests` compares incremental results with full computation, including class/hover
 toggles, structural selectors, sibling numeric inputs, and source/media invalidation. Run the focused
 suite from the repository root:
