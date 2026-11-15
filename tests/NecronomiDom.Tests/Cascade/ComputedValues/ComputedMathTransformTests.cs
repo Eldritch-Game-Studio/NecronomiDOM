@@ -36,6 +36,18 @@ namespace NecronomiDom.Tests.Cascade.ComputedValues
             Assert.That(ComputedValueResolver.Resolve(property, ComputedPropertyTests.Parse(property, specified), ComputedUnitTests.Context).Serialize(), Is.EqualTo(expected));
         }
 
+        // cos(θ) + (1 − cos(θ)) is not exactly 1 in binary floating point for these angles; the axis-angle form
+        // left m33 at 0.9999999999999999 and promoted a planar rotation to matrix3d.
+        [TestCase("rotate(91deg)")]
+        [TestCase("rotate(95deg)")]
+        [TestCase("rotateZ(93deg)")]
+        [TestCase("rotatez(-91deg)")]
+        public void PlanarRotationKeepsTheZAxisExactlyIdentity(string specified)
+        {
+            string computed = ComputedValueResolver.Resolve("transform", ComputedPropertyTests.Parse("transform", specified), ComputedUnitTests.Context).Serialize();
+            Assert.That(computed, Does.StartWith("matrix(").And.Not.Contain("matrix3d"));
+        }
+
         [Test]
         public void MixedLengthPercentageSimplifiesWithoutInventingLayoutBasis()
         {
