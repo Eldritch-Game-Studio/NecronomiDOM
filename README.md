@@ -492,6 +492,19 @@ cascades over fixed and randomized selectors and documents and counts rule tests
 4,300-element station document. Run the whole suite with `NECRONOMIDOM_CROSSCHECK_RULE_INDEX=1` to
 compare every rule collection against the linear walk.
 
+A class change whose added and removed tokens key only subject compounds (the rightmost compound of a
+top-level selector, outside selector arguments, `@scope` bounds and nesting contexts) re-matches only that
+element; its descendants keep their matched rules and only inherit again, after the subject features of
+Blink's and Stylo's invalidation sets. Tokens are compared with the class as of the previous change flush,
+so a class toggled back before the next read restyles nothing; `[class]` attribute selectors keep the
+ordinary subtree invalidation. Computed `CSSStyleDeclaration` views refresh lazily: a restyle only marks
+them, and their first read updates per-element value slots over a name layout shared by elements with the
+same longhands and custom properties. Unchanged values keep their serialized text and the view's consumer
+version, and the ordered records behind `Length`, `Item()` and enumeration are built only when read.
+Conditional `@media` results are reused across the elements of a restyle for the same scope environment.
+`StyleClassInvalidationTests` compares both computed views, in CSSOM order, with a fresh cascade over
+randomized class mutations.
+
 `StyleComputedReuseTests` compares incremental results with full computation, including class/hover
 toggles, structural selectors, sibling numeric inputs, and source/media invalidation. Run the focused
 suite from the repository root:

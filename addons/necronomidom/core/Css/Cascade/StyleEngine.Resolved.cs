@@ -11,39 +11,46 @@ namespace NecronomiDom.Css.Cascade
     public sealed partial class StyleEngine
     {
         /// <summary>Typed OM exposes computed values, unlike CSSOM getComputedStyle's resolved-value view (CSSOM § 9).</summary>
-        public CSSStyleDeclaration GetComputedValues(Element element)
+        public CSSStyleDeclaration GetComputedValues(Element element) => GetEntry(element).ComputedView();
+        // Elements normally share a handful of name sets: every longhand plus the custom properties in scope.
+        private const int RetainedLayouts = 16;
+        private readonly List<ComputedStyleLayout> _layouts = new();
+        /// <summary>Brings a stale view's slots up to the entry's values. Unchanged immutable values keep their instance and
+        /// text, so the view's Version advances only when a value or the name set actually changed.</summary>
+        private void SyncView(Entry entry, CSSStyleDeclaration view, bool resolved)
         {
-            var entry = GetEntry(element);
-            if (entry.ComputedDeclaration == null)
-            {
-                entry.ComputedDeclaration = new CSSStyleDeclaration { ReadOnly = true, IsComputed = true };
-                entry.ComputedDeclaration.BeforeRead = entry.Declaration.BeforeRead;
-                entry.ComputedDeclaration.ReplaceComputed(Declarations(entry, resolved: false));
-            }
-            return entry.ComputedDeclaration;
+            var values = entry.Values;
+            // Try the view's own layout in one pass: equal counts and every name present make it the same name set.
+            // A miss leaves some slots written; switching to the matching layout below resets every slot anyway.
+            ComputedStyleLayout? layout = view.ComputedLayout;
+            if (IncrementalReconciliation && layout != null && layout.Count == values.Count && TryFill(entry, view, layout, resolved)) return;
+            layout = LayoutFor(values);
+            view.BeginComputedLayout(layout);
+            TryFill(entry, view, layout, resolved);
         }
-        private List<CssDeclaration> Declarations(Entry entry, bool resolved)
+        private static bool TryFill(Entry entry, CSSStyleDeclaration view, ComputedStyleLayout layout, bool resolved)
         {
-            var result = entry.Projection;
-            var target = resolved ? entry.Declaration : entry.ComputedDeclaration!;
-            // Projection order is already ordinal-sorted. Reuse it only when every key still exists,
-            // not merely when counts match (one custom name can replace another in the same batch).
-            if (IncrementalReconciliation && result.Count == entry.Values.Count)
-            {
-                bool sameNames = true;
-                for (int i = 0; i < result.Count; i++)
-                {
-                    string name = result[i].Name;
-                    if (!entry.Values.TryGetValue(name, out CssValue? value)) { sameNames = false; break; }
-                    result[i] = target.ReuseComputedDeclaration(i, name, resolved ? ResolvedValue(entry, name, value) : value);
-                }
-                if (sameNames) return result;
-            }
-            result.Clear();
+            int position = 0;
             foreach (var pair in entry.Values)
-                result.Add(target.ReuseComputedDeclaration(-1, pair.Key, resolved ? ResolvedValue(entry, pair.Key, pair.Value) : pair.Value));
-            result.Sort(static (a, b) => StringComparer.Ordinal.Compare(a.Name, b.Name));
-            return result;
+            {
+                if (!layout.TryGetOrdinal(position++, pair.Key, out int ordinal)) return false;
+                view.SetComputedValue(ordinal, resolved ? ResolvedValue(entry, pair.Key, pair.Value) : pair.Value);
+            }
+            return true;
+        }
+        private ComputedStyleLayout LayoutFor(Dictionary<string, CssValue> values)
+        {
+            for (int i = 0; i < _layouts.Count; i++)
+            {
+                var layout = _layouts[i];
+                if (!layout.HasNames(values)) continue;
+                if (i > 0) { _layouts.RemoveAt(i); _layouts.Insert(0, layout); }
+                return layout;
+            }
+            var created = ComputedStyleLayout.FromValues(values);
+            if (_layouts.Count == RetainedLayouts) _layouts.RemoveAt(RetainedLayouts - 1);
+            _layouts.Insert(0, created);
+            return created;
         }
         private static CssValue ResolvedValue(Entry entry, string property, CssValue value)
         {

@@ -11,8 +11,7 @@ namespace NecronomiDom.Css.Om
     public sealed partial class CSSStyleDeclaration
     {
         private readonly List<CssDeclaration> _declarations = new List<CssDeclaration>();
-        // Computed declarations are replaced wholesale with unique names; their lookups are by name, not scans.
-        private Dictionary<string, int>? _computedIndex;
+        // Serialized text per computed-view slot (see CSSStyleDeclaration.Computed.cs).
         private object?[] _computedText = Array.Empty<object?>();
         private readonly string? _descriptorRule;
         private readonly bool _propertyGrammar = true;
@@ -32,14 +31,13 @@ namespace NecronomiDom.Css.Om
         internal int Version { get { Read(); return _version; } }
         /// <summary>One consumer-owned parsed view (layout's box style snapshot), validated against <see cref="Version"/>.</summary>
         internal object? ConsumerView;
-        public int Length { get { Read(); return _declarations.Count; } }
-        internal IReadOnlyList<CssDeclaration> Declarations { get { Read(); return _declarations; } }
-        public IEnumerable<CssDeclaration> EnumerateLonghands() { Read(); return _declarations; }
-        public string Item(int index) => index >= 0 && index < Length ? _declarations[index].Name : "";
+        public int Length { get { Read(); return _layout?.Count ?? _declarations.Count; } }
+        internal IReadOnlyList<CssDeclaration> Declarations { get { Read(); return Records(); } }
+        public IEnumerable<CssDeclaration> EnumerateLonghands() { Read(); return Records(); }
+        public string Item(int index) => index >= 0 && index < Length ? _layout?.Names[index] ?? _declarations[index].Name : "";
         [System.Runtime.CompilerServices.IndexerName("Indexed")]
         public string this[int index] => Item(index);
-        internal void SetComputedProperty(string name, CssValue value) => Store(new CssDeclaration(name, value, false), false);
-        internal CssValue? GetSpecifiedValue(string name) { Read(); return Find(name)?.Value; }
+        internal CssValue? GetSpecifiedValue(string name) { Read(); return FindValue(name); }
         private void Read()
         {
             if (_reading || BeforeRead == null) return;
@@ -57,18 +55,18 @@ namespace NecronomiDom.Css.Om
         public string GetPropertyValue(string property)
         {
             Read();
-            // Computed snapshots already index canonical longhands/custom names, never shorthand records.
-            if (IsComputed && _computedIndex != null && _computedIndex.TryGetValue(property, out int canonical))
+            // Computed views already index canonical longhands/custom names, never shorthand records.
+            if (IsComputed && _layout != null && _layout.Index.TryGetValue(property, out int canonical))
                 return ComputedText(canonical);
             property = Normalize(property);
             var definition = _propertyGrammar ? CssPropertyRegistry.Get(property) : null;
             if (definition?.IsShorthand == true) return ShorthandText(property, definition);
-            if (_computedIndex != null && _computedIndex.TryGetValue(property, out int index)) return ComputedText(index);
-            return Find(property)?.Value.Serialize() ?? "";
+            if (_layout != null && _layout.Index.TryGetValue(property, out int index)) return ComputedText(index);
+            return FindValue(property)?.Serialize() ?? "";
         }
         private string ComputedText(int index)
         {
-            var value = _declarations[index].Value;
+            var value = _layoutValues[index];
             if (CacheableComputedText(value))
                 return _computedText[index] as string ?? (string)(_computedText[index] = value.Serialize());
             if (value.GetType() == typeof(CssListValue)) return FlatComputedText(index, (CssListValue)value);
@@ -114,10 +112,10 @@ namespace NecronomiDom.Css.Om
         }
         private CssValue? ShorthandValue(string shorthand, string name)
         {
-            CssValue? value = Find(name)?.Value;
+            CssValue? value = FindValue(name);
             // In computed CSSOM the initial currentcolor is already the computed element color.
             if (IsComputed && shorthand == "text-decoration" && name == "text-decoration-color" && value != null &&
-                Find("color")?.Value is { } color && value.Serialize() == color.Serialize())
+                FindValue("color") is { } color && value.Serialize() == color.Serialize())
                 return new CssKeywordValue("currentcolor");
             return value;
         }
@@ -127,7 +125,7 @@ namespace NecronomiDom.Css.Om
             property = Normalize(property);
             var definition = _propertyGrammar ? CssPropertyRegistry.Get(property) : null;
             if (definition?.IsShorthand == true) return SamePriority(Longhands(definition), out var important) && important ? "important" : "";
-            return Find(property)?.Important == true ? "important" : "";
+            return TryFind(property, out _, out bool declared) && declared ? "important" : "";
         }
         public void SetProperty(string property, string? value, string? priority = "")
         {
@@ -201,7 +199,7 @@ namespace NecronomiDom.Css.Om
         /// <summary>Creates the declaration record only when it is actually stored; an unchanged write allocates nothing.</summary>
         private bool Store(string name, CssValue value, bool important, bool preserveImportant, bool notifyBefore, CssDeclaration? record = null)
         {
-            _computedIndex = null;
+            DropComputedLayout();
             for (var i = 0; i < _declarations.Count; i++)
             {
                 var previous = _declarations[i];
@@ -248,15 +246,9 @@ namespace NecronomiDom.Css.Om
         }
         private static bool Logical(string property) => property.Contains("inline", StringComparison.Ordinal) || property.Contains("block", StringComparison.Ordinal) ||
             property.Contains("-start", StringComparison.Ordinal) || property.Contains("-end", StringComparison.Ordinal);
-        private CssDeclaration? Find(string name)
-        {
-            if (_computedIndex != null) return _computedIndex.TryGetValue(name, out int index) ? _declarations[index] : null;
-            foreach (var declaration in _declarations) if (declaration.Name == name) return declaration;
-            return null;
-        }
         private bool Remove(string name, bool notifyBefore = false)
         {
-            _computedIndex = null;
+            DropComputedLayout();
             for (var i = 0; i < _declarations.Count; i++)
                 if (_declarations[i].Name == name) { if (notifyBefore) BeforeChange?.Invoke(); _version++; _declarations.RemoveAt(i); return true; }
             return false;
@@ -267,9 +259,8 @@ namespace NecronomiDom.Css.Om
             if (names.Count == 0) return false;
             for (var i = 0; i < names.Count; i++)
             {
-                var declaration = Find(names[i]);
-                if (declaration == null || (i > 0 && declaration.Important != important)) return false;
-                important = declaration.Important;
+                if (!TryFind(names[i], out _, out bool declared) || (i > 0 && declared != important)) return false;
+                important = declared;
             }
             return true;
         }

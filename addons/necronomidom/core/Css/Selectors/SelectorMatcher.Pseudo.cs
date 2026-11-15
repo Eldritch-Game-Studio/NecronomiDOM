@@ -60,8 +60,10 @@ namespace NecronomiDom.Css.Selectors
         private static bool HasRelative(Element anchor, SelectorList relative, SelectorMatchContext context)
         {
             var scoped = context with { Scope = anchor };
-            foreach (var selector in relative.Selectors)
+            var selectors = relative.Selectors;
+            for (int i = 0; i < selectors.Count; i++)
             {
+                var selector = selectors[i];
                 Node root = selector.LeadingCombinator is Combinator.AdjacentSibling or Combinator.GeneralSibling
                     ? anchor.ParentNode ?? anchor : anchor;
                 for (Node? n = root.FirstChild; n != null; n = n.NextInTreeOrder(root))

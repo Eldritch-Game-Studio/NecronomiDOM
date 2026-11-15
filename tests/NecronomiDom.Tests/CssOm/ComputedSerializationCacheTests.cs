@@ -110,19 +110,21 @@ public sealed class ComputedSerializationCacheTests
         Assert.That(style.GetPropertyValue("height"), Is.EqualTo("30px"));
     }
 
-    [TestCase(-1)]
-    [TestCase(0)]
-    [TestCase(1)]
-    [TestCase(99)]
-    public void UnchangedComputedDeclarationsKeepStorageAndOnlyChangedScalarsLoseText(int ordinal)
+    [Test]
+    public void UnchangedComputedDeclarationsKeepStorageAndOnlyChangedScalarsLoseText()
     {
         var style = new CSSStyleDeclaration { IsComputed = true };
         style.ReplaceComputed(new[] { new CssDeclaration("width", new CssDimensionValue(123.5, "px"), false),
             new CssDeclaration("opacity", new CssNumberValue(.5, false), false) });
         var original = style.Declarations[0];
         string text = style.GetPropertyValue("width");
-        var unchanged = style.ReuseComputedDeclaration(ordinal, "width", new CssDimensionValue(123.5, "px"));
-        style.ReplaceComputed(new[] { unchanged, style.ReuseComputedDeclaration(1, "opacity", new CssNumberValue(.8, false)) });
+        int version = style.Version;
+        style.ReplaceComputed(new[] { new CssDeclaration("width", new CssDimensionValue(123.5, "px"), false),
+            new CssDeclaration("opacity", new CssNumberValue(.5, false), false) });
+        Assert.That(style.Version, Is.EqualTo(version), "Equal immutable scalars are not a change.");
+        style.ReplaceComputed(new[] { new CssDeclaration("width", new CssDimensionValue(123.5, "px"), false),
+            new CssDeclaration("opacity", new CssNumberValue(.8, false), false) });
+        Assert.That(style.Version, Is.Not.EqualTo(version));
         Assert.That(style.Declarations[0], Is.SameAs(original));
         Assert.That(style.GetPropertyValue("width"), Is.SameAs(text));
         Assert.That(style.GetPropertyValue("opacity"), Is.EqualTo("0.8"));
@@ -134,11 +136,11 @@ public sealed class ComputedSerializationCacheTests
         var first = new TypedDimensionSlot(new CSSUnitValue(10, "px"));
         var second = new TypedDimensionSlot(new CSSUnitValue(10, "px"));
         var style = new CSSStyleDeclaration { IsComputed = true };
-        var prior = new CssDeclaration("--pair", new CssListValue(new CssValue[] { first }, CssListSeparator.Space), false);
-        style.ReplaceComputed(new[] { prior });
-        var next = style.ReuseComputedDeclaration(0, "--pair", new CssListValue(new CssValue[] { second }, CssListSeparator.Space));
-        Assert.That(next, Is.Not.SameAs(prior));
-        style.ReplaceComputed(new[] { next });
+        var prior = new CssListValue(new CssValue[] { first }, CssListSeparator.Space);
+        style.ReplaceComputed(new[] { new CssDeclaration("--pair", prior, false) });
+        var next = new CssListValue(new CssValue[] { second }, CssListSeparator.Space);
+        style.ReplaceComputed(new[] { new CssDeclaration("--pair", next, false) });
+        Assert.That(style.Declarations[0].Value, Is.SameAs(next));
         second.Current.Value = 30;
         first.Current.Value = 99;
         Assert.That(style.GetPropertyValue("--pair"), Is.EqualTo("30px"));
@@ -148,12 +150,13 @@ public sealed class ComputedSerializationCacheTests
     public void DeclarationReuseDoesNotCollapseDifferentNumericBitPatternsOrUrlMetadata()
     {
         var style = new CSSStyleDeclaration { IsComputed = true };
-        var zero = new CssDeclaration("width", new CssDimensionValue(-0.0, "px"), false);
-        var url = new CssDeclaration("background-image", new CssUrlValue("res:///same.png", integrity: "first"), false);
-        style.ReplaceComputed(new[] { zero, url });
-        Assert.That(style.ReuseComputedDeclaration(0, "width", new CssDimensionValue(0.0, "px")), Is.Not.SameAs(zero));
-        Assert.That(style.ReuseComputedDeclaration(1, "background-image", new CssUrlValue("res:///same.png", integrity: "second")),
-            Is.Not.SameAs(url));
+        var zero = new CssDimensionValue(-0.0, "px");
+        var url = new CssUrlValue("res:///same.png", integrity: "first");
+        style.ReplaceComputed(new[] { new CssDeclaration("width", zero, false), new CssDeclaration("background-image", url, false) });
+        style.ReplaceComputed(new[] { new CssDeclaration("width", new CssDimensionValue(0.0, "px"), false),
+            new CssDeclaration("background-image", new CssUrlValue("res:///same.png", integrity: "second"), false) });
+        Assert.That(style.Declarations[0].Value, Is.Not.SameAs(zero));
+        Assert.That(style.Declarations[1].Value, Is.Not.SameAs(url));
     }
 
     [Test]

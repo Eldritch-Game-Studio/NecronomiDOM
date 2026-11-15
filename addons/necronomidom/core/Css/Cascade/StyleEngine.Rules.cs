@@ -53,6 +53,12 @@ namespace NecronomiDom.Css.Cascade
             }
             entry.ReuseRules = false;
             entry.RuleGeneration = _generation;
+            if (entry.Pseudo == null)
+            {
+                // No change is pending at a collection, so this is the class as of the last flush.
+                entry.FlushedClass = entry.Element.GetAttribute("class");
+                entry.FlushedClassGeneration = _generation;
+            }
             result.Clear();
             Gather(entry, result);
             if (CrossCheckRuleIndex && !_linearRuleWalk) CrossCheck(entry, result);
@@ -211,8 +217,10 @@ namespace NecronomiDom.Css.Cascade
         {
             bool matched = false;
             specificity = default;
-            foreach (var selector in list.Selectors)
+            var selectors = list.Selectors;
+            for (int i = 0; i < selectors.Count; i++)
             {
+                var selector = selectors[i];
                 if (!SelectorMatcher.MatchesComplex(element, selector, selector.Compounds.Count - 1, context)) continue;
                 specificity = Specificity.Max(specificity, selector.Specificity);
                 matched = true;
@@ -224,8 +232,10 @@ namespace NecronomiDom.Css.Cascade
         {
             long sourceOrder = order ?? ++result.Order;
             result.InspectionSources?.TryAdd(sourceOrder, declarations);
-            foreach (var declaration in declarations.EnumerateLonghands())
+            var longhands = declarations.Declarations;
+            for (int i = 0; i < longhands.Count; i++)
             {
+                var declaration = longhands[i];
                 var priority = new CascadePriority(origin, declaration.Important, 0, inline, specificity, proximity, sourceOrder, depth);
                 result.Candidates.Add(new Candidate(declaration.Name, declaration.Value, priority, layer, root));
             }

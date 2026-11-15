@@ -26,15 +26,19 @@ namespace NecronomiDom.Css.Cascade
             Element? parentElement = entry.Pseudo != null ? entry.Element : entry.Element.AssignedSlotInternal
                 ?? entry.Element.ParentElement ?? (entry.Element.ParentNode as ShadowRoot)?.Host;
             Entry? parent = parentElement == null ? null : GetEntry(parentElement);
+            // A child normally carries its parent's name set; size once instead of growing through every prime.
+            entry.Values.EnsureCapacity(parent?.Values.Count ?? ComputedLonghands.Value.Length);
             var groups = Group(rules.Candidates, false, entry);
             CssValue direction = Specified("direction", groups, parent, out _);
             bool rtl = direction is CssKeywordValue { Value: "rtl" };
             if (rtl) groups = Group(rules.Candidates, true, entry);
             var rawCustom = entry.RawCustom;
             rawCustom.Clear();
+            if (parent != null) rawCustom.EnsureCapacity(parent.RawCustom.Count);
             // Unregistered custom properties this element does not declare inherit the parent's computed value as is.
             var passedCustom = entry.PassedCustom;
             passedCustom.Clear();
+            if (parent != null) passedCustom.EnsureCapacity(parent.PassedCustom.Count);
             if (parent != null)
                 foreach (var pair in parent.Values)
                 {

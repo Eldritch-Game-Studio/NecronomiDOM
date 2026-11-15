@@ -15,8 +15,9 @@ namespace NecronomiDom.Css.Selectors
         public static bool Matches(Element element, SelectorList selectors, SelectorMatchContext? context = null)
         {
             context ??= new SelectorMatchContext(element.OwnerDocument?.DocumentElement);
-            foreach (var selector in selectors.Selectors)
-                if (MatchesComplex(element, selector, selector.Compounds.Count - 1, context)) return true;
+            var list = selectors.Selectors;
+            for (int i = 0; i < list.Count; i++)
+                if (MatchesComplex(element, list[i], list[i].Compounds.Count - 1, context)) return true;
             return false;
         }
 
@@ -70,8 +71,11 @@ namespace NecronomiDom.Css.Selectors
             if (context.ShadowScope != null && ReferenceEquals(context.ShadowScope.Host, element) && !ContainsHostSelector(compound)) return false;
             if (compound.NamespaceURI != null && (element.NamespaceURI ?? "") != compound.NamespaceURI
                 && !(context.ShadowScope != null && ReferenceEquals(context.ShadowScope.Host, element))) return false;
-            foreach (SimpleSelector selector in compound.SimpleSelectors)
+            // Indexed: foreach over the IReadOnlyList-typed AST boxes an enumerator per compound test.
+            var simples = compound.SimpleSelectors;
+            for (int i = 0; i < simples.Count; i++)
             {
+                SimpleSelector selector = simples[i];
                 bool match = selector switch
                 {
                     TypeSelector type => (type.NamespaceURI == null || type.NamespaceURI == (element.NamespaceURI ?? ""))
@@ -100,8 +104,10 @@ namespace NecronomiDom.Css.Selectors
 
         private static bool MatchesAttribute(Element element, AttributeSelector selector, SelectorMatchContext context)
         {
-            foreach (Attr attr in element.Attributes)
+            var attributes = element.AttributeList;
+            for (int i = 0; i < attributes.Count; i++)
             {
+                Attr attr = attributes[i];
                 if (!NameEquals(element, attr.LocalName, selector.Name)) continue;
                 if (selector.NamespaceURI != null && selector.NamespaceURI != (attr.NamespaceURI ?? "")) continue;
                 if (selector.Operator == AttributeOperator.Exists) return true;

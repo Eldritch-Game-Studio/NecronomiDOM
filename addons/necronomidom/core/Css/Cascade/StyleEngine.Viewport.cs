@@ -12,6 +12,10 @@ public sealed partial class StyleEngine
     private bool _computedViewportDependent;
     private readonly Action _observeViewportUnit;
     private readonly Dictionary<(MediaQueryList Query, Node Root), bool> _observedMediaMatches = new();
+    // Every element of a restyle tests the same conditional rules against the same scope environment. Results are
+    // retained per environment instance: a rebuilt scope environment starts empty, and a viewport change keeps them
+    // only when every observed result was re-evaluated as unchanged.
+    private readonly Dictionary<(MediaQueryList Query, MediaEnvironment Environment), bool> _mediaMatchMemo = new();
     private readonly HashSet<string> _mediaMatchStack = new(StringComparer.Ordinal);
     private bool CanObserveMedia => Media.UnitScale == null && Media.ContainerStyle == null && Media.CustomMedia.Count == 0;
     private void ObserveViewportUnit() => _computedViewportDependent = true;
@@ -32,7 +36,7 @@ public sealed partial class StyleEngine
             foreach (var pair in _observedMediaMatches)
                 if (EvaluateObservedMedia(pair.Key.Query, SourceMedia(pair.Key.Root)) != pair.Value)
                 { preserve = false; break; }
-        if (!preserve) Invalidate();
+        if (!preserve) { _mediaMatchMemo.Clear(); Invalidate(); }
         return true;
     }
 
@@ -44,8 +48,10 @@ public sealed partial class StyleEngine
             _computedViewportDependent = true;
             return MediaEvaluator.Matches(query, environment);
         }
-        bool matched = EvaluateObservedMedia(query, environment);
+        if (_mediaMatchMemo.TryGetValue((query, environment), out bool matched)) return matched;
+        matched = EvaluateObservedMedia(query, environment);
         _observedMediaMatches[(query, root)] = matched;
+        _mediaMatchMemo[(query, environment)] = matched;
         return matched;
     }
     private bool EvaluateObservedMedia(MediaQueryList query, MediaEnvironment environment)

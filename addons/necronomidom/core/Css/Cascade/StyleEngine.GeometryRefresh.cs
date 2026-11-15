@@ -149,9 +149,10 @@ public sealed partial class StyleEngine
         }
         // CSSOM resolves these against this element's definite width/height even
         // though their computed (Typed OM) values have not changed.
-        foreach (string property in GeometryResolvedProperties)
-            if (entry.Values.TryGetValue(property, out var value))
-                entry.Declaration.ReplaceComputedValue(property, ResolvedValue(entry, property, value));
+        if (!entry.DeclarationStale)
+            foreach (string property in GeometryResolvedProperties)
+                if (entry.Values.TryGetValue(property, out var value))
+                    entry.Declaration.ReplaceComputedValue(property, ResolvedValue(entry, property, value));
         GeometryRefreshCount++;
         return true;
     }
@@ -161,8 +162,9 @@ public sealed partial class StyleEngine
     private static void ReplaceGeometryValue(Entry entry, string name, CssValue value)
     {
         entry.Values[name] = value;
-        entry.Declaration.ReplaceComputedValue(name, value);
-        entry.ComputedDeclaration?.ReplaceComputedValue(name, value);
+        // A stale view rebuilds every slot on its next read; a current one takes just this value.
+        if (!entry.DeclarationStale) entry.Declaration.ReplaceComputedValue(name, value);
+        if (entry.ComputedDeclaration != null && !entry.ComputedDeclarationStale) entry.ComputedDeclaration.ReplaceComputedValue(name, value);
     }
 
     private static bool StableInlineValue(CssValue value)
