@@ -208,6 +208,7 @@ namespace NecronomiDom.Css.Cascade
             _sources.Clear();
             _revisions.Clear();
             _scopeMedia.Clear();
+            _mediaMatchMemo.Clear();
             AddSource(UserAgentSheet.Value, _document, null, 0);
             AddTreeSheets((DocumentStyleSheetList)_document.StyleSheets, _document, 0);
             AddSheets(_document.AdoptedStyleSheets, _document, 0);
