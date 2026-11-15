@@ -100,7 +100,12 @@ substitutes for final-package runtime qualification. Provider files, hashes and
 receipt are provisioned externally, never invented by CI. Keep machine-specific
 paths and credentials out of tracked files.
 
-The Linux host also supplies bubblewrap and private Xvfb support. Each invocation
+The Linux host also supplies bubblewrap and private Xvfb support. The sandbox's
+minimal `/dev` has no DRM node, so Xvfb alone runs with glvnd pinned to Mesa's
+EGL vendor and no EGL external platforms: on NVIDIA hosts its GLX probe would
+otherwise segfault in the driver's GBM platform ([NVIDIA/egl-gbm#16](https://github.com/NVIDIA/egl-gbm/issues/16);
+same workaround as [selkies@6addb64](https://github.com/selkies-project/selkies/commit/6addb64396a28024c1ecff4b66c516a892390ce0)).
+Wine and Godot keep the inherited EGL selection. Each invocation
 uses a fresh materialized vendor default prefix and a private copied workspace on
 the configured disk-backed storage. Provider roots are mounted read-only; only
 owned job storage is writable. No job installs compiler prerequisites, modifies

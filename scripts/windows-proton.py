@@ -390,6 +390,23 @@ def dotnet_command(config, arguments):
             "/p:IlcUseEnvironmentalTools=true", "/p:UseSharedCompilation=false"]
 
 
+MESA_EGL_VENDOR = Path("/usr/share/glvnd/egl_vendor.d/50_mesa.json")
+
+
+def xvfb_environment(environment):
+    # The sandbox's minimal /dev has no DRM node, so Xvfb is always a software
+    # framebuffer. Its GLX probe otherwise reaches NVIDIA's EGL GBM platform,
+    # which segfaults without /dev/dri (NVIDIA/egl-gbm#16). Pin glvnd to Mesa
+    # and load no EGL external platform, which a driver libEGL ahead of glvnd
+    # still reads (selkies-project/selkies@6addb64). Only Xvfb gets this:
+    # Wine and Godot keep the inherited EGL selection.
+    result = dict(environment)
+    if MESA_EGL_VENDOR.is_file():
+        result["__EGL_VENDOR_LIBRARY_FILENAMES"] = str(MESA_EGL_VENDOR)
+    result["__EGL_EXTERNAL_PLATFORM_CONFIG_FILENAMES"] = ""
+    return result
+
+
 def read_display_number(read_fd, timeout=30):
     deadline = time.monotonic() + timeout
     response = b""
@@ -555,7 +572,8 @@ def session(config_path):
     try:
         read_fd, write_fd = os.pipe()
         try:
-            xvfb = subprocess.Popen(["Xvfb", "-displayfd", str(write_fd), "-screen", "0", "1280x720x24", "-nolisten", "tcp", "-ac"], pass_fds=(write_fd,))
+            xvfb = subprocess.Popen(["Xvfb", "-displayfd", str(write_fd), "-screen", "0", "1280x720x24", "-nolisten", "tcp", "-ac"],
+                                    pass_fds=(write_fd,), env=xvfb_environment(os.environ))
             os.close(write_fd)
             write_fd = None
             # Xvfb writes the number and trailing newline separately. Keep the

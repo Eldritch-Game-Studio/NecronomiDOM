@@ -559,6 +559,25 @@ class MappingAndCommandTests(unittest.TestCase):
         self.assertEqual(binds, [[str(work), str(work)], [str(work / "tmp"), "/tmp"], [str(work / "tmp"), "/var/tmp"]])
         self.assertNotIn("--share-pid", command)
 
+    def test_xvfb_alone_keeps_glx_probe_off_vendor_gbm_platforms(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            vendor = Path(temporary) / "50_mesa.json"
+            vendor.write_text("{}")
+            inherited = {"DISPLAY": ":9", "WINEPREFIX": "/storage/job/prefix"}
+            with patch.object(windows, "MESA_EGL_VENDOR", vendor):
+                environment = windows.xvfb_environment(inherited)
+            self.assertEqual(environment, {**inherited, "__EGL_VENDOR_LIBRARY_FILENAMES": str(vendor),
+                                           "__EGL_EXTERNAL_PLATFORM_CONFIG_FILENAMES": ""})
+            # Wine and Godot inherit the session environment, never Xvfb's pin.
+            self.assertEqual(inherited, {"DISPLAY": ":9", "WINEPREFIX": "/storage/job/prefix"})
+            with patch.object(windows, "MESA_EGL_VENDOR", Path(temporary) / "absent.json"):
+                environment = windows.xvfb_environment({})
+            # Without Mesa's vendor file, still keep NVIDIA's EGL off its GBM platform.
+            self.assertEqual(environment, {"__EGL_EXTERNAL_PLATFORM_CONFIG_FILENAMES": ""})
+        session = (ROOT / "scripts/windows-proton.py").read_text().split("\ndef session(", 1)[1].split("\ndef ", 1)[0]
+        self.assertEqual(session.count("subprocess.Popen("), 1)
+        self.assertIn("env=xvfb_environment(os.environ)", session)
+
     def test_native_driver_keeps_host_config_path_separate_from_windows_content(self):
         driver = (ROOT / "native/build.sh").read_text()
         self.assertIn('"$NECRONOMIDOM_NATIVE_PATH_MAPPER" "$1"', driver)
