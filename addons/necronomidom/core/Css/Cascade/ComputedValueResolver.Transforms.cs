@@ -85,7 +85,11 @@ namespace NecronomiDom.Css.Cascade
                 case "scalex" or "scaleX" when count == 1: matrix[0] = first; return true;
                 case "scaley" or "scaleY" when count == 1: matrix[5] = first; return true;
                 case "scalez" or "scaleZ" when count == 1: matrix[10] = first; return true;
-                case "rotate" or "rotatez" or "rotateZ" when count == 1: Rotation(matrix, 0, 0, 1, first); return true;
+                case "rotate" or "rotatez" or "rotateZ" when count == 1:
+                    // Keep the unused Z axis exactly identity; axis-angle rounding can falsely promote 2D to 3D.
+                    double angle = Radians(first), cosine = System.Math.Cos(angle), sine = System.Math.Sin(angle);
+                    matrix[0] = matrix[5] = cosine; matrix[1] = sine; matrix[4] = -sine;
+                    return true;
                 case "rotatex" or "rotateX" when count == 1: Rotation(matrix, 1, 0, 0, first); return true;
                 case "rotatey" or "rotateY" when count == 1: Rotation(matrix, 0, 1, 0, first); return true;
                 case "rotate3d" when count == 4: Rotation(matrix, first, numbers[1], numbers[2], numbers[3]); return true;

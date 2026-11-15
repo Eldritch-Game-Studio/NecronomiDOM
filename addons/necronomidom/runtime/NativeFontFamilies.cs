@@ -64,8 +64,14 @@ public sealed partial class NativeFontFamilies : INativeFontFamilies, IDisposabl
             {
                 if (!byPath.TryGetValue(pair.Value, out var shaper))
                 {
-                    // The shaper duplicates the imported asset; release this wrapper so no binding outlives the resource cache.
-                    using var font = GD.Load<FontFile>(pair.Value) ?? throw new InvalidOperationException("Missing font: " + pair.Value);
+                    var font = GD.Load<FontFile>(pair.Value) ?? throw new InvalidOperationException("Missing font: " + pair.Value);
+                    // The shaper owns only its duplicates. In a .NET host, GD.Load returns the resource cache's one
+                    // canonical wrapper, shared with the host's own consumers (a game console, another document):
+                    // disposing it would invalidate theirs. The GDExtension build's wrapper holds this extension's own
+                    // reference; release it so the imported asset does not outlive the resource cache at exit.
+#if NECRONOMIDOM_GDEXTENSION
+                    using (font)
+#endif
                     byPath.Add(pair.Value, shaper = new AdvancedTextShaper(font, FallbacksFor(pair.Value)));
                 }
                 next.Add(pair.Key, shaper);

@@ -344,6 +344,8 @@ jobs:
         run: '"$GODOT_MONO" --headless --path . res://demo/authoring/smoke.tscn'
       - name: Typed binding state, input and document lifetime
         run: '"$GODOT_MONO" --headless --path . res://demo/bindings/smoke.tscn'
+      - name: Borrowed cached fonts outlive documents and shapers
+        run: '"$GODOT_MONO" --headless --path . res://demo/fonts/smoke.tscn'
       - name: Retained paint updates and glyph target reuse
         run: '"$GODOT_MONO" --headless --path . res://demo/paint/smoke.tscn'
       - name: Retained paint without per-frame RenderingServer synchronization

@@ -323,6 +323,10 @@ paint/hit geometry, including viewport resizing and retained in-place clip updat
 | `ApplyTextScale(float)` | `1` | Scale the whole document for a text-size setting; `TextScaleGroup` reaches every host. |
 | `DocumentLive` / `DocumentWithdrawing` | static events | Observe every live document (e.g. global click sounds). |
 
+Font files are borrowed from Godot's resource cache. Hosts shape with private duplicates, so your own
+`GD.Load<FontFile>()` of the same path (a debug console, another control) stays valid while documents load, reload
+and exit.
+
 Stylesheet extensions: `--necronomidom-selection-color` (text selection highlight), `--necronomidom-scrollbar-size`,
 `-inset`, `-radius`, `-track`, `-thumb`, `-thumb-hover` (scrollbar styling), and the application media features
 `-necronomidom-input` (default `keyboard`) and `-necronomidom-platform` (default `desktop`). Change them by assigning

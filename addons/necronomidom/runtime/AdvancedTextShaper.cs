@@ -89,8 +89,11 @@ public sealed partial class AdvancedTextShaper : IInlineTextShaper, INativeFontF
     {
         if (_faces[index] is Face loaded) return loaded;
         string path = _fallbackPaths[index - 1];
-        // Face duplicates the imported asset; release this wrapper so no binding outlives the resource cache.
-        using var font = GD.Load<FontFile>(path) ?? throw new InvalidOperationException("Missing fallback font: " + path);
+        var font = GD.Load<FontFile>(path) ?? throw new InvalidOperationException("Missing fallback font: " + path);
+        // Face owns only its duplicates. See NativeFontFamilies.Refresh for why only the extension releases this wrapper.
+#if NECRONOMIDOM_GDEXTENSION
+        using (font)
+#endif
         return _faces[index] = new Face(font);
     }
     private bool HasGlyph(int face, int scalar) => Packed.HasChar(FaceAt(face).Font, scalar);
