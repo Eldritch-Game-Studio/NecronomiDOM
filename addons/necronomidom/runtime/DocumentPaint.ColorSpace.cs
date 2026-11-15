@@ -11,17 +11,23 @@ public partial class DocumentPaint
     private LinearDocumentComposite? _linearDocument;
     private BackBufferCopy? _sceneCopy;
 
+    /// <summary>Constructs the linear composite on the first rebuild, even one that paints nothing: a SubViewport
+    /// constructor waits for the render thread, so a document mounted empty (or hidden) pays it when mounted, not on
+    /// the frame it first reveals content. Until then it is a minimum-size, invisible target.</summary>
+    private void EnsureLinearDocument()
+    {
+        if (!LinearComposition || _linearDocument != null) return;
+        _sceneCopy = new BackBufferCopy { CopyMode = BackBufferCopy.CopyModeEnum.Viewport, Visible = false };
+        AddChild(_sceneCopy);
+        _linearDocument = new LinearDocumentComposite { Visible = false };
+        AddChild(_linearDocument);
+    }
+
     private CanvasItem CompositionParent()
     {
         if (!LinearComposition) return this;
-        if (_linearDocument == null)
-        {
-            _sceneCopy = new BackBufferCopy { CopyMode = BackBufferCopy.CopyModeEnum.Viewport };
-            AddChild(_sceneCopy);
-            _linearDocument = new LinearDocumentComposite();
-            AddChild(_linearDocument);
-        }
-        _linearDocument.BeginRebuild();
+        EnsureLinearDocument();
+        _linearDocument!.BeginRebuild();
         _isolatedContexts.Add(_linearDocument);
         _sceneCopy!.Visible = true;
         return _linearDocument.Content;

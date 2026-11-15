@@ -7,7 +7,10 @@ using NecronomiDom.Paint;
 
 namespace NecronomiDom.Runtime;
 
-/// <summary>Retained background-only clipping targets; final measurement/fitting belongs to the ordered dispatcher.</summary>
+/// <summary>Retained background-only clipping targets; final measurement/fitting belongs to the ordered dispatcher.
+/// Like <see cref="PolygonPaintStore"/>, up to <see cref="PolygonPaintStore.SpareIsolationTargets"/> unused slots stay
+/// detached for the next rebuild: an image that leaves and re-enters the display list (a glyph toggled by
+/// <c>display: none</c>) must not construct a SubViewport again, because that constructor waits for the render thread.</summary>
 public sealed class NativeBackgroundPaintStore : IDisposable
 {
     private sealed class Slot(BeginEllipticalClipRun clip)
@@ -71,8 +74,14 @@ public sealed class NativeBackgroundPaintStore : IDisposable
     }
     public void EndRebuild()
     {
-        for (int i = _slots.Count - 1; i >= _cursor; i--) _slots[i].Group.Free();
-        if (_cursor < _slots.Count) _slots.RemoveRange(_cursor, _slots.Count - _cursor);
+        int keep = Math.Min(_slots.Count, _cursor + PolygonPaintStore.SpareIsolationTargets);
+        for (int i = _slots.Count - 1; i >= keep; i--) _slots[i].Group.Free();
+        if (keep < _slots.Count) _slots.RemoveRange(keep, _slots.Count - keep);
+    }
+    /// <summary>Shrinks the detached spare targets kept for reuse; the nodes stay for the next rebuild.</summary>
+    internal void ReleaseSpareTargets()
+    {
+        for (int i = _cursor; i < _slots.Count; i++) _slots[i].Group.ReleaseTarget();
     }
     public void Dispose()
     {

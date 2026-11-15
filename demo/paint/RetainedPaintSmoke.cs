@@ -212,8 +212,11 @@ public partial class RetainedPaintSmoke : Godot.Node
         await RetainedNumericText(path);
         // A host that rewrites the same inline styles every frame, as world-anchored labels do, allocates almost nothing.
         await IdleInlineStyleWrites(path);
-        // Opacity and clip contexts that appear and disappear across structural rebuilds reuse retained targets.
+        // Opacity, clip, background-image and gradient contexts that appear and disappear across structural rebuilds
+        // reuse retained targets.
         await OscillatingIsolationTargets(path);
+        // A linear document that mounts empty constructs its composite then, not on the frame it first paints.
+        await LinearCompositeBeforeContent(path);
 
         await Settle(1281);
         await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
@@ -401,8 +404,15 @@ public partial class RetainedPaintSmoke : Godot.Node
             css.Append($"#e{i}{{position:absolute;left:{i % 6 * 16}%;top:{i / 6 * 40}%;width:14%;height:20%;background-color:rgb({60 + i * 15},{200 - i * 10},{90 + i * 7})}}");
             body.Append($"<div id=\"e{i}\"><div style=\"position:absolute;left:10%;top:10%;width:60%;height:60%;background-color:#f0d070\"></div></div>");
         }
-        // Wider than 1280 px: six boxes fade and two clip their child, so contexts appear and disappear each toggle.
-        css.Append("@media (min-width:1281px){#e0,#e2,#e4,#e6,#e8,#e10{opacity:.5} #e1,#e3{overflow:hidden;border-radius:12px}}");
+        // Wider than 1280 px: six boxes fade, two clip their child, and a background image, a gradient and an
+        // elliptical clip leave display:none, so contexts appear and disappear each toggle.
+        css.Append("#bg,#grad,#orb{position:absolute;top:82%;width:10%;height:14%;display:none} " +
+            $"#bg{{left:0;background-image:url('{KeycapUrl()}');background-size:100% 100%;background-repeat:no-repeat}} " +
+            "#grad{left:20%;background-image:linear-gradient(90deg,#ff0000,#0000ff)} " +
+            "#orb{left:40%;border-radius:50%;overflow:hidden;background-color:#3a6e4c}");
+        body.Append("<div id=\"bg\"></div><div id=\"grad\"></div><div id=\"orb\">" +
+            "<div style=\"position:absolute;left:0;top:0;width:100%;height:100%;background-color:#f0d070\"></div></div>");
+        css.Append("@media (min-width:1281px){#e0,#e2,#e4,#e6,#e8,#e10{opacity:.5} #e1,#e3{overflow:hidden;border-radius:12px} #bg,#grad,#orb{display:block}}");
         File.WriteAllText(Path.Combine(_directory, "contexts.html"), "<!doctype html><html><head><style>" + css + "</style></head><body>" + body + "</body></html>");
         var layer = new CanvasLayer(); AddChild(layer);
         var host = new DocumentHost { DocumentPath = path + "/contexts.html", Size = new Vector2(1280, 720) };
@@ -422,7 +432,14 @@ public partial class RetainedPaintSmoke : Godot.Node
             await NextFrames(1);
         }
         await Toggle(true); int wideLive = Live();
+        var wideRuns = host.DisplayList.Runs;
+        bool wideKinds = wideRuns.OfType<BackgroundImageRun>().Any() && wideRuns.OfType<GradientRun>().Any()
+            && wideRuns.OfType<BeginEllipticalClipRun>().Any();
         await Toggle(false); int narrowLive = Live();
+        var narrowRuns = host.DisplayList.Runs;
+        Check(wideKinds && !narrowRuns.OfType<BackgroundImageRun>().Any() && !narrowRuns.OfType<GradientRun>().Any()
+            && !narrowRuns.OfType<BeginEllipticalClipRun>().Any(),
+            "background-image, gradient and elliptical clip contexts appear only in the wide layout");
         int known = seen.Count, paint = host.PaintRevision;
         for (int cycle = 0; cycle < 24; cycle++)
         {
@@ -436,6 +453,30 @@ public partial class RetainedPaintSmoke : Godot.Node
         await NextFrames(3);
         // Detached spare targets are not in the tree; withdrawing the document must still free every one of them.
         Check(seen.All(id => GodotObject.InstanceFromId(id) == null), "withdrawing the document frees retained spare targets");
+    }
+
+    private async Task LinearCompositeBeforeContent(string path)
+    {
+        File.WriteAllText(Path.Combine(_directory, "late.html"), "<!doctype html><html><head><style>" +
+            "html,body,div{display:block;margin:0;padding:0;border:0;box-sizing:border-box} html,body{width:100%;height:100%} " +
+            "#root{position:absolute;left:40px;top:40px;width:300px;height:120px;background-color:#2c3a4c} #root.gone{display:none}" +
+            "</style></head><body><div id=\"root\" class=\"gone\"></div></body></html>");
+        var layer = new CanvasLayer(); AddChild(layer);
+        var host = new DocumentHost { DocumentPath = path + "/late.html", Size = new Vector2(1280, 720), LinearComposition = true };
+        layer.AddChild(host);
+        await NextFrames(10);
+        host.FlushPendingLayout();
+        await NextFrames(1);
+        HashSet<ulong> Targets() => host.FindChildren("*", nameof(SubViewport), true, false).Select(node => node.GetInstanceId()).ToHashSet();
+        var mounted = Targets();
+        bool empty = !host.DisplayList.RequiresRasterization;
+        host.Document.GetElementById("root")!.ClassList.Remove("gone");
+        host.FlushPendingLayout();
+        await NextFrames(1);
+        Check(empty && mounted.Count == 1 && host.DisplayList.RequiresRasterization && Targets().SetEquals(mounted),
+            $"an empty linear document constructs its composite when mounted, not when it first paints ({mounted.Count} mounted targets)");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(3);
     }
 
     private async Task HiddenDocumentTargets(string path)
