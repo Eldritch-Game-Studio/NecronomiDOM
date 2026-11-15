@@ -47,6 +47,9 @@ namespace NecronomiDom.Css.Cascade
             internal bool InlineOpacityChanged, InlineTransformChanged, InlinePolygonPaintChanged, InlinePositionChanged;
             internal bool ReuseRules;
             internal long RuleGeneration = -1;
+            // The class attribute every rule collection since the last change flush saw (StyleEngine.Invalidation.cs).
+            internal string? FlushedClass;
+            internal long FlushedClassGeneration = -1;
             internal List<GeometryInlineValue>? GeometryInline;
             internal Entry(StyleEngine owner, Element element, string? pseudo)
             {
@@ -279,7 +282,7 @@ namespace NecronomiDom.Css.Cascade
             // Style and link attributes select, type or scope a whole sheet.
             if (e is HTMLStyleElement || e.LocalName == "link") Invalidate();
             else RecordChange(e, localName == ":state" ? ChangeKind.State :
-                localName == "style" ? ChangeKind.InlineStyle : ChangeKind.Element);
+                localName == "style" ? ChangeKind.InlineStyle : localName == "class" ? ChangeKind.Class : ChangeKind.Element);
             _previousSink?.AttributeChanged(e, localName, oldValue);
         }
         void IDomChangeSink.CharacterDataChanged(CharacterData n)

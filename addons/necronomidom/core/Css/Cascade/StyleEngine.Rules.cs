@@ -53,6 +53,12 @@ namespace NecronomiDom.Css.Cascade
             }
             entry.ReuseRules = false;
             entry.RuleGeneration = _generation;
+            if (entry.Pseudo == null)
+            {
+                // No change is pending at a collection, so this is the class as of the last flush.
+                entry.FlushedClass = entry.Element.GetAttribute("class");
+                entry.FlushedClassGeneration = _generation;
+            }
             result.Clear();
             Gather(entry, result);
             if (CrossCheckRuleIndex && !_linearRuleWalk) CrossCheck(entry, result);

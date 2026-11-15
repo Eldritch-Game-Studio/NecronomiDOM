@@ -19,7 +19,7 @@ namespace NecronomiDom.Css.Cascade
     /// </summary>
     public sealed partial class StyleEngine
     {
-        private enum ChangeKind : byte { Element, InlineStyle, State, Children, Inserted, Removed }
+        private enum ChangeKind : byte { Element, Class, InlineStyle, State, Children, Inserted, Removed }
         private readonly record struct PendingChange(Node Node, Node? OldParent, ChangeKind Kind);
         private const ElementPseudoState InTreeStates = ElementPseudoState.Hover | ElementPseudoState.Active | ElementPseudoState.Focus;
         private readonly List<PendingChange> _pendingChanges = new();
@@ -28,7 +28,10 @@ namespace NecronomiDom.Css.Cascade
         private readonly List<SheetSource> _previousSources = new();
         private readonly List<CompoundSelector> _inTreeCompounds = new();
         private bool _hasShadowTrees, _restyleAllOnChange, _siblingSensitive, _inTreeUnbounded, _directionSensitive;
-        private bool _invalidationFeaturesDirty;
+        private bool _invalidationFeaturesDirty, _classAttributeSensitive;
+        // Classes some selector tests on an element other than the one it matches (ancestor, sibling, argument, scope or
+        // nesting context). Changing only other classes can change the element's own rules, never another element's.
+        private readonly HashSet<string> _nonSubjectClasses = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Distinct change roots a reader has not drained yet; a larger backlog collapses into one full restyle.
         /// This bounds bookkeeping, not correctness: changes nested in a pending subtree are absorbed before they count.</summary>
@@ -96,6 +99,18 @@ namespace NecronomiDom.Css.Cascade
                             break;
                         }
                         goto case ChangeKind.Element;
+                    case ChangeKind.Class:
+                        var classed = (Element)change.Node;
+                        // Classify every class record, even when rules cannot be reused: it advances the flushed class.
+                        if (ClassChangeStaysOnElement(classed, out bool unchanged) && (unchanged || reuseRules))
+                        {
+                            if (unchanged) break;
+                            // Descendants keep their rules and only inherit again; the element itself re-matches.
+                            MarkSubtreeStale(classed, reuseRules: true);
+                            if (_entries.TryGetValue(classed, out var own)) own.MarkStale();
+                            break;
+                        }
+                        goto case ChangeKind.Element;
                     case ChangeKind.Element:
                         var element = (Element)change.Node;
                         _restyleRoots.Add(SiblingScope(FormScope(element)));
@@ -153,6 +168,59 @@ namespace NecronomiDom.Css.Cascade
             _pendingChanges.Clear();
             _pendingChildren.Clear();
             _pendingInserted.Clear();
+        }
+        /// <summary>
+        /// Whether a class attribute change can alter only the element's own matched rules: every added or removed token
+        /// appears in no selector compound that tests another element (Blink/Stylo invalidation sets, subject features
+        /// only). Tokens are diffed against the class as of the previous flush in this generation, which is the class
+        /// every current rule collection saw, so an unchanged token set (a change reverted before a read) restyles
+        /// nothing. [class] selectors observe the attribute text itself and keep the ordinary invalidation.
+        /// </summary>
+        private bool ClassChangeStaysOnElement(Element element, out bool unchanged)
+        {
+            unchanged = false;
+            if (_classAttributeSensitive || !_entries.TryGetValue(element, out var entries) || entries.Normal is not { } entry
+                || entry.FlushedClassGeneration != _generation) return false;
+            string? previous = entry.FlushedClass, current = element.GetAttribute("class");
+            entry.FlushedClass = current;
+            bool changed = false;
+            if (ChangesNonSubjectClass(previous, current, ref changed) || ChangesNonSubjectClass(current, previous, ref changed)) return false;
+            unchanged = !changed;
+            return true;
+        }
+        /// <summary>Whether a token of <paramref name="from"/> missing from <paramref name="to"/> is a non-subject class;
+        /// <paramref name="changed"/> records whether any token is missing.</summary>
+        private bool ChangesNonSubjectClass(string? from, string? to, ref bool changed)
+        {
+            if (from == null) return false;
+            int start = 0;
+            while (start < from.Length)
+            {
+                while (start < from.Length && DOMTokenList.IsSpace(from[start])) start++;
+                int end = start;
+                while (end < from.Length && !DOMTokenList.IsSpace(from[end])) end++;
+                if (end > start && !HasToken(to, from.AsSpan(start, end - start)))
+                {
+                    changed = true;
+                    if (_nonSubjectClasses.Contains(from.Substring(start, end - start))) return true;
+                }
+                start = end;
+            }
+            return false;
+        }
+        private static bool HasToken(string? classes, ReadOnlySpan<char> token)
+        {
+            if (classes == null) return false;
+            int start = 0;
+            while (start < classes.Length)
+            {
+                while (start < classes.Length && DOMTokenList.IsSpace(classes[start])) start++;
+                int end = start;
+                while (end < classes.Length && !DOMTokenList.IsSpace(classes[end])) end++;
+                if (classes.AsSpan(start, end - start).SequenceEqual(token)) return true;
+                start = end;
+            }
+            return false;
         }
         /// <summary>Sibling combinators and :nth-child(of S) reach only the parent's other children and their subtrees.</summary>
         private Element SiblingScope(Element root) => _siblingSensitive && root.ParentElement is { } parent ? parent : root;
@@ -230,8 +298,9 @@ namespace NecronomiDom.Css.Cascade
         {
             _invalidationFeaturesDirty = false;
             _restyleAllOnChange = _siblingSensitive = _inTreeUnbounded = _directionSensitive = false;
-            _geometryStyleSensitive = false;
+            _geometryStyleSensitive = _classAttributeSensitive = false;
             _inTreeCompounds.Clear();
+            _nonSubjectClasses.Clear();
             var visited = new HashSet<(CSSStyleSheet, Node)>();
             foreach (var source in _sources) ScanSheet(source.Sheet, source.Root, visited);
         }
@@ -247,7 +316,8 @@ namespace NecronomiDom.Css.Cascade
                 // Observe it even before any element matches, so crossing its boundary rescans these flags.
                 if (rule is CSSMediaRule media && CanObserveMedia && !MatchesMedia(media.Media.Queries, root)) continue;
                 ScanGeometryRule(rule);
-                if (rule is CSSStyleRule style) ScanSelectors(style.Selectors, nested: false);
+                // A rule with nested rules is their context: its compounds then constrain other elements too.
+                if (rule is CSSStyleRule style) ScanSelectors(style.Selectors, nested: false, contextual: style.CssRules.Count > 0);
                 else if (rule is CSSScopeRule scope)
                 {
                     if (scope.Start != null) ScanSelectors(scope.Start, nested: true);
@@ -257,7 +327,7 @@ namespace NecronomiDom.Css.Cascade
                 if (rule is CSSGroupingRule group) ScanRules(group.CssRules, root, visited);
             }
         }
-        private void ScanSelectors(SelectorList list, bool nested)
+        private void ScanSelectors(SelectorList list, bool nested, bool contextual = false)
         {
             foreach (var complex in list.Selectors)
             {
@@ -267,13 +337,20 @@ namespace NecronomiDom.Css.Cascade
                     if (combinator is Combinator.AdjacentSibling or Combinator.GeneralSibling) _siblingSensitive = true;
                     else if (combinator == Combinator.Column) _restyleAllOnChange = true;
                 }
-                foreach (var compound in complex.Compounds)
+                for (int index = 0; index < complex.Compounds.Count; index++)
                 {
+                    var compound = complex.Compounds[index];
+                    // Only a top-level subject compound tests the matched element alone; every other compound (and
+                    // every class inside a selector argument, scope bound or nesting context) tests a related element.
+                    bool subject = !nested && !contextual && index == complex.Compounds.Count - 1;
                     bool inTree = false;
                     foreach (var simple in compound.SimpleSelectors)
                     {
+                        if (simple is ClassSelector cls && !subject) _nonSubjectClasses.Add(cls.ClassName);
                         if (simple is AttributeSelector attribute && attribute.Name.Equals("style", StringComparison.OrdinalIgnoreCase))
                             _geometryStyleSensitive = true;
+                        if (simple is AttributeSelector classAttribute && classAttribute.Name.Equals("class", StringComparison.OrdinalIgnoreCase))
+                            _classAttributeSensitive = true;
                         if (simple is PseudoElementSelector pseudoElement)
                         {
                             if (pseudoElement.Arguments != null || pseudoElement.Argument != null) _restyleAllOnChange = true;

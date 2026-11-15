@@ -92,7 +92,9 @@ public sealed class StyleRuleReuseTests
     [Test]
     public void BroaderInvalidationAndSheetRevisionCannotReuseStaleMatches()
     {
-        var (doc, styles) = Load(); var (control, reference) = Load();
+        // .blue also keys an ancestor compound, so the class change really makes the child's matches stale.
+        const string css = ".blue .polygon{min-width:1px}";
+        var (doc, styles) = Load(css); var (control, reference) = Load(css);
         Compare(doc, styles, control, reference);
         foreach (var document in new[] { doc, control })
         {
