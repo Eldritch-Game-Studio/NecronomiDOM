@@ -54,6 +54,12 @@ namespace NecronomiDom.Css.Cascade
             entry.ReuseRules = false;
             entry.RuleGeneration = _generation;
             result.Clear();
+            Gather(entry, result);
+            if (CrossCheckRuleIndex && !_linearRuleWalk) CrossCheck(entry, result);
+            return result;
+        }
+        private void Gather(Entry entry, RuleCollection result)
+        {
             if (entry.Pseudo == null && entry.Element is HTMLImageElement)
             {
                 Node root = entry.Element.Root;
@@ -94,7 +100,6 @@ namespace NecronomiDom.Css.Cascade
                 if (item.Priority.Order != long.MinValue)
                     result.Candidates[i] = item with { Priority = item.Priority with { Layer = item.Layer.Order } };
             }
-            return result;
         }
         internal long ReusedRuleCollectionCount { get; private set; }
         private static double? ImageDimensionHint(string? attribute)
@@ -111,56 +116,69 @@ namespace NecronomiDom.Css.Cascade
             CascadeLayers layers, CascadeLayers.Layer layer, CascadeOrigin origin,
             SelectorMatchContext context, SelectorList? nesting, int proximity)
         {
-            // Most style rules have no nested rules; do not allocate an enumerator per leaf and element.
+            // Most style rules have no nested rules; return before any per-list work.
             if (rules.Count == 0) return;
             MediaEnvironment environment = SourceMedia(source.Root);
-            foreach (CSSRule rule in rules)
+            // Nested rules match through their parent's selectors, so only top-level lists use the rightmost-key index.
+            if (nesting == null && !_linearRuleWalk)
             {
-                long order = ++result.Order;
-                switch (rule)
-                {
-                    case CSSLayerStatementRule statement:
-                        foreach (string name in statement.NameList) layers.Register(name, layer);
-                        break;
-                    case CSSLayerBlockRule block:
-                        WalkRules(block.CssRules, source, entry, result, layers, RuleLayer(result, layers, block, layer, block.Name), origin, context, nesting, proximity);
-                        break;
-                    case CSSImportRule import:
-                        CascadeLayers.Layer importedLayer = import.LayerName == null ? layer : RuleLayer(result, layers, import, layer, import.LayerName);
-                        if (import.StyleSheet == null || import.Supports != null && !MediaEvaluator.Evaluate(import.Supports, environment)
-                            || import.Media.Length > 0 && !MatchesMedia(import.Media.Queries, source.Root) || !result.ImportStack.Add(import.StyleSheet)) break;
-                        WalkRules(import.StyleSheet.CssRules, source with { Sheet = import.StyleSheet }, entry, result, layers, importedLayer,
-                            origin, context with { Namespaces = import.StyleSheet.Namespaces }, nesting, proximity);
-                        result.ImportStack.Remove(import.StyleSheet);
-                        break;
-                    case CSSMediaRule media:
-                        if (MatchesMedia(media.Media.Queries, source.Root)) WalkRules(media.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
-                        break;
-                    case CSSSupportsRule supports:
-                        if (MediaEvaluator.Evaluate(supports.Condition, environment)) WalkRules(supports.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
-                        break;
-                    case CSSContainerRule container:
-                        var containerEnvironment = ContainerEnvironment?.Invoke(entry.Element, container.Query.Name);
-                        if (containerEnvironment != null && MediaEvaluator.Evaluate(container.Condition, containerEnvironment))
-                            WalkRules(container.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
-                        break;
-                    case CSSScopeRule scope:
-                        WalkScope(scope, source, entry, result, layers, layer, origin, context, nesting, proximity);
-                        break;
-                    case CSSStyleRule style:
-                        SelectorList selectors = nesting == null ? style.Selectors : NestingExpansion.Expand(style.Selectors, nesting);
-                        if (TrySpecificity(entry.Element, selectors, context, out Specificity specificity))
-                            AddDeclarations(style.Style, specificity, entry, result, layer, origin, source.Root, source.Depth, proximity, false, order);
-                        WalkRules(style.CssRules, source, entry, result, layers, layer, origin, context, selectors, proximity);
-                        break;
-                    case CSSNestedDeclarations declarations:
-                        if (nesting != null && TrySpecificity(entry.Element, nesting, context, out Specificity nestedSpecificity))
-                            AddDeclarations(declarations.Style, nestedSpecificity, entry, result, layer, origin, source.Root, source.Depth, proximity, false, order);
-                        break;
-                    case CSSPropertyRule property:
-                        result.Properties[property.Name] = new Registration(property.Syntax.Trim('"'), property.Inherits, property.InitialValue);
-                        break;
-                }
+                WalkIndexedRules(rules, source, entry, result, layers, layer, origin, context, proximity, environment);
+                return;
+            }
+            for (int i = 0; i < rules.Count; i++)
+                WalkRule(rules[i], source, entry, result, layers, layer, origin, context, nesting, proximity, environment);
+        }
+        private void WalkRule(CSSRule rule, SheetSource source, Entry entry, RuleCollection result,
+            CascadeLayers layers, CascadeLayers.Layer layer, CascadeOrigin origin,
+            SelectorMatchContext context, SelectorList? nesting, int proximity, MediaEnvironment environment)
+        {
+            long order = ++result.Order;
+            switch (rule)
+            {
+                case CSSLayerStatementRule statement:
+                    foreach (string name in statement.NameList) layers.Register(name, layer);
+                    break;
+                case CSSLayerBlockRule block:
+                    WalkRules(block.CssRules, source, entry, result, layers, RuleLayer(result, layers, block, layer, block.Name), origin, context, nesting, proximity);
+                    break;
+                case CSSImportRule import:
+                    CascadeLayers.Layer importedLayer = import.LayerName == null ? layer : RuleLayer(result, layers, import, layer, import.LayerName);
+                    if (import.StyleSheet == null || import.Supports != null && !MediaEvaluator.Evaluate(import.Supports, environment)
+                        || import.Media.Length > 0 && !MatchesMedia(import.Media.Queries, source.Root) || !result.ImportStack.Add(import.StyleSheet)) break;
+                    WalkRules(import.StyleSheet.CssRules, source with { Sheet = import.StyleSheet }, entry, result, layers, importedLayer,
+                        origin, context with { Namespaces = import.StyleSheet.Namespaces }, nesting, proximity);
+                    result.ImportStack.Remove(import.StyleSheet);
+                    break;
+                case CSSMediaRule media:
+                    if (MatchesMedia(media.Media.Queries, source.Root)) WalkRules(media.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
+                    break;
+                case CSSSupportsRule supports:
+                    if (MediaEvaluator.Evaluate(supports.Condition, environment)) WalkRules(supports.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
+                    break;
+                case CSSContainerRule container:
+                    var containerEnvironment = ContainerEnvironment?.Invoke(entry.Element, container.Query.Name);
+                    if (containerEnvironment != null && MediaEvaluator.Evaluate(container.Condition, containerEnvironment))
+                        WalkRules(container.CssRules, source, entry, result, layers, layer, origin, context, nesting, proximity);
+                    break;
+                case CSSScopeRule scope:
+                    WalkScope(scope, source, entry, result, layers, layer, origin, context, nesting, proximity);
+                    break;
+                case CSSStyleRule style:
+                    SelectorList selectors = nesting == null ? style.Selectors : NestingExpansion.Expand(style.Selectors, nesting);
+                    RuleTestCount++;
+                    if (TrySpecificity(entry.Element, selectors, context, out Specificity specificity))
+                        AddDeclarations(style.Style, specificity, entry, result, layer, origin, source.Root, source.Depth, proximity, false, order);
+                    WalkRules(style.CssRules, source, entry, result, layers, layer, origin, context, selectors, proximity);
+                    break;
+                case CSSNestedDeclarations declarations:
+                    if (nesting == null) break;
+                    RuleTestCount++;
+                    if (TrySpecificity(entry.Element, nesting, context, out Specificity nestedSpecificity))
+                        AddDeclarations(declarations.Style, nestedSpecificity, entry, result, layer, origin, source.Root, source.Depth, proximity, false, order);
+                    break;
+                case CSSPropertyRule property:
+                    result.Properties[property.Name] = new Registration(property.Syntax.Trim('"'), property.Inherits, property.InitialValue);
+                    break;
             }
         }
         private void WalkScope(CSSScopeRule rule, SheetSource source, Entry entry, RuleCollection result,

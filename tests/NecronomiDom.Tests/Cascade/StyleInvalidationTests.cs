@@ -1,3 +1,4 @@
+using System;
 using NecronomiDom.Css.Cascade;
 using NecronomiDom.Dom;
 using NecronomiDom.Html;
@@ -281,5 +282,113 @@ public sealed class StyleInvalidationTests
         style.TextContent = "p { color: green }";
         doc.Body!.AppendChild(style);
         Assert.That(Color(styles, doc, "p"), Is.EqualTo(Green));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void BatchedInsertionsUnderOneParentRestyleOnlyThatSubtree(bool attachFirst)
+    {
+        var others = string.Concat(Enumerable.Range(0, 300).Select(i => "<p class=other>" + i + "</p>"));
+        var (doc, styles) = Load(".chip{color:red}.glyph{color:blue}.other{color:green}#effect .value{color:rgb(0, 0, 255)}",
+            "<div id=others>" + others + "</div><div id=effect></div>");
+        var effect = doc.GetElementById("effect")!;
+        const int chips = 600;
+        for (int i = 0; i < chips; i++)
+        {
+            var chip = doc.CreateElement("div"); chip.ClassName = "chip";
+            if (attachFirst) effect.AppendChild(chip);
+            var glyph = doc.CreateElement("div"); glyph.ClassName = "glyph"; chip.AppendChild(glyph);
+            var value = doc.CreateElement("p"); value.ClassName = "value"; value.TextContent = "+33%"; chip.AppendChild(value);
+            if (!attachFirst) effect.AppendChild(chip);
+        }
+        // Over 1,024 change records, each nested in the pending child change of #effect: one subtree, not the document.
+        Assert.That(Restyled(doc, styles), Is.EqualTo(1 + 3 * chips));
+        Assert.That(styles.GetComputedStyle(effect.Children[chips - 1]!).GetPropertyValue("color"), Is.EqualTo(Red));
+        Assert.That(styles.GetComputedStyle(effect.Children[0]!.Children[1]!).GetPropertyValue("color"), Is.EqualTo(Blue));
+        AssertMatchesFreshCascade(doc, styles, "batched insertion");
+    }
+
+    private static readonly string[] MutationProperties = { "color", "background-color", "width", "margin-left" };
+    private static void AssertMatchesFreshCascade(Document doc, StyleEngine styles, string because)
+    {
+        var fresh = new StyleEngine(doc);
+        foreach (Element element in doc.QuerySelectorAll("*"))
+            foreach (string property in MutationProperties)
+                Assert.That(styles.GetComputedStyle(element).GetPropertyValue(property),
+                    Is.EqualTo(fresh.GetComputedStyle(element).GetPropertyValue(property)), because + ": " + property + " of " + element.LocalName);
+    }
+
+    /// <summary>Large mixed batches (insertions under changed parents, moves, removals, state and attribute changes)
+    /// resolve to the same styles as a fresh cascade, whether absorbed, recorded or collapsed into a full restyle.</summary>
+    [Test]
+    public void LargeMutationBatchesMatchAFreshCascade([Range(0, 23)] int seed)
+    {
+        string[] tags = { "div", "p", "span", "li", "ul", "section" };
+        string[] classes = { "a", "b", "c", "d" };
+        string css = ".a{color:red}.a>.b{color:blue}div:hover>p{color:purple}section:focus-within{color:orange}" +
+            ":dir(rtl){margin-left:3px}p:empty{width:2px}.d:first-child{width:4px}ul>li:last-child{color:navy}" +
+            "[data-k=v] span{background-color:red}li:nth-child(2n){width:1px}" +
+            (seed % 2 == 0 ? ".b+.c{color:green}.c~.a{background-color:blue}" : "");
+        var random = new Random(seed);
+        var (doc, styles) = Load(css, "<div id=root></div>");
+        Element Make()
+        {
+            var element = doc.CreateElement(tags[random.Next(tags.Length)]);
+            element.ClassName = classes[random.Next(classes.Length)] + (random.Next(2) == 0 ? " " + classes[random.Next(classes.Length)] : "");
+            if (random.Next(5) == 0) element.SetAttribute("data-k", "v");
+            return element;
+        }
+        var root = doc.GetElementById("root")!;
+        for (int i = 0; i < 120; i++)
+        {
+            var parents = root.QuerySelectorAll("*").Cast<Element>().Append(root).ToList();
+            parents[random.Next(parents.Count)].AppendChild(Make());
+        }
+        StyleAll(doc, styles);
+        for (int batch = 0; batch < 3; batch++)
+        {
+            for (int i = 0; i < 1500; i++)
+            {
+                var elements = root.QuerySelectorAll("*").Cast<Element>().ToList();
+                Element target = elements.Count == 0 || random.Next(8) == 0 ? root : elements[random.Next(elements.Count)];
+                switch (random.Next(10))
+                {
+                    case 0: case 1:
+                        var subtree = Make();
+                        for (int c = random.Next(4); c > 0; c--) subtree.AppendChild(Make());
+                        if (random.Next(2) == 0) target.AppendChild(subtree); else target.InsertBefore(subtree, target.FirstChild);
+                        break;
+                    case 2:
+                        var parent = Make();
+                        target.AppendChild(parent);
+                        for (int c = random.Next(4); c > 0; c--) parent.AppendChild(Make());
+                        break;
+                    case 3:
+                        if (elements.Count < 2 || target == root) break;
+                        var destination = elements[random.Next(elements.Count)];
+                        if (!target.Contains(destination)) destination.AppendChild(target);
+                        break;
+                    case 4:
+                        if (target != root && elements.Count > 60) target.Remove();
+                        break;
+                    case 5:
+                        target.ClassName = classes[random.Next(classes.Length)];
+                        break;
+                    case 6:
+                        target.PseudoState ^= random.Next(2) == 0 ? ElementPseudoState.Hover : ElementPseudoState.Focus;
+                        break;
+                    case 7:
+                        if (random.Next(3) == 0) target.RemoveAttribute("dir"); else target.SetAttribute("dir", random.Next(2) == 0 ? "rtl" : "auto");
+                        break;
+                    case 8:
+                        target.TextContent = random.Next(2) == 0 ? "" : "\u05d0";
+                        break;
+                    default:
+                        target.SetAttribute("data-k", random.Next(2) == 0 ? "v" : "w");
+                        break;
+                }
+            }
+            AssertMatchesFreshCascade(doc, styles, "seed " + seed + " batch " + batch);
+        }
     }
 }
