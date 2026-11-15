@@ -51,6 +51,7 @@ public partial class DocumentPaint : Node2D
         _ellipticalClips?.BeginRebuild();
         _backgrounds?.BeginRebuild();
         _gradients?.BeginRebuild();
+        EnsureLinearDocument();
         // Keep withdrawal and unused-slot retirement, without creating paint resources for transparent boxes.
         if (!list.RequiresRasterization) { EndStoreRebuild(); ReleaseTargets(); return; }
         CanvasItem parent = CompositionParent();

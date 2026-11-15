@@ -18,6 +18,9 @@ public partial class DocumentPaint
         _linearDocument?.ReleaseTarget();
         foreach (var context in _isolatedContexts) context.ReleaseTarget();
         _polygons.ReleaseSpareTargets();
+        _ellipticalClips?.ReleaseSpareTargets();
+        _backgrounds?.ReleaseSpareTargets();
+        _gradients?.ReleaseSpareTargets();
         _targetsReleased = true;
     }
 

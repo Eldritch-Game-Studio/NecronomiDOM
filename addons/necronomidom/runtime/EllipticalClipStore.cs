@@ -62,7 +62,8 @@ public partial class EllipticalClipGroup : PolygonComposite
 }
 
 /// <summary>
-/// One new-type store per painter. Detach before ordinary child cleanup; end rebuild only trims.
+/// One new-type store per painter. Detach before ordinary child cleanup; end rebuild trims beyond
+/// <see cref="PolygonPaintStore.SpareIsolationTargets"/> detached spares, which keep their SubViewport for reuse.
 /// The sole ordered dispatcher measures ALL composite kinds then fits ALL in display preorder,
 /// never by store order, because nested viewport canvas transforms are established outer-first.
 /// </summary>
@@ -84,8 +85,14 @@ public sealed class EllipticalClipStore : IDisposable
     }
     public void EndRebuild()
     {
-        for (int i = _groups.Count - 1; i >= _cursor; i--) _groups[i].Free();
-        if (_cursor < _groups.Count) _groups.RemoveRange(_cursor,_groups.Count-_cursor);
+        int keep = Math.Min(_groups.Count, _cursor + PolygonPaintStore.SpareIsolationTargets);
+        for (int i = _groups.Count - 1; i >= keep; i--) _groups[i].Free();
+        if (keep < _groups.Count) _groups.RemoveRange(keep, _groups.Count - keep);
+    }
+    /// <summary>Shrinks the detached spare targets kept for reuse; the nodes stay for the next rebuild.</summary>
+    internal void ReleaseSpareTargets()
+    {
+        for (int i = _cursor; i < _groups.Count; i++) _groups[i].ReleaseTarget();
     }
     public void Dispose()
     {
