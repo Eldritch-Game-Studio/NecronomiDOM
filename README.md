@@ -525,6 +525,30 @@ It is not the standalone GDScript/native release; that release still uses the na
 build and final-ZIP qualification workflow.
 Host-generated `.import` files are excluded; installing this package preserves the host's asset-import settings.
 
+Hosts install only CI-built packages. After a main push passes the unit, API and smoke jobs (and for every `v*`
+tag), CI runs the same script and publishes release `managed-<sha12>`: a prerelease for main and a full release for
+a tag, never marked latest. Its assets are `necronomidom-managed-<sha>.zip` and `provenance.json`
+(`eldritch.managed-provenance/1`: repository, sha, ref, run IDs, ZIP name and sha256). CI then sends Dirge a
+`repository_dispatch` event `upstream-package-published` with `{package, sha, release_tag, zip_sha256}`. To publish
+an earlier main commit whose own main run passed, run the CI/CD workflow manually with `managed-revision` set to
+that commit. Pull requests that change `core/`, `runtime/`, `vendor/` or `NecronomiDom.targets` also build Dirge's
+`managed/1.0.x` line against the candidate package and run its smoke test.
+
+### API compatibility
+
+CI fails on a public API change that its pull request doesn't declare:
+
+- The public C# API of the core assembly and of `runtime/` (built the way a GodotSharp host builds it) is declared
+  in `api/core` and `api/runtime` as `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`, which the Roslyn
+  public API analyzers check. `python3 scripts/api-baseline.py check` runs the gate. `update` declares new symbols
+  in `PublicAPI.Unshipped.txt` and drops removed ones. `ship` moves declarations to `Shipped` at a release.
+- What GDScript sees of the native classes (methods, signals, properties, constants and enums of `DocumentHost`
+  and its peers, read from `ClassDB`) is snapshotted in `api/gdscript/api.json`. With the native library built and
+  the project imported, check it with `godot --headless --path . --script res://api/gdscript/check_api.gd`, and
+  rewrite it by appending `-- --update`.
+
+A removed or changed line in a baseline is a breaking change. Make it in the same pull request as the code.
+
 ## Supported profile
 
 NecronomiDOM implements a deliberate subset of the web platform and refuses the rest loudly: content outside the

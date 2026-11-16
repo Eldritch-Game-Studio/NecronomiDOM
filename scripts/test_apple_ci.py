@@ -133,12 +133,41 @@ class TrustTests(unittest.TestCase):
         for runner in matrices:
             self.assertIn("self-hosted", runner.split(", "))
         checkouts = workflow.count("uses: actions/checkout@v4")
-        self.assertEqual(checkouts, workflow.count("ref: ${{ inputs.source-sha }}"))
+        # Only two checkouts leave the event commit: a managed package revision proved on main before it builds, and
+        # the consumer's own release line.
+        foreign = [workflow.count("ref: ${{ steps.revision.outputs.sha }}"),
+                   workflow.count("repository: Eldritch-Game-Studio/Dirge\n          ref: managed/1.0.x\n")]
+        self.assertEqual(foreign, [1, 1])
+        self.assertEqual(checkouts, workflow.count("ref: ${{ inputs.source-sha }}") + sum(foreign))
         self.assertEqual(checkouts, workflow.count("persist-credentials: false"))
 
     def job(self, name):
         workflow = (ROOT / ".github/workflows/ci-local.yml").read_text()
         return re.split(r"\n  [a-z][a-z0-9-]*:\n", workflow.split(f"  {name}:\n", 1)[1], 1)[0]
+
+    def test_managed_release_requires_gates_and_notifies_from_trusted_host(self):
+        package = self.job("managed-package")
+        condition = re.search(r"^    if: (.+)$", package, re.MULTILINE).group(1)
+        self.assertIn("needs.changes.outputs.managed == 'true'", condition)
+        for gate in ("test", "api", "smoke"):
+            self.assertIn(gate, re.search(r"^    needs: \[(.+)\]$", package, re.MULTILINE).group(1).split(", "))
+            self.assertIn(f"needs.{gate}.result == 'success'", condition.split("needs.changes.outputs.mode == 'backfill' || ", 1)[1])
+        self.assertLess(package.index("publish-managed.py source"), package.index("scripts/package-managed.py"))
+        self.assertIn("publish-managed.py provenance", package)
+        release = self.job("managed-release")
+        self.assertIn("needs: [changes, managed-package]", release)
+        self.assertIn("runs-on: [self-hosted, Linux, X64, necronomidom]", release)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", release.split("publish-managed.py publish", 1)[0])
+        notify = release.split("Notify Dirge", 1)[1]
+        self.assertNotIn("GH_TOKEN", notify)
+        self.assertIn("--consumer Eldritch-Game-Studio/Dirge", notify)
+        consumer = self.job("consumer-dirge")
+        self.assertIn("if: needs.changes.outputs.consumer == 'true'", consumer)
+        self.assertLess(consumer.index("scripts/package-managed.py"), consumer.index("scripts/fetch-deps.sh"))
+        self.assertLess(consumer.index("scripts/smoke.sh"), consumer.index("Dirge did not use the candidate"))
+        api = self.job("api")
+        self.assertIn("python3 scripts/api-baseline.py check", api)
+        self.assertIn("res://api/gdscript/check_api.gd", self.job("smoke"))
 
     def test_windows_proton_jobs_are_mandatory_linux_hosted_full_gates(self):
         workflow = (ROOT / ".github/workflows/ci-local.yml").read_text()

@@ -11,8 +11,12 @@ on:
         description: Linux-only diagnostic ZIP (never a release)
         type: boolean
         default: false
+      managed-revision:
+        description: Earlier main commit whose managed-host package to publish (backfill; skips other jobs)
+        type: string
+        default: ''
 
-# The called workflow reduces permissions to read except for its tag release job.
+# The called workflow reduces permissions to read except for its release jobs.
 permissions:
   contents: write
   actions: read

@@ -1,0 +1,20 @@
+<Project>
+  <!-- Declared public API: every public symbol must be listed in $(NecronomiDomApiBaseline)PublicAPI.Shipped.txt
+       or PublicAPI.Unshipped.txt, and every listed symbol must still exist. An undeclared addition or a removal
+       fails the build; an intentional change updates the baseline in the same change (scripts/api-baseline.py). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+    <AdditionalFiles Include="$(NecronomiDomApiBaseline)PublicAPI.Shipped.txt;$(NecronomiDomApiBaseline)PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(NecronomiDomApiDiagnostics)' != 'warning'">
+    <!-- RS0016 undeclared public symbol, RS0017 declared symbol removed or no longer public, RS0024/RS0025 duplicates,
+         RS0036/RS0037 nullable annotations, RS0048 missing baseline file, RS0050 removed symbol not declared removed.
+         scripts/api-baseline.py keeps them warnings so core's differences don't hide the runtime's, then fails on any. -->
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017;RS0024;RS0025;RS0036;RS0037;RS0048;RS0050</WarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- Overload/optional-parameter design rules are not compatibility checks. -->
+    <NoWarn>$(NoWarn);RS0026;RS0027;RS0041</NoWarn>
+  </PropertyGroup>
+</Project>

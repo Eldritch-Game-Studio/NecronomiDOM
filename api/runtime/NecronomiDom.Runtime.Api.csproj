@@ -1,0 +1,17 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!-- The public C# API of addons/necronomidom/runtime exactly as a GodotSharp host compiles it (NecronomiDom.targets),
+       without demo code. Built only by scripts/api-baseline.py; never packaged. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>NecronomiDom.Runtime.Api</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GodotProjectDir>$(MSBuildThisFileDirectory)../../</GodotProjectDir>
+    <NecronomiDomApiBaseline>$(MSBuildThisFileDirectory)</NecronomiDomApiBaseline>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../addons/necronomidom/runtime/**/*.cs" />
+    <ProjectReference Include="../../addons/necronomidom/core/NecronomiDom.csproj" />
+  </ItemGroup>
+</Project>

@@ -10,6 +10,9 @@ import subprocess
 
 MEDIA = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".mp4", ".webm"}
 BUILD_SUFFIXES = {".csproj", ".props", ".targets", ".sln", ".slnx", ".lock", ".gdextension"}
+# Source a managed host compiles: changes here must still build and run Dirge's managed line.
+CONSUMER_PATHS = ("addons/necronomidom/core/", "addons/necronomidom/runtime/", "addons/necronomidom/vendor/",
+                  "addons/necronomidom/NecronomiDom.targets")
 
 
 def path_kind(path):
@@ -28,8 +31,11 @@ def path_kind(path):
     return "fast"
 
 
-def policy(event_name, ref, paths, partial=False):
-    if event_name == "workflow_dispatch":
+def policy(event_name, ref, paths, partial=False, backfill=False):
+    if event_name == "workflow_dispatch" and backfill:
+        # Republishes an earlier main commit's managed package from that commit's own passing CI run.
+        mode = "backfill"
+    elif event_name == "workflow_dispatch":
         mode = "partial" if partial else "full"
     elif ref.startswith("refs/tags/v"):
         mode = "full"
@@ -40,8 +46,12 @@ def policy(event_name, ref, paths, partial=False):
     else:
         # A code push (even native/tooling changes) gets fast feedback; full qualification is a PR/tag gate.
         mode = "fast"
-    return {"mode": mode, "code": mode != "docs", "full": mode == "full",
-            "package": mode in {"full", "partial"}}
+    release_ref = ref == "refs/heads/main" or ref.startswith("refs/tags/v")
+    return {"mode": mode, "code": mode not in {"docs", "backfill"}, "full": mode == "full",
+            "package": mode in {"full", "partial"},
+            "consumer": event_name == "pull_request" and mode != "docs"
+            and any(path.startswith(CONSUMER_PATHS) for path in paths),
+            "managed": mode == "backfill" or (event_name == "push" and release_ref and mode != "docs")}
 
 
 def git(*args, cwd=None, input=None):
@@ -72,9 +82,11 @@ def main():
     args = parser.parse_args()
     event = json.loads(Path(args.event).read_text(encoding="utf-8"))
     event_name = os.environ["GITHUB_EVENT_NAME"]
-    partial = event.get("inputs", {}).get("partial", False) in (True, "true")
+    inputs = event.get("inputs") or {}
+    partial = inputs.get("partial", False) in (True, "true")
+    backfill = bool((inputs.get("managed-revision") or "").strip())
     paths = changed_paths(event_name, event)
-    result = policy(event_name, os.environ["GITHUB_REF"], paths, partial)
+    result = policy(event_name, os.environ["GITHUB_REF"], paths, partial, backfill)
     print(json.dumps({**result, "paths": paths}, indent=2))
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         for key, value in result.items():

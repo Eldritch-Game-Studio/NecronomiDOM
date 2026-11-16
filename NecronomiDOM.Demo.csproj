@@ -6,7 +6,7 @@
     <RootNamespace>NecronomiDomDemo</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="tests/**;native/**" />
+    <Compile Remove="tests/**;native/**;api/**" />
   </ItemGroup>
   <Import Project="addons/necronomidom/NecronomiDom.targets" />
 </Project>

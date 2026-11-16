@@ -1,0 +1,8 @@
+<Project>
+  <!-- Repository-only build policy; addon packages never contain this file, so hosts are unaffected.
+       `-p:NecronomiDomApiCheck=true` checks the core assembly against api/core (scripts/api-baseline.py). -->
+  <PropertyGroup Condition="'$(NecronomiDomApiCheck)' == 'true' and '$(MSBuildProjectName)' == 'NecronomiDom'">
+    <NecronomiDomApiBaseline>$(MSBuildThisFileDirectory)api/core/</NecronomiDomApiBaseline>
+  </PropertyGroup>
+  <Import Project="api/PublicApi.targets" Condition="'$(NecronomiDomApiBaseline)' != ''" />
+</Project>
