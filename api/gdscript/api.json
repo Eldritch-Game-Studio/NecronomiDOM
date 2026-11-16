@@ -1,0 +1,1688 @@
+{
+  "DocumentHost": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Control",
+    "methods": {
+      "add_class": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "append_html": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "apply_text_scale": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "begin_inspector_pick": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "click": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "close_inspector": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "element_from_point": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "focus_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "force_reload": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "int"
+        }
+      },
+      "get_active_element_id": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_attribute": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_cancel_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_checked": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "get_developer_reload_enabled": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "get_developer_reload_watch_enabled": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "get_document_path": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_element_rect": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Rect2"
+        }
+      },
+      "get_fallback_font_paths": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 23.0,
+          "hint_string": "4/0:",
+          "type": "PackedStringArray"
+        }
+      },
+      "get_font_family": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_font_path": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_font_paths": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 23.0,
+          "hint_string": "4/0:;4/0:",
+          "type": "Dictionary"
+        }
+      },
+      "get_inspector_report": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_inspector_selection": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_navigate_down_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_navigate_left_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_navigate_right_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_navigate_up_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_scroll": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Vector2"
+        }
+      },
+      "get_selected_index": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "int"
+        }
+      },
+      "get_style": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_submit_action": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "StringName"
+        }
+      },
+      "get_text": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "get_value": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      },
+      "has_class": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "has_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "has_pointer_capture": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "int"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "insert_html_before": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "is_input_enabled": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "is_inspector_open": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "listen": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "load_document": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "move_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [
+          "\"\""
+        ],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "open_inspector": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "pick_inspector_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "query_ids": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 23.0,
+          "hint_string": "4/0:",
+          "type": "PackedStringArray"
+        }
+      },
+      "release_pointer_capture": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "int"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "reload_changed_files": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "int"
+        }
+      },
+      "remove_attribute": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "remove_class": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "remove_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "scroll_to": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "float"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "select_inspector_element": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "set_application_navigation": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "bool"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_attribute": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_cancel_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_checked": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "bool"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_developer_reload_enabled": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "bool"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_developer_reload_watch_enabled": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "bool"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_document_path": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_fallback_font_paths": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 23.0,
+            "hint_string": "4/0:",
+            "type": "PackedStringArray"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_font_family": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_font_path": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_font_paths": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 23.0,
+            "hint_string": "4/0:;4/0:",
+            "type": "Dictionary"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_inner_html": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_input_enabled": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "bool"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_navigate_down_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_navigate_left_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_navigate_right_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_navigate_up_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_pointer_capture": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "int"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_selected_index": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "int"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_style": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_submit_action": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "StringName"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_text": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "set_value": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      },
+      "toggle_class": {
+        "args": [
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          },
+          {
+            "class_name": "",
+            "hint": 0.0,
+            "hint_string": "",
+            "type": "String"
+          }
+        ],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        }
+      },
+      "toggle_inspector": {
+        "args": [],
+        "default_args": [],
+        "flags": 1.0,
+        "return": {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Nil"
+        }
+      }
+    },
+    "properties": {
+      "cancel_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      },
+      "developer_reload_enabled": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "bool"
+      },
+      "developer_reload_watch_enabled": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "bool"
+      },
+      "document_path": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "String"
+      },
+      "fallback_font_paths": {
+        "class_name": "",
+        "hint": 23.0,
+        "hint_string": "4/0:",
+        "type": "PackedStringArray"
+      },
+      "font_family": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "String"
+      },
+      "font_path": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "String"
+      },
+      "font_paths": {
+        "class_name": "",
+        "hint": 23.0,
+        "hint_string": "4/0:;4/0:",
+        "type": "Dictionary"
+      },
+      "navigate_down_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      },
+      "navigate_left_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      },
+      "navigate_right_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      },
+      "navigate_up_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      },
+      "submit_action": {
+        "class_name": "",
+        "hint": 0.0,
+        "hint_string": "",
+        "type": "StringName"
+      }
+    },
+    "signals": {
+      "cancel": [],
+      "clicked": [
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      ],
+      "developer_reloaded": [
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "int"
+        },
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "bool"
+        },
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      ],
+      "dom_event": [
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        },
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        }
+      ],
+      "dom_event_detail": [
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        },
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "String"
+        },
+        {
+          "class_name": "",
+          "hint": 0.0,
+          "hint_string": "",
+          "type": "Dictionary"
+        }
+      ]
+    }
+  },
+  "DocumentInspector": {
+    "constants": {},
+    "enums": {},
+    "inherits": "CanvasLayer",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "DocumentPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "EllipticalClipGroup": {
+    "constants": {},
+    "enums": {},
+    "inherits": "PolygonComposite",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "LinearDocumentComposite": {
+    "constants": {},
+    "enums": {},
+    "inherits": "PolygonComposite",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeBorderPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "MeshInstance2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeBoxPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "MultiMeshInstance2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGlyphBlurPass": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGlyphBlurTarget": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGlyphEffectsPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGlyphMaskPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGlyphShadowPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeGradientPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "NativeImagePaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "PolygonClipGroup": {
+    "constants": {},
+    "enums": {},
+    "inherits": "PolygonComposite",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "PolygonComposite": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "PolygonOpacityGroup": {
+    "constants": {},
+    "enums": {},
+    "inherits": "PolygonComposite",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "PolygonPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "RoundedRectClipGroup": {
+    "constants": {},
+    "enums": {},
+    "inherits": "PolygonComposite",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  },
+  "ShapedTextPaint": {
+    "constants": {},
+    "enums": {},
+    "inherits": "Node2D",
+    "methods": {},
+    "properties": {},
+    "signals": {}
+  }
+}

@@ -73,6 +73,8 @@ jobs:
       code: ${{ steps.policy.outputs.code }}
       full: ${{ steps.policy.outputs.full }}
       package: ${{ steps.policy.outputs.package }}
+      consumer: ${{ steps.policy.outputs.consumer }}
+      managed: ${{ steps.policy.outputs.managed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,6 +86,21 @@ jobs:
       - name: Classify event and complete changed paths
         id: policy
         run: python3 scripts/ci-policy.py
+
+  api:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: [self-hosted, Linux, X64, eldritch-linux]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - name: Require provisioned .NET SDK
+        run: dotnet --info
+      - name: Public C# API of core and runtime matches api/core and api/runtime
+        # An undeclared addition or any removal fails; intentional changes update the baseline in the same PR.
+        run: python3 scripts/api-baseline.py check
 
   docs:
     needs: changes
@@ -329,6 +346,8 @@ jobs:
           cp native/necronomidom.gdextension addons/necronomidom/
           "$GODOT" --headless --audio-driver Dummy --path . --import res://demo/gdscript/demo.tscn
           "$GODOT" --headless --path . res://demo/gdscript/demo.tscn -- --smoke
+      - name: GDScript-visible API of the native classes matches api/gdscript/api.json
+        run: '"$GODOT" --headless --path . --script res://api/gdscript/check_api.gd'
       - name: Native authoring tools and shared-resource lifetime
         run: '"$GODOT" --headless --path . res://demo/authoring/native-smoke.tscn'
       - name: Native retained paint classes
@@ -364,6 +383,179 @@ jobs:
           "$GODOT_MONO" --headless --path . res://demo/paint/single-fill-smoke.tscn
           xvfb-run -a -s "-screen 0 1440x1000x24" "$GODOT_MONO" --path . --rendering-method gl_compatibility \
             --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
+
+  # Managed hosts (Dirge, Kraken's Keg, God Complex) compile this source package; it needs no native binaries, so
+  # every qualified main push and v* tag publishes it, and a manual dispatch can backfill an earlier main commit.
+  managed-package:
+    needs: [changes, docs, test, api, smoke]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.managed == 'true' && needs.docs.result == 'success' && (needs.changes.outputs.mode == 'backfill' || (needs.test.result == 'success' && needs.api.result == 'success' && needs.smoke.result == 'success')) }}
+    runs-on: [self-hosted, Linux, X64, eldritch-linux]
+    steps:
+      - name: Select the exact package revision
+        id: revision
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          # Read from the dispatch event, as scripts/ci-policy.py does, so callers need no matching input.
+          MANAGED_REVISION: ${{ github.event.inputs['managed-revision'] }}
+          BACKFILL: ${{ needs.changes.outputs.mode == 'backfill' }}
+        run: |
+          revision="$SOURCE_SHA"
+          if [ "$BACKFILL" = true ]; then revision="$MANAGED_REVISION"; fi
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo "Package revision must be an exact 40-character commit" >&2; exit 1; }
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
+      # Trusted tools come from the event commit; the package comes from its own revision's tree and packager.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.revision.outputs.sha }}
+          path: package
+          persist-credentials: false
+      - name: Require provisioned .NET SDK
+        run: dotnet --info
+      - name: Prove the revision is on main (a backfill also needs its own passing main run)
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.revision.outputs.sha }}
+          BACKFILL: ${{ needs.changes.outputs.mode == 'backfill' }}
+        run: |
+          flags=()
+          if [ "$BACKFILL" = true ]; then flags+=(--backfill); fi
+          run_id="$(python3 scripts/publish-managed.py source --sha "$SHA" --ref "$GITHUB_REF" "${flags[@]}")"
+          echo "qualified-run-id=$run_id" >> "$GITHUB_OUTPUT"
+      - name: Build the deterministic managed-host package
+        working-directory: package
+        run: python3 scripts/package-managed.py
+      - name: Verify the package and write provenance.json
+        env:
+          SHA: ${{ steps.revision.outputs.sha }}
+          QUALIFIED_RUN_ID: ${{ steps.source.outputs.qualified-run-id }}
+        run: |
+          mkdir -p dist-managed
+          cp "package/dist/necronomidom-managed-$SHA.zip" dist-managed/
+          python3 scripts/publish-managed.py provenance --zip "dist-managed/necronomidom-managed-$SHA.zip" \
+            --sha "$SHA" --ref "$GITHUB_REF" --qualified-run-id "$QUALIFIED_RUN_ID" \
+            --output dist-managed/provenance.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: managed-host
+          path: dist-managed/
+          if-no-files-found: error
+
+  # The repository-scoped runner on the trusted host signs consumer notifications with that host's own gh login.
+  managed-release:
+    needs: [changes, managed-package]
+    if: ${{ !cancelled() && needs.managed-package.result == 'success' }}
+    runs-on: [self-hosted, Linux, X64, necronomidom]
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: managed-host
+          path: dist-managed
+      - name: Locate the package
+        id: package
+        run: |
+          sha="$(python3 -c 'import json; print(json.load(open("dist-managed/provenance.json"))["sha"])')"
+          echo "zip=dist-managed/necronomidom-managed-$sha.zip" >> "$GITHUB_OUTPUT"
+      - name: Publish release managed-<sha12> with provenance.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZIP: ${{ steps.package.outputs.zip }}
+        run: python3 scripts/publish-managed.py publish --zip "$ZIP" --provenance dist-managed/provenance.json
+      - name: Notify Dirge (upstream-package-published)
+        env:
+          ZIP: ${{ steps.package.outputs.zip }}
+        run: |
+          python3 scripts/publish-managed.py dispatch --zip "$ZIP" --provenance dist-managed/provenance.json \
+            --consumer Eldritch-Game-Studio/Dirge
+
+  # A candidate that compiles here can still break its managed consumer; build and run Dirge's managed line with it.
+  consumer-dirge:
+    needs: changes
+    if: needs.changes.outputs.consumer == 'true'
+    runs-on: [self-hosted, Linux, X64, eldritch-linux]
+    steps:
+      - name: Select isolated smoke log directory
+        run: echo "DIRGE_SMOKE_LOG_DIR=$RUNNER_TEMP/dirge-consumer-smoke" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Require provisioned .NET SDK
+        run: dotnet --info
+      - name: Package the candidate exactly as managed hosts install it
+        working-directory: candidate
+        run: python3 scripts/package-managed.py
+      - uses: actions/checkout@v4
+        with:
+          repository: Eldritch-Game-Studio/Dirge
+          ref: managed/1.0.x
+          path: dirge
+          submodules: recursive
+          persist-credentials: false
+      - id: native-pin
+        working-directory: dirge
+        run: echo "revision=$(git rev-parse HEAD:native/godot-cpp)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            dirge/native/.sconsign.dblite
+            dirge/native/godot-cpp/bin
+            dirge/native/godot-cpp/gen
+            dirge/native/godot-cpp/src/**/*.o
+          key: dirge-consumer-godot-cpp-linux-${{ steps.native-pin.outputs.revision }}-${{ hashFiles('dirge/native/SConstruct', 'dirge/native/build.sh') }}
+      - name: Build Dirge's native runtime
+        working-directory: dirge
+        run: native/build.sh
+      - name: Install stock Godot .NET
+        working-directory: dirge
+        run: scripts/install-godot.sh
+      - name: Build and smoke Dirge managed/1.0.x against the candidate package
+        working-directory: dirge
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+        run: |
+          package="$GITHUB_WORKSPACE/candidate/dist/necronomidom-managed-$SOURCE_SHA.zip"
+          export NECRONOMIDOM_PACKAGE_URL="file://$package"
+          export NECRONOMIDOM_PACKAGE_SHA256="$(sha256sum "$package" | cut -d' ' -f1)"
+          export NECRONOMIDOM_REVISION="$SOURCE_SHA"
+          scripts/fetch-deps.sh
+          scripts/smoke.sh
+          # The consumer must have compiled and run the candidate, not its locked release.
+          python3 - "$package" <<'PY'
+          import hashlib, json, sys, zipfile
+          from pathlib import Path
+          with zipfile.ZipFile(sys.argv[1]) as package:
+              files = json.loads(package.read("addon-package.json"))["files"]
+          for name, digest in files.items():
+              path = Path("addons/necronomidom") / name
+              if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                  raise SystemExit(f"Dirge did not use the candidate's {name}")
+          print(f"Dirge used all {len(files)} candidate files")
+          PY
+      - name: Native runtime smoke
+        working-directory: dirge
+        run: |
+          "$GODOT" --headless --audio-driver Dummy --path . res://native/tests/sendreturn.tscn 2>&1 | tee "$DIRGE_SMOKE_LOG_DIR/native.log"
+          grep -q '^NATIVE_TEST PASS' "$DIRGE_SMOKE_LOG_DIR/native.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: consumer-dirge-logs
+          path: ${{ env.DIRGE_SMOKE_LOG_DIR }}
+          if-no-files-found: ignore
 
   package:
     needs: [changes, docs, test, native-linux-x64, native-platforms, native-apple, native-windows-proton, smoke]

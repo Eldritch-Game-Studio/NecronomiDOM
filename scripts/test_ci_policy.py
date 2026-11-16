@@ -35,8 +35,31 @@ class PolicyTests(unittest.TestCase):
         for event, ref, paths, partial, expected in cases:
             with self.subTest(event=event, ref=ref, paths=paths, partial=partial):
                 result = ci.policy(event, ref, paths, partial)
-                self.assertEqual(result, {"mode": expected, "code": expected != "docs",
-                                          "full": expected == "full", "package": expected in {"full", "partial"}})
+                self.assertEqual({key: result[key] for key in ("mode", "code", "full", "package")},
+                                 {"mode": expected, "code": expected != "docs",
+                                  "full": expected == "full", "package": expected in {"full", "partial"}})
+                self.assertEqual(result["managed"], event == "push" and expected != "docs"
+                                 and (ref == "refs/heads/main" or ref.startswith("refs/tags/v")))
+
+    def test_backfill_publishes_only_the_managed_package(self):
+        result = ci.policy("workflow_dispatch", "refs/heads/main", [], partial=False, backfill=True)
+        self.assertEqual(result, {"mode": "backfill", "code": False, "full": False, "package": False,
+                                  "consumer": False, "managed": True})
+        self.assertFalse(ci.policy("push", "refs/heads/feature", ["addons/necronomidom/core/Dom/Node.cs"])["managed"])
+        self.assertFalse(ci.policy("pull_request", "refs/pull/1/merge", ["scripts/ci-policy.py"])["managed"])
+
+    def test_consumer_job_runs_for_prs_changing_host_compiled_source(self):
+        for path, expected in [("addons/necronomidom/core/Layout/FlowLayout.cs", True),
+                               ("addons/necronomidom/runtime/DocumentHost.cs", True),
+                               ("addons/necronomidom/vendor/AngleSharp/src/AngleSharp/Dom/Node.cs", True),
+                               ("addons/necronomidom/NecronomiDom.targets", True),
+                               ("addons/necronomidom/runtime/README.md", False),
+                               ("tests/NecronomiDom.Tests/Dom/NodeTests.cs", False),
+                               ("native/src/Extension.cs", False),
+                               ("addons/necronomidom/fonts/OFL.txt", False)]:
+            with self.subTest(path=path):
+                self.assertEqual(ci.policy("pull_request", "refs/pull/1/merge", [path])["consumer"], expected)
+                self.assertFalse(ci.policy("push", "refs/heads/main", [path])["consumer"])
 
     def test_native_and_build_inputs_require_full_pr_gate(self):
         paths = ["native/src/DocumentHost.cs", "native/tests/lifecycle.gd", "native/patches/fix.patch",

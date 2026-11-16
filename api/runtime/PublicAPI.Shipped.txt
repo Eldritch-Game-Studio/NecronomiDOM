@@ -1,0 +1,1003 @@
+#nullable enable
+const NecronomiDom.Runtime.DocumentHost.TextScaleGroup = "necronomidom_text_scale" -> string!
+const NecronomiDom.Runtime.PolygonPaintStore.SpareIsolationTargets = 8 -> int
+NecronomiDom.Runtime.AdvancedTextShaper
+NecronomiDom.Runtime.AdvancedTextShaper.AdvancedTextShaper(Godot.FontFile! font) -> void
+NecronomiDom.Runtime.AdvancedTextShaper.AdvancedTextShaper(Godot.FontFile! font, System.Collections.Generic.IReadOnlyList<string!>! fallbackPaths) -> void
+NecronomiDom.Runtime.AdvancedTextShaper.Backend.get -> string!
+NecronomiDom.Runtime.AdvancedTextShaper.BeginLayoutPass() -> void
+NecronomiDom.Runtime.AdvancedTextShaper.Caret(NecronomiDom.Paint.TextRun! text, int utf16Offset) -> Godot.Rect2
+NecronomiDom.Runtime.AdvancedTextShaper.Clear() -> void
+NecronomiDom.Runtime.AdvancedTextShaper.Dispose() -> void
+NecronomiDom.Runtime.AdvancedTextShaper.Draw(Godot.Rid canvas, NecronomiDom.Paint.TextRun! run) -> void
+NecronomiDom.Runtime.AdvancedTextShaper.GetShapedRun(NecronomiDom.Paint.TextRun! run) -> NecronomiDom.Runtime.NativeShapedTextRun
+NecronomiDom.Runtime.AdvancedTextShaper.HitTest(NecronomiDom.Paint.TextRun! text, double x) -> int
+NecronomiDom.Runtime.AdvancedTextShaper.InkBounds(NecronomiDom.Paint.TextRun! run) -> Godot.Rect2
+NecronomiDom.Runtime.AdvancedTextShaper.InlineAdvance(string! text, int offset, int fontSize, double fontWeight = 400, double letterSpacing = 0, bool italic = false) -> double
+NecronomiDom.Runtime.AdvancedTextShaper.InlineInkBounds(string! text, int fontSize, double fontWeight = 400, double letterSpacing = 0, bool italic = false) -> NecronomiDom.Paint.Rect
+NecronomiDom.Runtime.AdvancedTextShaper.Measure(string! text, int fontSize, double fontWeight = 400, double letterSpacing = 0, bool italic = false) -> NecronomiDom.Layout.TextMetrics
+NecronomiDom.Runtime.AdvancedTextShaper.Resolve(NecronomiDom.Paint.TextRun! run) -> NecronomiDom.Runtime.AdvancedTextShaper!
+NecronomiDom.Runtime.AdvancedTextShaper.Selection(NecronomiDom.Paint.TextRun! text, int start, int end) -> Godot.Vector2[]!
+NecronomiDom.Runtime.AdvancedTextShaper.ShapedRunCount.get -> int
+NecronomiDom.Runtime.BorderPaintStore
+NecronomiDom.Runtime.BorderPaintStore.BeginRebuild() -> void
+NecronomiDom.Runtime.BorderPaintStore.BorderPaintStore() -> void
+NecronomiDom.Runtime.BorderPaintStore.Create(NecronomiDom.Paint.BorderBoxRun! run, out int slot) -> Godot.CanvasItem!
+NecronomiDom.Runtime.BorderPaintStore.CreateContext(NecronomiDom.Paint.BeginTransformRun! run) -> Godot.CanvasItem!
+NecronomiDom.Runtime.BorderPaintStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.BorderPaintStore.Dispose() -> void
+NecronomiDom.Runtime.BorderPaintStore.EndRebuild() -> void
+NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadKind.Disabled = 0 -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadKind.Document = 3 -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadKind.Failed = 4 -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadKind.Styles = 2 -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadKind.Unchanged = 1 -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadResult
+NecronomiDom.Runtime.DeveloperReloadResult.Deconstruct(out NecronomiDom.Runtime.DeveloperReloadKind Kind, out string! Error) -> void
+NecronomiDom.Runtime.DeveloperReloadResult.DeveloperReloadResult() -> void
+NecronomiDom.Runtime.DeveloperReloadResult.DeveloperReloadResult(NecronomiDom.Runtime.DeveloperReloadKind Kind, string! Error = "") -> void
+NecronomiDom.Runtime.DeveloperReloadResult.DocumentReplaced.get -> bool
+NecronomiDom.Runtime.DeveloperReloadResult.Equals(NecronomiDom.Runtime.DeveloperReloadResult other) -> bool
+NecronomiDom.Runtime.DeveloperReloadResult.Error.get -> string!
+NecronomiDom.Runtime.DeveloperReloadResult.Error.init -> void
+NecronomiDom.Runtime.DeveloperReloadResult.Kind.get -> NecronomiDom.Runtime.DeveloperReloadKind
+NecronomiDom.Runtime.DeveloperReloadResult.Kind.init -> void
+NecronomiDom.Runtime.DeveloperReloadResult.Succeeded.get -> bool
+NecronomiDom.Runtime.DocumentGeometrySnapshot
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Deconstruct(out bool GuiSnapControlsToPixels, out bool Snap2DTransformsToPixel, out bool Snap2DVerticesToPixel, out NecronomiDom.Runtime.NativeCanvasAffine HostCanvas, out NecronomiDom.Runtime.NativeCanvasAffine HostDevice, out NecronomiDom.Runtime.NativeCanvasAffine PaintDevice, out float Width, out float Height) -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.DocumentGeometrySnapshot() -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.DocumentGeometrySnapshot(bool GuiSnapControlsToPixels, bool Snap2DTransformsToPixel, bool Snap2DVerticesToPixel, NecronomiDom.Runtime.NativeCanvasAffine HostCanvas, NecronomiDom.Runtime.NativeCanvasAffine HostDevice, NecronomiDom.Runtime.NativeCanvasAffine PaintDevice, float Width, float Height) -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Equals(NecronomiDom.Runtime.DocumentGeometrySnapshot other) -> bool
+NecronomiDom.Runtime.DocumentGeometrySnapshot.GuiSnapControlsToPixels.get -> bool
+NecronomiDom.Runtime.DocumentGeometrySnapshot.GuiSnapControlsToPixels.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Height.get -> float
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Height.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.HostCanvas.get -> NecronomiDom.Runtime.NativeCanvasAffine
+NecronomiDom.Runtime.DocumentGeometrySnapshot.HostCanvas.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.HostDevice.get -> NecronomiDom.Runtime.NativeCanvasAffine
+NecronomiDom.Runtime.DocumentGeometrySnapshot.HostDevice.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.PaintDevice.get -> NecronomiDom.Runtime.NativeCanvasAffine
+NecronomiDom.Runtime.DocumentGeometrySnapshot.PaintDevice.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Snap2DTransformsToPixel.get -> bool
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Snap2DTransformsToPixel.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Snap2DVerticesToPixel.get -> bool
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Snap2DVerticesToPixel.init -> void
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Width.get -> float
+NecronomiDom.Runtime.DocumentGeometrySnapshot.Width.init -> void
+NecronomiDom.Runtime.DocumentHost
+NecronomiDom.Runtime.DocumentHost.AccessibilityPublicationCount.get -> int
+NecronomiDom.Runtime.DocumentHost.AccessibilityTree.get -> NecronomiDom.Accessibility.AccessibleTree?
+NecronomiDom.Runtime.DocumentHost.AccessibleSubElementCount.get -> int
+NecronomiDom.Runtime.DocumentHost.ApplicationNavigation.get -> bool
+NecronomiDom.Runtime.DocumentHost.ApplicationNavigation.set -> void
+NecronomiDom.Runtime.DocumentHost.ApplyTextScale(float scale) -> void
+NecronomiDom.Runtime.DocumentHost.AttachInspector() -> NecronomiDom.Runtime.DocumentInspector!
+NecronomiDom.Runtime.DocumentHost.BackgroundColorTransitionProfile.get -> NecronomiDom.Layout.BackgroundColorTransitionProfile
+NecronomiDom.Runtime.DocumentHost.BackgroundColorTransitionProfile.init -> void
+NecronomiDom.Runtime.DocumentHost.BeginInspectorPick() -> void
+NecronomiDom.Runtime.DocumentHost.CancelAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.CancelAction.set -> void
+NecronomiDom.Runtime.DocumentHost.CancelRequested -> System.Action?
+NecronomiDom.Runtime.DocumentHost.CaptureGeometrySnapshot() -> NecronomiDom.Runtime.DocumentGeometrySnapshot
+NecronomiDom.Runtime.DocumentHost.CloseInspector() -> void
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateDownMatch.get -> Godot.StringName?
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateDownMatch.set -> void
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateLeftMatch.get -> Godot.StringName?
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateLeftMatch.set -> void
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateRightMatch.get -> Godot.StringName?
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateRightMatch.set -> void
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateUpMatch.get -> Godot.StringName?
+NecronomiDom.Runtime.DocumentHost.ControllerNavigateUpMatch.set -> void
+NecronomiDom.Runtime.DocumentHost.CreateBindings() -> NecronomiDom.Bindings.DocumentBindings!
+NecronomiDom.Runtime.DocumentHost.DeveloperReloaded -> NecronomiDom.Runtime.DocumentHost.DeveloperReloadedEventHandler
+NecronomiDom.Runtime.DocumentHost.DeveloperReloadedEventHandler
+NecronomiDom.Runtime.DocumentHost.DeveloperReloadEnabled.get -> bool
+NecronomiDom.Runtime.DocumentHost.DeveloperReloadEnabled.set -> void
+NecronomiDom.Runtime.DocumentHost.DeveloperReloadWatchEnabled.get -> bool
+NecronomiDom.Runtime.DocumentHost.DeveloperReloadWatchEnabled.set -> void
+NecronomiDom.Runtime.DocumentHost.DisplayList.get -> NecronomiDom.Paint.DisplayList!
+NecronomiDom.Runtime.DocumentHost.Document.get -> NecronomiDom.Dom.Document!
+NecronomiDom.Runtime.DocumentHost.DocumentHost() -> void
+NecronomiDom.Runtime.DocumentHost.DocumentPath.get -> string!
+NecronomiDom.Runtime.DocumentHost.DocumentPath.set -> void
+NecronomiDom.Runtime.DocumentHost.FallbackFontPaths.get -> string![]!
+NecronomiDom.Runtime.DocumentHost.FallbackFontPaths.set -> void
+NecronomiDom.Runtime.DocumentHost.FlushPendingLayout() -> void
+NecronomiDom.Runtime.DocumentHost.FontFamily.get -> string!
+NecronomiDom.Runtime.DocumentHost.FontFamily.set -> void
+NecronomiDom.Runtime.DocumentHost.FontPath.get -> string!
+NecronomiDom.Runtime.DocumentHost.FontPath.set -> void
+NecronomiDom.Runtime.DocumentHost.FontPaths.get -> Godot.Collections.Dictionary<string!, string!>!
+NecronomiDom.Runtime.DocumentHost.FontPaths.set -> void
+NecronomiDom.Runtime.DocumentHost.ForceReload() -> NecronomiDom.Runtime.DeveloperReloadResult
+NecronomiDom.Runtime.DocumentHost.ForegroundColorTransitionProfile.get -> NecronomiDom.Layout.ForegroundColorTransitionProfile
+NecronomiDom.Runtime.DocumentHost.ForegroundColorTransitionProfile.init -> void
+NecronomiDom.Runtime.DocumentHost.GeometryRevision.get -> int
+NecronomiDom.Runtime.DocumentHost.GeometryTransitionProfile.get -> NecronomiDom.Layout.GeometryTransitionProfile
+NecronomiDom.Runtime.DocumentHost.GeometryTransitionProfile.init -> void
+NecronomiDom.Runtime.DocumentHost.GetDocumentAccessibilityElement(NecronomiDom.Dom.Node! source) -> Godot.Rid
+NecronomiDom.Runtime.DocumentHost.GetInspectorReport() -> string!
+NecronomiDom.Runtime.DocumentHost.GetInspectorSelection() -> string!
+NecronomiDom.Runtime.DocumentHost.HasRunningBackgroundColorTransitions.get -> bool
+NecronomiDom.Runtime.DocumentHost.HasRunningForegroundColorTransitions.get -> bool
+NecronomiDom.Runtime.DocumentHost.HasRunningOpacityTransitions.get -> bool
+NecronomiDom.Runtime.DocumentHost.HasRunningScaleTransitions.get -> bool
+NecronomiDom.Runtime.DocumentHost.HasRunningWidthTransitions.get -> bool
+NecronomiDom.Runtime.DocumentHost.InputEnabled.get -> bool
+NecronomiDom.Runtime.DocumentHost.InputEnabled.set -> void
+NecronomiDom.Runtime.DocumentHost.InspectorOpen.get -> bool
+NecronomiDom.Runtime.DocumentHost.InspectorSelection.get -> string!
+NecronomiDom.Runtime.DocumentHost.IsInspectorOpen() -> bool
+NecronomiDom.Runtime.DocumentHost.LayoutRevision.get -> int
+NecronomiDom.Runtime.DocumentHost.LinearComposition.get -> bool
+NecronomiDom.Runtime.DocumentHost.LinearComposition.init -> void
+NecronomiDom.Runtime.DocumentHost.LoadDocument(string! path) -> void
+NecronomiDom.Runtime.DocumentHost.MethodName
+NecronomiDom.Runtime.DocumentHost.MethodName.MethodName() -> void
+NecronomiDom.Runtime.DocumentHost.MonotonicSeconds.get -> System.Func<double>!
+NecronomiDom.Runtime.DocumentHost.MonotonicSeconds.set -> void
+NecronomiDom.Runtime.DocumentHost.NavigateDownAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.NavigateDownAction.set -> void
+NecronomiDom.Runtime.DocumentHost.NavigateLeftAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.NavigateLeftAction.set -> void
+NecronomiDom.Runtime.DocumentHost.NavigateRightAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.NavigateRightAction.set -> void
+NecronomiDom.Runtime.DocumentHost.NavigateUpAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.NavigateUpAction.set -> void
+NecronomiDom.Runtime.DocumentHost.OpenInspector() -> void
+NecronomiDom.Runtime.DocumentHost.PaintedBoxCount.get -> int
+NecronomiDom.Runtime.DocumentHost.PaintedImageRunCount.get -> int
+NecronomiDom.Runtime.DocumentHost.PaintedTextRunCount.get -> int
+NecronomiDom.Runtime.DocumentHost.PaintRevision.get -> int
+NecronomiDom.Runtime.DocumentHost.PickInspectorElement(double x, double y) -> bool
+NecronomiDom.Runtime.DocumentHost.PointerActivationCount.get -> int
+NecronomiDom.Runtime.DocumentHost.PropertyName
+NecronomiDom.Runtime.DocumentHost.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.DocumentHost.ReloadChangedFiles() -> NecronomiDom.Runtime.DeveloperReloadResult
+NecronomiDom.Runtime.DocumentHost.ReloadCompleted -> System.Action<NecronomiDom.Runtime.DeveloperReloadResult>?
+NecronomiDom.Runtime.DocumentHost.RetainedUpdates.get -> bool
+NecronomiDom.Runtime.DocumentHost.RetainedUpdates.init -> void
+NecronomiDom.Runtime.DocumentHost.ScriptForceReload() -> int
+NecronomiDom.Runtime.DocumentHost.ScriptReloadChangedFiles() -> int
+NecronomiDom.Runtime.DocumentHost.SelectInspectorElement(string! selector) -> bool
+NecronomiDom.Runtime.DocumentHost.ShapedRunCount.get -> int
+NecronomiDom.Runtime.DocumentHost.SignalName
+NecronomiDom.Runtime.DocumentHost.SignalName.SignalName() -> void
+NecronomiDom.Runtime.DocumentHost.Styles.get -> NecronomiDom.Css.Cascade.StyleEngine!
+NecronomiDom.Runtime.DocumentHost.SubmitAction.get -> Godot.StringName!
+NecronomiDom.Runtime.DocumentHost.SubmitAction.set -> void
+NecronomiDom.Runtime.DocumentHost.TextBackend.get -> string!
+NecronomiDom.Runtime.DocumentHost.TextScale.get -> float
+NecronomiDom.Runtime.DocumentHost.ToggleInspector() -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Button.get -> Godot.MouseButton
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Button.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Deconstruct(out string! Stage, out ulong Frame, out Godot.MouseButton Button, out bool Pressed, out float Factor, out float NativeX, out float NativeY, out float LocalX, out float LocalY, out double DeltaX, out double DeltaY, out bool InputEnabled, out bool HostFocused, out bool WindowFocused, out bool NativeGuiPress, out bool DomCapture, out string? HitId, out string? HitTag, out string? FocusId) -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DeltaX.get -> double
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DeltaX.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DeltaY.get -> double
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DeltaY.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DomCapture.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.DomCapture.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Equals(NecronomiDom.Runtime.DocumentHost.WheelObservation other) -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Factor.get -> float
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Factor.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.FocusId.get -> string?
+NecronomiDom.Runtime.DocumentHost.WheelObservation.FocusId.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Frame.get -> ulong
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Frame.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HitId.get -> string?
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HitId.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HitTag.get -> string?
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HitTag.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HostFocused.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.HostFocused.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.InputEnabled.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.InputEnabled.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.LocalX.get -> float
+NecronomiDom.Runtime.DocumentHost.WheelObservation.LocalX.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.LocalY.get -> float
+NecronomiDom.Runtime.DocumentHost.WheelObservation.LocalY.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeGuiPress.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeGuiPress.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeX.get -> float
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeX.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeY.get -> float
+NecronomiDom.Runtime.DocumentHost.WheelObservation.NativeY.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Pressed.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Pressed.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Stage.get -> string!
+NecronomiDom.Runtime.DocumentHost.WheelObservation.Stage.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.WheelObservation() -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.WheelObservation(string! Stage, ulong Frame, Godot.MouseButton Button, bool Pressed, float Factor, float NativeX, float NativeY, float LocalX, float LocalY, double DeltaX, double DeltaY, bool InputEnabled, bool HostFocused, bool WindowFocused, bool NativeGuiPress, bool DomCapture, string? HitId, string? HitTag, string? FocusId) -> void
+NecronomiDom.Runtime.DocumentHost.WheelObservation.WindowFocused.get -> bool
+NecronomiDom.Runtime.DocumentHost.WheelObservation.WindowFocused.init -> void
+NecronomiDom.Runtime.DocumentHost.WheelObserved -> System.Action<NecronomiDom.Runtime.DocumentHost.WheelObservation>?
+NecronomiDom.Runtime.DocumentInspector
+NecronomiDom.Runtime.DocumentInspector.BeginPick() -> void
+NecronomiDom.Runtime.DocumentInspector.CaptureReport() -> string!
+NecronomiDom.Runtime.DocumentInspector.Close() -> void
+NecronomiDom.Runtime.DocumentInspector.DocumentInspector() -> void
+NecronomiDom.Runtime.DocumentInspector.IsOpen.get -> bool
+NecronomiDom.Runtime.DocumentInspector.MethodName
+NecronomiDom.Runtime.DocumentInspector.MethodName.MethodName() -> void
+NecronomiDom.Runtime.DocumentInspector.Open() -> void
+NecronomiDom.Runtime.DocumentInspector.Pick(double x, double y) -> bool
+NecronomiDom.Runtime.DocumentInspector.PropertyName
+NecronomiDom.Runtime.DocumentInspector.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.DocumentInspector.Report.get -> string!
+NecronomiDom.Runtime.DocumentInspector.Select(NecronomiDom.Dom.Element! element) -> void
+NecronomiDom.Runtime.DocumentInspector.SelectedElement.get -> NecronomiDom.Dom.Element?
+NecronomiDom.Runtime.DocumentInspector.SignalName
+NecronomiDom.Runtime.DocumentInspector.SignalName.SignalName() -> void
+NecronomiDom.Runtime.DocumentPaint
+NecronomiDom.Runtime.DocumentPaint.BackgroundImageRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.BorderBoxRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.BoxInstanceCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.Clear() -> void
+NecronomiDom.Runtime.DocumentPaint.DocumentPaint() -> void
+NecronomiDom.Runtime.DocumentPaint.GradientRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.ImageRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.LinearComposition.get -> bool
+NecronomiDom.Runtime.DocumentPaint.MethodName
+NecronomiDom.Runtime.DocumentPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.DocumentPaint.PaintContextCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.PolygonRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.PropertyName
+NecronomiDom.Runtime.DocumentPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.DocumentPaint.Rebuild(NecronomiDom.Paint.DisplayList! list, NecronomiDom.Runtime.INativeFontFamilies! fonts, NecronomiDom.Runtime.NativeImageSource! images) -> void
+NecronomiDom.Runtime.DocumentPaint.RebuildRevision.get -> int
+NecronomiDom.Runtime.DocumentPaint.RetainedUpdates.get -> bool
+NecronomiDom.Runtime.DocumentPaint.RetainedUpdates.set -> void
+NecronomiDom.Runtime.DocumentPaint.SignalName
+NecronomiDom.Runtime.DocumentPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.DocumentPaint.TextRunCount.get -> int
+NecronomiDom.Runtime.DocumentPaint.UpdateOpacity(int groupOrdinal, float alpha) -> void
+NecronomiDom.Runtime.DocumentPaint.UpdateTransform(int ordinal, NecronomiDom.Paint.Affine2D transform) -> void
+NecronomiDom.Runtime.DocumentPaint.WithdrawDocument() -> void
+NecronomiDom.Runtime.EllipticalClipGroup
+NecronomiDom.Runtime.EllipticalClipGroup.Geometry.get -> NecronomiDom.Paint.EllipticalClipGeometry
+NecronomiDom.Runtime.EllipticalClipGroup.MethodName
+NecronomiDom.Runtime.EllipticalClipGroup.MethodName.MethodName() -> void
+NecronomiDom.Runtime.EllipticalClipGroup.PropertyName
+NecronomiDom.Runtime.EllipticalClipGroup.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.EllipticalClipGroup.SignalName
+NecronomiDom.Runtime.EllipticalClipGroup.SignalName.SignalName() -> void
+NecronomiDom.Runtime.EllipticalClipStore
+NecronomiDom.Runtime.EllipticalClipStore.BeginRebuild() -> void
+NecronomiDom.Runtime.EllipticalClipStore.CreateContext(NecronomiDom.Paint.BeginEllipticalClipRun! run) -> NecronomiDom.Runtime.EllipticalClipGroup!
+NecronomiDom.Runtime.EllipticalClipStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.EllipticalClipStore.Dispose() -> void
+NecronomiDom.Runtime.EllipticalClipStore.EllipticalClipStore() -> void
+NecronomiDom.Runtime.EllipticalClipStore.EndRebuild() -> void
+NecronomiDom.Runtime.INativeFontFamilies
+NecronomiDom.Runtime.INativeFontFamilies.Resolve(NecronomiDom.Paint.TextRun! run) -> NecronomiDom.Runtime.AdvancedTextShaper!
+NecronomiDom.Runtime.INativePaintBounds
+NecronomiDom.Runtime.INativePaintBounds.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeAccessibleRoles
+NecronomiDom.Runtime.NativeBackgroundPaintStore
+NecronomiDom.Runtime.NativeBackgroundPaintStore.BeginRebuild() -> void
+NecronomiDom.Runtime.NativeBackgroundPaintStore.Create(NecronomiDom.Paint.BackgroundImageRun! run, NecronomiDom.Runtime.NativeImageSource! images, out int index) -> NecronomiDom.Runtime.EllipticalClipGroup!
+NecronomiDom.Runtime.NativeBackgroundPaintStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.NativeBackgroundPaintStore.Dispose() -> void
+NecronomiDom.Runtime.NativeBackgroundPaintStore.EndRebuild() -> void
+NecronomiDom.Runtime.NativeBackgroundPaintStore.NativeBackgroundPaintStore() -> void
+NecronomiDom.Runtime.NativeBorderPaint
+NecronomiDom.Runtime.NativeBorderPaint.MethodName
+NecronomiDom.Runtime.NativeBorderPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeBorderPaint.NativeBorderPaint() -> void
+NecronomiDom.Runtime.NativeBorderPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeBorderPaint.PropertyName
+NecronomiDom.Runtime.NativeBorderPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeBorderPaint.SignalName
+NecronomiDom.Runtime.NativeBorderPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeBoxPaint
+NecronomiDom.Runtime.NativeBoxPaint.MethodName
+NecronomiDom.Runtime.NativeBoxPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeBoxPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeBoxPaint.PropertyName
+NecronomiDom.Runtime.NativeBoxPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeBoxPaint.SignalName
+NecronomiDom.Runtime.NativeBoxPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeCanvasAffine
+NecronomiDom.Runtime.NativeCanvasAffine.A.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.A.init -> void
+NecronomiDom.Runtime.NativeCanvasAffine.B.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.B.init -> void
+NecronomiDom.Runtime.NativeCanvasAffine.C.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.C.init -> void
+NecronomiDom.Runtime.NativeCanvasAffine.D.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.D.init -> void
+NecronomiDom.Runtime.NativeCanvasAffine.Deconstruct(out float A, out float B, out float C, out float D, out float X, out float Y) -> void
+NecronomiDom.Runtime.NativeCanvasAffine.Equals(NecronomiDom.Runtime.NativeCanvasAffine other) -> bool
+NecronomiDom.Runtime.NativeCanvasAffine.NativeCanvasAffine() -> void
+NecronomiDom.Runtime.NativeCanvasAffine.NativeCanvasAffine(float A, float B, float C, float D, float X, float Y) -> void
+NecronomiDom.Runtime.NativeCanvasAffine.X.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.X.init -> void
+NecronomiDom.Runtime.NativeCanvasAffine.Y.get -> float
+NecronomiDom.Runtime.NativeCanvasAffine.Y.init -> void
+NecronomiDom.Runtime.NativeFontFamilies
+NecronomiDom.Runtime.NativeFontFamilies.Backend.get -> string!
+NecronomiDom.Runtime.NativeFontFamilies.BeginLayoutPass() -> void
+NecronomiDom.Runtime.NativeFontFamilies.BeginRetainedTextPass(NecronomiDom.Paint.DisplayList! list) -> void
+NecronomiDom.Runtime.NativeFontFamilies.Dispose() -> void
+NecronomiDom.Runtime.NativeFontFamilies.Metrics.get -> System.Collections.Generic.IReadOnlyDictionary<string!, NecronomiDom.Layout.ITextShaper!>!
+NecronomiDom.Runtime.NativeFontFamilies.NativeFontFamilies(string! family, string! path, Godot.Collections.Dictionary<string!, string!>! mapped, string![]! fallbacks) -> void
+NecronomiDom.Runtime.NativeFontFamilies.Refresh(NecronomiDom.Dom.Document! document, System.Action? beforeReplace = null) -> void
+NecronomiDom.Runtime.NativeFontFamilies.Resolve(NecronomiDom.Paint.TextRun! run) -> NecronomiDom.Runtime.AdvancedTextShaper!
+NecronomiDom.Runtime.NativeFontFamilies.ShapedRunCount.get -> int
+NecronomiDom.Runtime.NativeGlyphBlurPass
+NecronomiDom.Runtime.NativeGlyphBlurPass.MethodName
+NecronomiDom.Runtime.NativeGlyphBlurPass.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName
+NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurPass.SignalName
+NecronomiDom.Runtime.NativeGlyphBlurPass.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurTarget
+NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName
+NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName
+NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurTarget.SignalName
+NecronomiDom.Runtime.NativeGlyphBlurTarget.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGlyphBlurTarget.Texture.get -> Godot.ViewportTexture!
+NecronomiDom.Runtime.NativeGlyphEffectsPaint
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.NativeGlyphEffectsPaint(NecronomiDom.Paint.TextEffectsRun! run, NecronomiDom.Runtime.NativeShapedTextRun shaped) -> void
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.SignalName
+NecronomiDom.Runtime.NativeGlyphEffectsPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGlyphMaskPaint
+NecronomiDom.Runtime.NativeGlyphMaskPaint.MethodName
+NecronomiDom.Runtime.NativeGlyphMaskPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGlyphMaskPaint.PropertyName
+NecronomiDom.Runtime.NativeGlyphMaskPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGlyphMaskPaint.SignalName
+NecronomiDom.Runtime.NativeGlyphMaskPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGlyphPaintStore
+NecronomiDom.Runtime.NativeGlyphPaintStore.BeginRebuild() -> void
+NecronomiDom.Runtime.NativeGlyphPaintStore.Create(NecronomiDom.Paint.TextEffectsRun! run, NecronomiDom.Runtime.INativeFontFamilies! fonts, out int index) -> NecronomiDom.Runtime.NativeGlyphEffectsPaint!
+NecronomiDom.Runtime.NativeGlyphPaintStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.NativeGlyphPaintStore.Dispose() -> void
+NecronomiDom.Runtime.NativeGlyphPaintStore.EndRebuild() -> void
+NecronomiDom.Runtime.NativeGlyphPaintStore.NativeGlyphPaintStore() -> void
+NecronomiDom.Runtime.NativeGlyphShadowPaint
+NecronomiDom.Runtime.NativeGlyphShadowPaint.MethodName
+NecronomiDom.Runtime.NativeGlyphShadowPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGlyphShadowPaint.NativeGlyphShadowPaint() -> void
+NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName
+NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGlyphShadowPaint.SignalName
+NecronomiDom.Runtime.NativeGlyphShadowPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGradientPaint
+NecronomiDom.Runtime.NativeGradientPaint.MethodName
+NecronomiDom.Runtime.NativeGradientPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeGradientPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeGradientPaint.PaletteUploadCount.get -> int
+NecronomiDom.Runtime.NativeGradientPaint.PropertyName
+NecronomiDom.Runtime.NativeGradientPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeGradientPaint.Run.get -> NecronomiDom.Paint.GradientRun!
+NecronomiDom.Runtime.NativeGradientPaint.SignalName
+NecronomiDom.Runtime.NativeGradientPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeGradientPaintStore
+NecronomiDom.Runtime.NativeGradientPaintStore.BeginRebuild() -> void
+NecronomiDom.Runtime.NativeGradientPaintStore.Create(NecronomiDom.Paint.GradientRun! run) -> NecronomiDom.Runtime.EllipticalClipGroup!
+NecronomiDom.Runtime.NativeGradientPaintStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.NativeGradientPaintStore.Dispose() -> void
+NecronomiDom.Runtime.NativeGradientPaintStore.EndRebuild() -> void
+NecronomiDom.Runtime.NativeGradientPaintStore.LinearComposition.get -> bool
+NecronomiDom.Runtime.NativeGradientPaintStore.LinearComposition.init -> void
+NecronomiDom.Runtime.NativeGradientPaintStore.NativeGradientPaintStore() -> void
+NecronomiDom.Runtime.NativeImagePaint
+NecronomiDom.Runtime.NativeImagePaint.ConfigureCoordinates() -> void
+NecronomiDom.Runtime.NativeImagePaint.ImageTexture.get -> Godot.Texture2D!
+NecronomiDom.Runtime.NativeImagePaint.ImageTexture.set -> void
+NecronomiDom.Runtime.NativeImagePaint.MethodName
+NecronomiDom.Runtime.NativeImagePaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.NativeImagePaint.NativeImagePaint() -> void
+NecronomiDom.Runtime.NativeImagePaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.NativeImagePaint.PropertyName
+NecronomiDom.Runtime.NativeImagePaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.NativeImagePaint.RasterDestination.get -> NecronomiDom.Paint.Rect
+NecronomiDom.Runtime.NativeImagePaint.RasterDestination.set -> void
+NecronomiDom.Runtime.NativeImagePaint.Run.get -> NecronomiDom.Paint.ImageRun!
+NecronomiDom.Runtime.NativeImagePaint.Run.set -> void
+NecronomiDom.Runtime.NativeImagePaint.SignalName
+NecronomiDom.Runtime.NativeImagePaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.NativeImagePaint.Source.get -> NecronomiDom.Paint.Rect
+NecronomiDom.Runtime.NativeImagePaint.Source.set -> void
+NecronomiDom.Runtime.NativeImageSource
+NecronomiDom.Runtime.NativeImageSource.Clear() -> void
+NecronomiDom.Runtime.NativeImageSource.Dispose() -> void
+NecronomiDom.Runtime.NativeImageSource.LinearComposition.get -> bool
+NecronomiDom.Runtime.NativeImageSource.LinearComposition.init -> void
+NecronomiDom.Runtime.NativeImageSource.Load(NecronomiDom.Dom.Element! element) -> NecronomiDom.Layout.ImageResource
+NecronomiDom.Runtime.NativeImageSource.LoadBackground(NecronomiDom.Dom.Element! owner, string! sourceUrl) -> NecronomiDom.Layout.ImageResource
+NecronomiDom.Runtime.NativeImageSource.NativeImageSource() -> void
+NecronomiDom.Runtime.NativeImageSource.Texture(NecronomiDom.Paint.ImageRun! run) -> (Godot.Texture2D! Texture, NecronomiDom.Paint.Rect Source)
+NecronomiDom.Runtime.NativePositionedGlyph
+NecronomiDom.Runtime.NativePositionedGlyph.Advance.get -> double
+NecronomiDom.Runtime.NativePositionedGlyph.Advance.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Count.get -> int
+NecronomiDom.Runtime.NativePositionedGlyph.Count.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Deconstruct(out Godot.Rid Font, out int Size, out long Index, out int Start, out int End, out int Count, out int Repeat, out Godot.TextServer.GraphemeFlag Flags, out Godot.Vector2 Position, out double Advance) -> void
+NecronomiDom.Runtime.NativePositionedGlyph.End.get -> int
+NecronomiDom.Runtime.NativePositionedGlyph.End.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Equals(NecronomiDom.Runtime.NativePositionedGlyph other) -> bool
+NecronomiDom.Runtime.NativePositionedGlyph.Flags.get -> Godot.TextServer.GraphemeFlag
+NecronomiDom.Runtime.NativePositionedGlyph.Flags.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Font.get -> Godot.Rid
+NecronomiDom.Runtime.NativePositionedGlyph.Font.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Index.get -> long
+NecronomiDom.Runtime.NativePositionedGlyph.Index.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.NativePositionedGlyph() -> void
+NecronomiDom.Runtime.NativePositionedGlyph.NativePositionedGlyph(Godot.Rid Font, int Size, long Index, int Start, int End, int Count, int Repeat, Godot.TextServer.GraphemeFlag Flags, Godot.Vector2 Position, double Advance) -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Position.get -> Godot.Vector2
+NecronomiDom.Runtime.NativePositionedGlyph.Position.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Repeat.get -> int
+NecronomiDom.Runtime.NativePositionedGlyph.Repeat.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Size.get -> int
+NecronomiDom.Runtime.NativePositionedGlyph.Size.init -> void
+NecronomiDom.Runtime.NativePositionedGlyph.Start.get -> int
+NecronomiDom.Runtime.NativePositionedGlyph.Start.init -> void
+NecronomiDom.Runtime.NativeShapedTextRun
+NecronomiDom.Runtime.NativeShapedTextRun.Draw(Godot.Rid canvas, Godot.Vector2 baseline, Godot.Color color, long outline = 0) -> void
+NecronomiDom.Runtime.NativeShapedTextRun.Equals(NecronomiDom.Runtime.NativeShapedTextRun other) -> bool
+NecronomiDom.Runtime.NativeShapedTextRun.FractionalTracking.get -> bool
+NecronomiDom.Runtime.NativeShapedTextRun.Glyphs.get -> System.ReadOnlySpan<NecronomiDom.Runtime.NativePositionedGlyph>
+NecronomiDom.Runtime.NativeShapedTextRun.NativeShapedTextRun() -> void
+NecronomiDom.Runtime.NativeShapedTextRun.PreserveHexCodes.get -> bool
+NecronomiDom.Runtime.NativeShapedTextRun.Server.get -> Godot.TextServer!
+NecronomiDom.Runtime.NativeShapedTextRun.ShapedRid.get -> Godot.Rid
+NecronomiDom.Runtime.PolygonClipGroup
+NecronomiDom.Runtime.PolygonClipGroup.MethodName
+NecronomiDom.Runtime.PolygonClipGroup.MethodName.MethodName() -> void
+NecronomiDom.Runtime.PolygonClipGroup.PropertyName
+NecronomiDom.Runtime.PolygonClipGroup.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.PolygonClipGroup.SignalName
+NecronomiDom.Runtime.PolygonClipGroup.SignalName.SignalName() -> void
+NecronomiDom.Runtime.PolygonComposite
+NecronomiDom.Runtime.PolygonComposite.CompositeMaterial.get -> Godot.ShaderMaterial!
+NecronomiDom.Runtime.PolygonComposite.Content.get -> Godot.CanvasItem!
+NecronomiDom.Runtime.PolygonComposite.DevicePaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.PolygonComposite.InvalidateAncestorTargets() -> void
+NecronomiDom.Runtime.PolygonComposite.LinearTarget.get -> bool
+NecronomiDom.Runtime.PolygonComposite.LinearTarget.init -> void
+NecronomiDom.Runtime.PolygonComposite.MethodName
+NecronomiDom.Runtime.PolygonComposite.MethodName.MethodName() -> void
+NecronomiDom.Runtime.PolygonComposite.PolygonComposite() -> void
+NecronomiDom.Runtime.PolygonComposite.PropertyName
+NecronomiDom.Runtime.PolygonComposite.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.PolygonComposite.SignalName
+NecronomiDom.Runtime.PolygonComposite.SignalName.SignalName() -> void
+NecronomiDom.Runtime.PolygonComposite.TargetCapacity.get -> Godot.Vector2I
+NecronomiDom.Runtime.PolygonComposite.TargetReleaseCount.get -> int
+NecronomiDom.Runtime.PolygonComposite.TargetResizeCount.get -> int
+NecronomiDom.Runtime.PolygonComposite.TargetUpdateCount.get -> int
+NecronomiDom.Runtime.PolygonOpacityGroup
+NecronomiDom.Runtime.PolygonOpacityGroup.MethodName
+NecronomiDom.Runtime.PolygonOpacityGroup.MethodName.MethodName() -> void
+NecronomiDom.Runtime.PolygonOpacityGroup.PropertyName
+NecronomiDom.Runtime.PolygonOpacityGroup.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.PolygonOpacityGroup.SignalName
+NecronomiDom.Runtime.PolygonOpacityGroup.SignalName.SignalName() -> void
+NecronomiDom.Runtime.PolygonPaint
+NecronomiDom.Runtime.PolygonPaint.IsSingleFill.get -> bool
+NecronomiDom.Runtime.PolygonPaint.MethodName
+NecronomiDom.Runtime.PolygonPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.PolygonPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.PolygonPaint.PropertyName
+NecronomiDom.Runtime.PolygonPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.PolygonPaint.SignalName
+NecronomiDom.Runtime.PolygonPaint.SignalName.SignalName() -> void
+NecronomiDom.Runtime.PolygonPaint.SurfaceBuildCount.get -> int
+NecronomiDom.Runtime.PolygonPaint.VertexUploadCount.get -> int
+NecronomiDom.Runtime.PolygonPaintStore
+NecronomiDom.Runtime.PolygonPaintStore.BeginRebuild() -> void
+NecronomiDom.Runtime.PolygonPaintStore.Content(Godot.CanvasItem! context) -> Godot.CanvasItem!
+NecronomiDom.Runtime.PolygonPaintStore.Create(NecronomiDom.Paint.PolygonRun! run) -> Godot.CanvasItem!
+NecronomiDom.Runtime.PolygonPaintStore.CreateContext(NecronomiDom.Paint.PaintRun! begin) -> Godot.CanvasItem!
+NecronomiDom.Runtime.PolygonPaintStore.DetachBeforeClear() -> void
+NecronomiDom.Runtime.PolygonPaintStore.Dispose() -> void
+NecronomiDom.Runtime.PolygonPaintStore.EndRebuild() -> void
+NecronomiDom.Runtime.PolygonPaintStore.PolygonPaintStore() -> void
+NecronomiDom.Runtime.RoundedRectClipGroup
+NecronomiDom.Runtime.RoundedRectClipGroup.MethodName
+NecronomiDom.Runtime.RoundedRectClipGroup.MethodName.MethodName() -> void
+NecronomiDom.Runtime.RoundedRectClipGroup.PropertyName
+NecronomiDom.Runtime.RoundedRectClipGroup.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.RoundedRectClipGroup.SignalName
+NecronomiDom.Runtime.RoundedRectClipGroup.SignalName.SignalName() -> void
+NecronomiDom.Runtime.ShapedTextPaint
+NecronomiDom.Runtime.ShapedTextPaint.MethodName
+NecronomiDom.Runtime.ShapedTextPaint.MethodName.MethodName() -> void
+NecronomiDom.Runtime.ShapedTextPaint.PaintBounds.get -> Godot.Rect2
+NecronomiDom.Runtime.ShapedTextPaint.PropertyName
+NecronomiDom.Runtime.ShapedTextPaint.PropertyName.PropertyName() -> void
+NecronomiDom.Runtime.ShapedTextPaint.Run.get -> NecronomiDom.Paint.TextRun!
+NecronomiDom.Runtime.ShapedTextPaint.Shaper.get -> NecronomiDom.Runtime.AdvancedTextShaper!
+NecronomiDom.Runtime.ShapedTextPaint.SignalName
+NecronomiDom.Runtime.ShapedTextPaint.SignalName.SignalName() -> void
+override NecronomiDom.Runtime.DeveloperReloadResult.GetHashCode() -> int
+override NecronomiDom.Runtime.DocumentGeometrySnapshot.GetHashCode() -> int
+override NecronomiDom.Runtime.DocumentHost._EnterTree() -> void
+override NecronomiDom.Runtime.DocumentHost._ExitTree() -> void
+override NecronomiDom.Runtime.DocumentHost._GetCursorShape(Godot.Vector2 atPosition) -> int
+override NecronomiDom.Runtime.DocumentHost._GetFocusedAccessibilityElement() -> Godot.Rid
+override NecronomiDom.Runtime.DocumentHost._GuiInput(Godot.InputEvent! input) -> void
+override NecronomiDom.Runtime.DocumentHost._HasPoint(Godot.Vector2 point) -> bool
+override NecronomiDom.Runtime.DocumentHost._Input(Godot.InputEvent! input) -> void
+override NecronomiDom.Runtime.DocumentHost._Notification(int what) -> void
+override NecronomiDom.Runtime.DocumentHost._Process(double delta) -> void
+override NecronomiDom.Runtime.DocumentHost._Ready() -> void
+override NecronomiDom.Runtime.DocumentHost.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.DocumentHost.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.DocumentHost.HasGodotClassSignal(in Godot.NativeInterop.godot_string_name signal) -> bool
+override NecronomiDom.Runtime.DocumentHost.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.DocumentHost.RaiseGodotClassSignalCallbacks(in Godot.NativeInterop.godot_string_name signal, Godot.NativeInterop.NativeVariantPtrArgs args) -> void
+override NecronomiDom.Runtime.DocumentHost.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.DocumentHost.WheelObservation.GetHashCode() -> int
+override NecronomiDom.Runtime.DocumentInspector._ExitTree() -> void
+override NecronomiDom.Runtime.DocumentInspector._Input(Godot.InputEvent! input) -> void
+override NecronomiDom.Runtime.DocumentInspector._Process(double delta) -> void
+override NecronomiDom.Runtime.DocumentInspector._Ready() -> void
+override NecronomiDom.Runtime.DocumentInspector.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.DocumentInspector.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.DocumentInspector.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.DocumentInspector.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.DocumentPaint._ExitTree() -> void
+override NecronomiDom.Runtime.DocumentPaint._Notification(int what) -> void
+override NecronomiDom.Runtime.DocumentPaint.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.DocumentPaint.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.DocumentPaint.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.DocumentPaint.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeBorderPaint.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeCanvasAffine.GetHashCode() -> int
+override NecronomiDom.Runtime.NativeGlyphBlurPass._Draw() -> void
+override NecronomiDom.Runtime.NativeGlyphBlurPass._Notification(int what) -> void
+override NecronomiDom.Runtime.NativeGlyphBlurTarget._Notification(int what) -> void
+override NecronomiDom.Runtime.NativeGlyphBlurTarget._Ready() -> void
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint._Draw() -> void
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint._Notification(int what) -> void
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint._Ready() -> void
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.NativeGlyphEffectsPaint.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeGlyphMaskPaint._Draw() -> void
+override NecronomiDom.Runtime.NativeGlyphShadowPaint._Draw() -> void
+override NecronomiDom.Runtime.NativeGlyphShadowPaint._Notification(int what) -> void
+override NecronomiDom.Runtime.NativeGlyphShadowPaint.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeGlyphShadowPaint.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.NativeGlyphShadowPaint.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.NativeGlyphShadowPaint.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeGradientPaint._Draw() -> void
+override NecronomiDom.Runtime.NativeGradientPaint._Notification(int what) -> void
+override NecronomiDom.Runtime.NativeImagePaint._Draw() -> void
+override NecronomiDom.Runtime.NativeImagePaint.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativeImagePaint.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.NativeImagePaint.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.NativeImagePaint.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.NativePositionedGlyph.GetHashCode() -> int
+override NecronomiDom.Runtime.NativeShapedTextRun.GetHashCode() -> int
+override NecronomiDom.Runtime.PolygonClipGroup._Notification(int what) -> void
+override NecronomiDom.Runtime.PolygonComposite._Draw() -> void
+override NecronomiDom.Runtime.PolygonComposite._Notification(int what) -> void
+override NecronomiDom.Runtime.PolygonComposite.GetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, out Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.PolygonComposite.HasGodotClassMethod(in Godot.NativeInterop.godot_string_name method) -> bool
+override NecronomiDom.Runtime.PolygonComposite.InvokeGodotClassMethod(in Godot.NativeInterop.godot_string_name method, Godot.NativeInterop.NativeVariantPtrArgs args, out Godot.NativeInterop.godot_variant ret) -> bool
+override NecronomiDom.Runtime.PolygonComposite.SetGodotClassPropertyValue(in Godot.NativeInterop.godot_string_name name, in Godot.NativeInterop.godot_variant value) -> bool
+override NecronomiDom.Runtime.PolygonPaint._Draw() -> void
+override NecronomiDom.Runtime.PolygonPaint._Notification(int what) -> void
+override NecronomiDom.Runtime.ShapedTextPaint._Draw() -> void
+static NecronomiDom.Runtime.BorderPaintStore.ToNative(NecronomiDom.Paint.Affine2D matrix) -> Godot.Transform2D
+static NecronomiDom.Runtime.DeveloperReloadResult.operator !=(NecronomiDom.Runtime.DeveloperReloadResult left, NecronomiDom.Runtime.DeveloperReloadResult right) -> bool
+static NecronomiDom.Runtime.DeveloperReloadResult.operator ==(NecronomiDom.Runtime.DeveloperReloadResult left, NecronomiDom.Runtime.DeveloperReloadResult right) -> bool
+static NecronomiDom.Runtime.DocumentGeometrySnapshot.operator !=(NecronomiDom.Runtime.DocumentGeometrySnapshot left, NecronomiDom.Runtime.DocumentGeometrySnapshot right) -> bool
+static NecronomiDom.Runtime.DocumentGeometrySnapshot.operator ==(NecronomiDom.Runtime.DocumentGeometrySnapshot left, NecronomiDom.Runtime.DocumentGeometrySnapshot right) -> bool
+static NecronomiDom.Runtime.DocumentHost.DocumentLive -> System.Action<NecronomiDom.Runtime.DocumentHost!>?
+static NecronomiDom.Runtime.DocumentHost.DocumentWithdrawing -> System.Action<NecronomiDom.Runtime.DocumentHost!>?
+static NecronomiDom.Runtime.DocumentHost.LiveDocumentHosts.get -> System.Collections.Generic.IReadOnlyCollection<NecronomiDom.Runtime.DocumentHost!>!
+static NecronomiDom.Runtime.DocumentHost.WheelObservation.operator !=(NecronomiDom.Runtime.DocumentHost.WheelObservation left, NecronomiDom.Runtime.DocumentHost.WheelObservation right) -> bool
+static NecronomiDom.Runtime.DocumentHost.WheelObservation.operator ==(NecronomiDom.Runtime.DocumentHost.WheelObservation left, NecronomiDom.Runtime.DocumentHost.WheelObservation right) -> bool
+static NecronomiDom.Runtime.NativeAccessibleRoles.Description(NecronomiDom.Accessibility.AccessibleNode! node) -> string!
+static NecronomiDom.Runtime.NativeAccessibleRoles.Map(string! role) -> Godot.AccessibilityServer.AccessibilityRole
+static NecronomiDom.Runtime.NativeCanvasAffine.operator !=(NecronomiDom.Runtime.NativeCanvasAffine left, NecronomiDom.Runtime.NativeCanvasAffine right) -> bool
+static NecronomiDom.Runtime.NativeCanvasAffine.operator ==(NecronomiDom.Runtime.NativeCanvasAffine left, NecronomiDom.Runtime.NativeCanvasAffine right) -> bool
+static NecronomiDom.Runtime.NativePositionedGlyph.operator !=(NecronomiDom.Runtime.NativePositionedGlyph left, NecronomiDom.Runtime.NativePositionedGlyph right) -> bool
+static NecronomiDom.Runtime.NativePositionedGlyph.operator ==(NecronomiDom.Runtime.NativePositionedGlyph left, NecronomiDom.Runtime.NativePositionedGlyph right) -> bool
+static NecronomiDom.Runtime.NativeShapedTextRun.operator !=(NecronomiDom.Runtime.NativeShapedTextRun left, NecronomiDom.Runtime.NativeShapedTextRun right) -> bool
+static NecronomiDom.Runtime.NativeShapedTextRun.operator ==(NecronomiDom.Runtime.NativeShapedTextRun left, NecronomiDom.Runtime.NativeShapedTextRun right) -> bool
+virtual NecronomiDom.Runtime.DocumentHost.DeveloperReloadedEventHandler.Invoke(int kind, bool documentReplaced, string! error) -> void
+virtual NecronomiDom.Runtime.PolygonComposite.ClipBounds.get -> Godot.Rect2?
+virtual NecronomiDom.Runtime.PolygonComposite.ConfigureDeviceCoverage() -> void
+virtual NecronomiDom.Runtime.PolygonComposite.EmptyClip.get -> bool
+~NecronomiDom.Runtime.DocumentHost.EmitSignalDeveloperReloaded(int kind, bool documentReplaced, string error) -> void
+~override NecronomiDom.Runtime.DeveloperReloadResult.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.DeveloperReloadResult.ToString() -> string
+~override NecronomiDom.Runtime.DocumentGeometrySnapshot.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.DocumentGeometrySnapshot.ToString() -> string
+~override NecronomiDom.Runtime.DocumentHost.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.DocumentHost.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.DocumentHost.WheelObservation.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.DocumentHost.WheelObservation.ToString() -> string
+~override NecronomiDom.Runtime.DocumentInspector.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.DocumentInspector.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.DocumentPaint.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.DocumentPaint.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeBorderPaint.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeBorderPaint.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeCanvasAffine.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.NativeCanvasAffine.ToString() -> string
+~override NecronomiDom.Runtime.NativeGlyphEffectsPaint.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeGlyphEffectsPaint.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeGlyphShadowPaint.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeGlyphShadowPaint.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeImagePaint.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativeImagePaint.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.NativePositionedGlyph.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.NativePositionedGlyph.ToString() -> string
+~override NecronomiDom.Runtime.NativeShapedTextRun.Equals(object obj) -> bool
+~override NecronomiDom.Runtime.NativeShapedTextRun.ToString() -> string
+~override NecronomiDom.Runtime.PolygonComposite.RestoreGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~override NecronomiDom.Runtime.PolygonComposite.SaveGodotObjectData(Godot.Bridge.GodotSerializationInfo info) -> void
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._EnterTree -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._ExitTree -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._GetCursorShape -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._GetFocusedAccessibilityElement -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._GuiInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._HasPoint -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._Input -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._Process -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName._Ready -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ApplyTextScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.AttachInspector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.BeginInspectorPick -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.BindOpacityGroups -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CancelIntent -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CaptureDeveloperReloadBaseline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CaptureGeometryWidths -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ClearDocumentBackgroundColor -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ClearDocumentForegroundColor -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ClearDocumentGeometry -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ClearDocumentOpacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ClearTextControls -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CloseInspector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CloseUpdateTimingOutput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.CreateDocumentResources -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.DispatchGeometryEvents -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.DisposeInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.FitTextScaleParent -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.FitViewport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.FlushPendingLayout -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.FocusDocumentAccessibility -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.GetInspectorReport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.GetInspectorSelection -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.HandleScrollWheel -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.Held -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.InitializeInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.IsInspectorOpen -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.LoadDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.LostHostFocus -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.MarkDirty -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.MountDocumentAccessibility -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.MountResources -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.MountTextScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.NavigationControllerConnectionChanged -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ObserveControllerNavigation -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ObserveScriptModifiers -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ObserveWheel -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.OnDocumentLive -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.OnDocumentResourcesWithdrawn -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.OnDocumentWithdrawn -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.OpacityPhaseEnded -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.OpenInspector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.PickInspectorElement -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.PointerExited -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ProcessDeveloperReload -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ProcessDocumentInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.PublishLiveDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.Read -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReadControllerNavigation -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReadDeveloperSource -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReadNavigation -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReadSource -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReconcileBackgroundColorStyles -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReconcileForegroundColorStyles -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReconcileGeometryStyles -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ReconcileOpacityStyles -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.RefreshTextScroll -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ResetInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.RetractLiveDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ScriptForceReload -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ScriptReloadChangedFiles -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.SelectInspectorElement -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.StopDeveloperReloadWatch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.Strength -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.SynchronizeDocumentAccessibility -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.ToggleInspector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.TryUpdateInlineCompositor -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.UpdateOpacityGroups -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.UpdateTextCaret -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.WithdrawDocumentAccessibility -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.WithdrawDocumentResources -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.MethodName.WithdrawTextScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._accessibilityActive -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._accessibleLayout -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._authoredScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._cancelDown -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._developerInspector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._developerReloadElapsed -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._developerReloadEnabled -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._developerReloadRunning -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._dirty -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._entryActive -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._fittedViewport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._inputEnabled -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._inputWindow -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._lastAutomaticReloadError -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._nativeGuiPress -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._navigation -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._paint -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._readyInitialized -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._repeatRemaining -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._resumeAfterAssemblyReload -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._scaleParent -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._submitDown -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._textScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._updateTimingOutputFailed -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._waitForRelease -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName._wasAvailable -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.AccessibilityPublicationCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.AccessibleSubElementCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ApplicationNavigation -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.Available -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.BackgroundColorTransitionProfile -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.CancelAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ControllerNavigateDownMatch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ControllerNavigateLeftMatch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ControllerNavigateRightMatch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ControllerNavigateUpMatch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.DeveloperReloadEnabled -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.DeveloperReloadWatchEnabled -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.DocumentPath -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.EditedScenePreview -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.FallbackFontPaths -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.FontFamily -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.FontPath -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.FontPaths -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ForegroundColorTransitionProfile -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.GeometryRevision -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.GeometryTransitionProfile -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.HasRunningBackgroundColorTransitions -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.HasRunningForegroundColorTransitions -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.HasRunningOpacityTransitions -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.HasRunningScaleTransitions -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.HasRunningWidthTransitions -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.InputEnabled -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.InspectorOpen -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.InspectorSelection -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.LayoutRevision -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.LinearComposition -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavDown -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavigateDownAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavigateLeftAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavigateRightAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavigateUpAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavLeft -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavRight -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.NavUp -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.PaintedBoxCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.PaintedImageRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.PaintedTextRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.PaintRevision -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.PointerActivationCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.RetainedUpdates -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.ShapedRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.SubmitAction -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.TextBackend -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.PropertyName.TextScale -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentHost.SignalName.DeveloperReloaded -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName._ExitTree -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName._Input -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName._Process -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName._Ready -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.AddTextTab -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.AncestryText -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.Attach -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.BeginPick -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.BuildControls -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.CaptureReport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.Close -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.DrawHighlight -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.FinishPick -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.FitDock -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.Open -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.Pick -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.Refresh -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.MethodName.SetText -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._ancestry -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._boxes -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._built -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._computed -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._dock -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._elapsed -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._host -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._pickHint -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._picking -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._rules -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._savedFocusVisible -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._savedHostFocus -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._savedInput -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._savedNativeFocus -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._selector -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._shield -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._state -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._title -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName._variables -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName.IsOpen -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentInspector.PropertyName.Report -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName._ExitTree -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.BindRetained -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.BoxCustomData -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.Clear -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.CompositionParent -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.EndStoreRebuild -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.EnsureLinearDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.FitRetainedTargets -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.MarkRetainedContentChanged -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.ReleaseTargets -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.RestoreTargets -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.UpdateOpacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.MethodName.WithdrawDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._linearDocument -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._sceneCopy -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._stylePixels -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._styleRowCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._styleTexture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName._targetsReleased -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.BackgroundImageRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.BorderBoxRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.BoxInstanceCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.GradientRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.ImageRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.LinearComposition -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.PaintContextCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.PolygonRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.RebuildRevision -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.RetainedUpdates -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.TargetsHidden -> Godot.StringName
+~static readonly NecronomiDom.Runtime.DocumentPaint.PropertyName.TextRunCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.EllipticalClipGroup.MethodName.ConfigureDeviceCoverage -> Godot.StringName
+~static readonly NecronomiDom.Runtime.EllipticalClipGroup.MethodName.Float -> Godot.StringName
+~static readonly NecronomiDom.Runtime.EllipticalClipGroup.PropertyName._initialized -> Godot.StringName
+~static readonly NecronomiDom.Runtime.EllipticalClipGroup.PropertyName.EmptyClip -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeBorderPaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeBoxPaint.PropertyName.Batch -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeBoxPaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.MethodName.Update -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName._material -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName._rect -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName._sigma -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurPass.PropertyName._source -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName._Ready -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName.Disable -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.MethodName.Update -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName._pass -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName._size -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName._target -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName._world -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphBlurTarget.PropertyName.Texture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName._Ready -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName.BlurSupport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName.Float -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName.Merge -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.MethodName.OutlineUnits -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._capacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._glyphMask -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._mask -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._outline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._texture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName._world -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphEffectsPaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphMaskPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphMaskPaint.PropertyName._baseline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphMaskPaint.PropertyName._outline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._baseline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._color -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._maskBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._material -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._outline -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._sigma -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._sourceRect -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._texel -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._texture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGlyphShadowPaint.PropertyName._usesBlurMaterial -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName._linear -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName._material -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName._palette -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName.OwnsRectEdge -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeGradientPaint.PropertyName.PaletteUploadCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeImagePaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeImagePaint.MethodName.ConfigureCoordinates -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeImagePaint.PropertyName.ImageTexture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.NativeImagePaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonClipGroup.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonClipGroup.PropertyName._clipBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonClipGroup.PropertyName._edges -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonClipGroup.PropertyName._image -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonClipGroup.PropertyName.EmptyClip -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.BeginRebuild -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.ConfigureDeviceCoverage -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.FitTarget -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.InvalidateAncestorTargets -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.MeasurePaint -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.ReleaseTarget -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.RequestCapture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._capacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._captureTransform -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._colors -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._content -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._contentDirty -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._deviceBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._deviceTransform -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._hasPaint -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._logicalBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._measured -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._parentTexture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._parentViewport -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._quad -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._target -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._targetHdr -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._texture -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._uv -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._world -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.CompositeMaterial -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.Content -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.DevicePaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.EmptyClip -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.LinearTarget -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.TargetCapacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.TargetReleaseCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.TargetResizeCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.TargetUpdateCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonOpacityGroup.MethodName.Update -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonOpacityGroup.PropertyName._opacity -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.MethodName._Notification -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.MethodName.FiniteFloat -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.MethodName.WriteSingleFillColor -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._empty -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._fill -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._mesh -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._paintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._singleFill -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._singleFillEdgeCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._vertexBytes -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName._vertexCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName.IsSingleFill -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName.PaintBounds -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName.SurfaceBuildCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.PolygonPaint.PropertyName.VertexUploadCount -> Godot.StringName
+~static readonly NecronomiDom.Runtime.RoundedRectClipGroup.PropertyName._radius -> Godot.StringName
+~static readonly NecronomiDom.Runtime.RoundedRectClipGroup.PropertyName.EmptyClip -> Godot.StringName
+~static readonly NecronomiDom.Runtime.ShapedTextPaint.MethodName._Draw -> Godot.StringName
+~static readonly NecronomiDom.Runtime.ShapedTextPaint.PropertyName.PaintBounds -> Godot.StringName
