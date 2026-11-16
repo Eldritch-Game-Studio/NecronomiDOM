@@ -1,6 +1,6 @@
 namespace NecronomiDom
 {
-    /// <summary>Severity of an import diagnostic. Parse errors never change the tree a browser would build; they are warnings.</summary>
+    /// <summary>Severity of an import diagnostic. Parse errors never change the tree a browser would build, so they are warnings.</summary>
     public enum WebDiagnosticSeverity { Warning, Error }
 
     /// <summary>
