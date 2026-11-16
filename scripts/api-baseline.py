@@ -23,12 +23,16 @@ NULLABLE = "#nullable enable"
 DIAGNOSTIC = re.compile(
     r": (?:error|warning) (?P<id>RS0016|RS0017): Symbol '(?P<symbol>.*)' is "
     r"(?:not part of the declared public API|part of the declared (?:public )?API, but).*\[(?P<project>[^\]]+)\]\s*$")
+# Every rule api/PublicApi.targets enforces.
+API_RULE = re.compile(r": (?:error|warning) RS00(?:16|17|24|25|36|37|48|50):")
 
 
 def build() -> tuple[int, str]:
-    # One invocation checks both: the global property flows to the core ProjectReference.
-    command = ["dotnet", "build", str(PROJECT), "-nologo", "--disable-build-servers", "-m:1", "-nr:false",
-               "-p:UseSharedCompilation=false", "-p:NecronomiDomApiCheck=true", "-clp:NoSummary"]
+    # One invocation checks both: the global properties flow to the core ProjectReference. API rules stay warnings so a
+    # core difference cannot stop the runtime from compiling; a full rebuild re-reports every warning.
+    command = ["dotnet", "build", str(PROJECT), "-nologo", "--disable-build-servers", "--no-incremental", "-m:1",
+               "-nr:false", "-p:UseSharedCompilation=false", "-p:NecronomiDomApiCheck=true",
+               "-p:NecronomiDomApiDiagnostics=warning", "-clp:NoSummary"]
     result = subprocess.run(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     return result.returncode, result.stdout
 
@@ -59,7 +63,7 @@ def diagnostics(output: str) -> dict[Path, dict[str, set[str]]]:
 
 def check() -> int:
     status, output = build()
-    if status == 0:
+    if status == 0 and not API_RULE.search(output):
         print("Public API matches api/core and api/runtime.")
         return 0
     print(output)

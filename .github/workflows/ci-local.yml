@@ -384,7 +384,7 @@ jobs:
           xvfb-run -a -s "-screen 0 1440x1000x24" "$GODOT_MONO" --path . --rendering-method gl_compatibility \
             --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
 
-  # Managed hosts (Dirge, Kraken's Keg, God Complex) compile this source package; it needs no native binaries, so
+  # Managed hosts (Dirge, and through Dirge Kraken's Keg) compile this source package; it needs no native binaries, so
   # every qualified main push and v* tag publishes it, and a manual dispatch can backfill an earlier main commit.
   managed-package:
     needs: [changes, docs, test, api, smoke]
