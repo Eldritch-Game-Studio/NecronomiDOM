@@ -1,1 +1,3 @@
 #nullable enable
+virtual NecronomiDom.Runtime.PolygonComposite.DeviceCoverageChanged(Godot.Rect2 local, bool painted) -> void
+~static readonly NecronomiDom.Runtime.PolygonComposite.MethodName.DeviceCoverageChanged -> Godot.StringName

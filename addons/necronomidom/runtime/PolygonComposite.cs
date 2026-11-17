@@ -44,6 +44,10 @@ public partial class PolygonComposite : Node2D
     protected virtual Rect2? ClipBounds => null;
     protected virtual bool EmptyClip => false;
     protected virtual void ConfigureDeviceCoverage() { }
+    /// <summary>Called whenever this frame's device coverage is decided: <paramref name="local"/> is the drawn quad's
+    /// bounds in this item's local space (device paint bounds plus the one-pixel fringe), meaningful only when
+    /// <paramref name="painted"/>. A composite that reads the destination uses it to bound that read.</summary>
+    protected virtual void DeviceCoverageChanged(Rect2 local, bool painted) { }
     public CanvasItem Content => _content;
     public Rect2 DevicePaintBounds => _deviceBounds;
     public Vector2I TargetCapacity => _capacity;
@@ -124,6 +128,7 @@ public partial class PolygonComposite : Node2D
             _deviceBounds = default;
             _contentDirty = true;
             _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
+            DeviceCoverageChanged(default, false);
             return;
         }
         // Includes actual viewport/window/stretch/global-canvas and ancestor affine
@@ -163,7 +168,8 @@ public partial class PolygonComposite : Node2D
         {
             Visible = false; _deviceBounds = default;
             _contentDirty = true;
-            _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled; return;
+            _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
+            DeviceCoverageChanged(default, false); return;
         }
         // One physical pixel covers raster/coverage fringe, independent of CSS scale or DPR.
         Vector2 origin = new(MathF.Floor(painted.Position.X) - 1, MathF.Floor(painted.Position.Y) - 1);
@@ -189,7 +195,9 @@ public partial class PolygonComposite : Node2D
         _quad[3] = inverse * new Vector2(origin.X, end.Y);
         Vector2 extent = next.Size / new Vector2(_capacity.X, _capacity.Y);
         _uv[0] = Vector2.Zero; _uv[1] = new Vector2(extent.X, 0); _uv[2] = extent; _uv[3] = new Vector2(0, extent.Y);
-        RenderingServer.CanvasItemSetCustomRect(GetCanvasItem(), true, inverse * next);
+        Rect2 local = inverse * next;
+        RenderingServer.CanvasItemSetCustomRect(GetCanvasItem(), true, local);
+        DeviceCoverageChanged(local, true);
         // SubViewport render dependencies are child texture -> parent texture -> window.
         // Request only dirty rebuild frames, never a continuously redrawn isolation target.
         bool captureNeeded = _contentDirty || captureChanged;
@@ -204,6 +212,7 @@ public partial class PolygonComposite : Node2D
         _measured = false; _hasPaint = false; _deviceBounds = default; _contentDirty = true;
         _target.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
         QueueRedraw();
+        DeviceCoverageChanged(default, false);
         if (_capacity == MinimumCapacity) return;
         _capacity = MinimumCapacity; _target.Size = _capacity; TargetReleaseCount++;
     }
