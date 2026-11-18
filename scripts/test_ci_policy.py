@@ -14,32 +14,33 @@ SPEC.loader.exec_module(ci)
 class PolicyTests(unittest.TestCase):
     def test_event_path_matrix(self):
         cases = [
-            ("pull_request", "refs/pull/1/merge", ["README.md"], False, "docs"),
-            ("push", "refs/heads/main", ["docs/images/ui.gif", "native/README.md"], False, "docs"),
-            ("pull_request", "refs/pull/1/merge", ["native/README.md"], False, "docs"),
-            ("pull_request", "refs/pull/1/merge", ["README.md", ".gitattributes"], False, "full"),
-            ("push", "refs/heads/main", [".gitignore"], False, "fast"),
-            ("pull_request", "refs/pull/1/merge", ["addons/necronomidom/core/Layout/FlowLayout.cs"], False, "fast"),
-            ("push", "refs/heads/main", ["native/build.sh"], False, "fast"),
-            ("push", "refs/heads/main", ["README.md", "unknown/new.code"], False, "fast"),
-            ("pull_request", "refs/pull/1/merge", ["README.md", "native/godot-dotnet.lock"], False, "full"),
-            ("pull_request", "refs/pull/1/merge", ["scripts/windows-proton.py"], True, "full"),
-            ("push", "refs/tags/v1.2.3", ["README.md"], False, "full"),
-            ("push", "refs/tags/v1.2.3", [], True, "full"),
-            ("workflow_dispatch", "refs/heads/main", [], False, "full"),
-            ("workflow_dispatch", "refs/heads/main", [], True, "partial"),
-            ("workflow_dispatch", "refs/tags/v1.2.3", [], True, "partial"),
-            ("workflow_dispatch", "refs/tags/v1.2.3", [], False, "full"),
-            ("push", "refs/heads/main", [], False, "fast"),
+            ("pull_request", "refs/pull/1/merge", ["README.md"], False, "docs", False),
+            ("push", "refs/heads/main", ["docs/images/ui.gif", "native/README.md"], False, "docs", False),
+            ("pull_request", "refs/pull/1/merge", ["native/README.md"], False, "docs", False),
+            ("pull_request", "refs/pull/1/merge", ["README.md", ".gitattributes"], False, "full", False),
+            ("push", "refs/heads/main", [".gitignore"], False, "fast", True),
+            ("pull_request", "refs/pull/1/merge", ["addons/necronomidom/core/Layout/FlowLayout.cs"], False, "fast", False),
+            ("push", "refs/heads/main", ["native/build.sh"], False, "fast", True),
+            ("push", "refs/heads/main", ["README.md", "unknown/new.code"], False, "fast", True),
+            ("pull_request", "refs/pull/1/merge", ["README.md", "native/godot-dotnet.lock"], False, "full", False),
+            ("pull_request", "refs/pull/1/merge", ["scripts/windows-proton.py"], True, "full", False),
+            ("push", "refs/tags/v1.2.3", ["README.md"], False, "full", True),
+            ("push", "refs/tags/v1.2.3", [], True, "full", True),
+            ("workflow_dispatch", "refs/heads/main", [], False, "full", True),
+            ("workflow_dispatch", "refs/heads/main", [], True, "partial", False),
+            ("workflow_dispatch", "refs/tags/v1.2.3", [], True, "partial", False),
+            ("workflow_dispatch", "refs/tags/v1.2.3", [], False, "full", True),
+            ("workflow_dispatch", "refs/heads/feature", [], False, "full", False),
+            ("workflow_dispatch", "refs/heads/feature", [], True, "partial", False),
+            ("push", "refs/heads/main", [], False, "fast", True),
         ]
-        for event, ref, paths, partial, expected in cases:
+        for event, ref, paths, partial, expected, managed in cases:
             with self.subTest(event=event, ref=ref, paths=paths, partial=partial):
                 result = ci.policy(event, ref, paths, partial)
                 self.assertEqual({key: result[key] for key in ("mode", "code", "full", "package")},
                                  {"mode": expected, "code": expected != "docs",
                                   "full": expected == "full", "package": expected in {"full", "partial"}})
-                self.assertEqual(result["managed"], event == "push" and expected != "docs"
-                                 and (ref == "refs/heads/main" or ref.startswith("refs/tags/v")))
+                self.assertEqual(result["managed"], managed)
 
     def test_backfill_publishes_only_the_managed_package(self):
         result = ci.policy("workflow_dispatch", "refs/heads/main", [], partial=False, backfill=True)
