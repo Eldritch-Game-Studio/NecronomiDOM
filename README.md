@@ -536,7 +536,9 @@ that commit. Pull requests that change `core/`, `runtime/`, `vendor/` or `Necron
 Reusing or notifying an existing managed release verifies its tag's exact commit, downloaded ZIP and
 original provenance, and the recorded producer and qualifying CI runs. Missing or mismatched proof
 fails closed even when a rebuilt ZIP is identical. Reruns and tag promotion never replace the original
-package or provenance assets; a new release may notify from its own exact still-running publisher job.
+package or provenance assets. Live notification and same-run retries require the exact publisher
+context and successful trusted prerequisite jobs; failed notification retries also verify the original
+attempt's prerequisites. An unrelated or unqualified run cannot replace missing historical proof.
 
 ### API compatibility
 

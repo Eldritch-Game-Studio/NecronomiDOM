@@ -125,6 +125,34 @@ def load(provenance_path: Path, package_path: Path) -> dict[str, object]:
     return record
 
 
+def current_run(record: dict[str, object], proof: dict[str, object]) -> bool:
+    return (str(proof.get("id")) == os.environ.get("GITHUB_RUN_ID")
+            and str(proof.get("run_attempt")) == os.environ.get("GITHUB_RUN_ATTEMPT")
+            and proof.get("head_sha") == os.environ.get("GITHUB_SHA")
+            and os.environ.get("GITHUB_REPOSITORY") == REPOSITORY
+            and os.environ.get("GITHUB_REF") == record["ref"]
+            and os.environ.get("GITHUB_WORKFLOW_REF") == record["workflow"])
+
+
+def prerequisite_jobs(record: dict[str, object], proof: dict[str, object]) -> None:
+    run_id = proof["id"]
+    pages = gh_json("api", "--paginate", "--slurp",
+                    f"repos/{REPOSITORY}/actions/runs/{run_id}/attempts/{proof['run_attempt']}/jobs?per_page=100")
+    jobs = [job for page in pages for job in page["jobs"]]
+    required = {"admit", "changes", "docs", "managed-package"}
+    if record["run_id"] == record["qualified_run_id"]:
+        required.update({"test", "api", "smoke"})
+    for name in required:
+        # GitHub includes inherited successful prerequisites in this attempt's job
+        # list, with this attempt number even when their execution timestamps are older.
+        matches = [job for job in jobs if job.get("name") == f"local / {name}"]
+        if (len(matches) != 1 or matches[0].get("run_id") != run_id
+                or matches[0].get("head_sha") != proof["head_sha"]
+                or matches[0].get("run_attempt") != proof["run_attempt"]
+                or (matches[0].get("status"), matches[0].get("conclusion")) != ("completed", "success")):
+            raise SystemExit(f"Canonical release retry lacks successful trusted prerequisite: {name}")
+
+
 def verify_run(record: dict[str, object], run_id: int, *, producer: bool, allow_current: bool) -> None:
     attempt = f"/attempts/{record['run_attempt']}" if producer else ""
     proof = gh_json("api", f"repos/{REPOSITORY}/actions/runs/{run_id}{attempt}")
@@ -140,17 +168,27 @@ def verify_run(record: dict[str, object], run_id: int, *, producer: bool, allow_
             or (not (producer and backfill) and proof.get("head_sha") != record["sha"])
             or (producer and proof.get("run_attempt") != record["run_attempt"])):
         raise SystemExit("Canonical release CI run does not match its source provenance")
-    # A just-created release is notified within its own still-running CI job. No historical
-    # proof, other attempt or unrelated live run may use this exception.
-    current = (allow_current and str(run_id) == os.environ.get("GITHUB_RUN_ID")
-               and str(proof.get("run_attempt")) == os.environ.get("GITHUB_RUN_ATTEMPT")
-               and proof.get("head_sha") == os.environ.get("GITHUB_SHA")
-               and os.environ.get("GITHUB_REPOSITORY") == REPOSITORY
-               and os.environ.get("GITHUB_REF") == ref
-               and os.environ.get("GITHUB_WORKFLOW_REF") == record["workflow"])
-    if not ((proof.get("status"), proof.get("conclusion")) == ("completed", "success")
-            or (current and proof.get("status") == "in_progress" and proof.get("conclusion") is None)):
-        raise SystemExit("Canonical release CI run is not successful")
+    # Live notification/retry must be this exact workflow run with independently successful
+    # trusted package prerequisites. Historical failed proof alone is never reusable.
+    current = allow_current and current_run(record, proof)
+    if current and proof.get("status") == "in_progress" and proof.get("conclusion") is None:
+        prerequisite_jobs(record, proof)
+        return
+    if (proof.get("status"), proof.get("conclusion")) == ("completed", "success"):
+        return
+    if (allow_current and producer and proof.get("status") == "completed"
+            and proof.get("conclusion") == "failure"
+            and str(run_id) == os.environ.get("GITHUB_RUN_ID")):
+        live = gh_json("api", f"repos/{REPOSITORY}/actions/runs/{run_id}")
+        identity = ("id", "head_sha", "head_branch", "event", "path", "repository", "head_repository")
+        if (all(live.get(key) == proof.get(key) for key in identity)
+                and current_run(record, live)
+                and type(live.get("run_attempt")) is int and live["run_attempt"] > record["run_attempt"]
+                and (live.get("status"), live.get("conclusion")) == ("in_progress", None)):
+            prerequisite_jobs(record, proof)
+            prerequisite_jobs(record, live)
+            return
+    raise SystemExit("Canonical release CI run is not successful")
 
 
 def canonical(record: dict[str, object], *, allow_current: bool = False) -> dict[str, object]:
@@ -209,7 +247,7 @@ def publish(package_path: Path, provenance_path: Path) -> str:
         if existing is None:
             raise SystemExit(f"Could not create {tag}")
     # Never replace historical proof with this rerun's record, even for identical package bytes.
-    canonical(record)
+    canonical(record, allow_current=True)
     if existing["isPrerelease"] and not prerelease:
         run("gh", "release", "edit", tag, "-R", REPOSITORY, "--prerelease=false", "--latest=false")
         print(f"Promoted {tag} to the {record['ref']} release")

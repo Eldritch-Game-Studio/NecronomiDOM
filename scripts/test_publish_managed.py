@@ -43,16 +43,26 @@ def run_proof(run_id=77, **changes):
             "path": ".github/workflows/ci.yml", **changes}
 
 
+def job_proofs(proof):
+    return [{"name": f"local / {name}", "run_id": proof["id"], "run_attempt": proof["run_attempt"],
+             "head_sha": proof["head_sha"], "status": "completed", "conclusion": "success"}
+            for name in ("admit", "changes", "docs", "managed-package", "test", "api", "smoke")]
+
+
 class FakeGh:
     """Records commands; answers release view/download from an in-memory release table."""
 
-    def __init__(self, releases=None, ancestor=True, runs=(), proofs=None, tag_sha=SHA):
+    def __init__(self, releases=None, ancestor=True, runs=(), proofs=None, tag_sha=SHA,
+                 attempt_proofs=None, jobs=None, post_failure=False):
         self.releases = releases or {}
         self.ancestor = ancestor
         self.runs = list(runs)
         self.proofs = proofs if proofs is not None else {77: run_proof()}
         self.tag_sha = tag_sha
         self.calls = []
+        self.attempt_proofs = attempt_proofs or {}
+        self.jobs = jobs
+        self.post_failure = post_failure
 
     def __call__(self, command, **kwargs):
         command = list(command)
@@ -76,12 +86,26 @@ class FakeGh:
                 "prerelease": "--prerelease" in command,
                 "provenance": json.loads(Path(command[5].split("#")[0]).read_text()),
                 "bytes": Path(command[4]).read_bytes()}
+        elif command[:4] == ["gh", "api", "--paginate", "--slurp"]:
+            endpoint = command[4]
+            run_id = int(endpoint.split("/runs/")[1].split("/")[0])
+            attempt = int(endpoint.split("/attempts/")[1].split("/")[0])
+            proof = self.attempt_proofs.get((run_id, attempt), self.proofs[run_id])
+            jobs = self.jobs if self.jobs is not None else job_proofs(proof)
+            jobs = [job for job in jobs if job["run_attempt"] == attempt]
+            # Split pages to exercise real paginated prerequisite evidence.
+            stdout = json.dumps([{"jobs": jobs[:3]}, {"jobs": jobs[3:]}])
+        elif command[:4] == ["gh", "api", "--method", "POST"] and self.post_failure:
+            returncode, stderr = 1, "consumer notification failed"
         elif command[:2] == ["gh", "api"] and "/runs?" in command[2]:
             stdout = json.dumps({"workflow_runs": self.runs})
         elif command[:2] == ["gh", "api"] and "/commits/" in command[2]:
             stdout = json.dumps({"sha": self.tag_sha})
         elif command[:2] == ["gh", "api"] and "/actions/runs/" in command[2]:
-            proof = self.proofs.get(int(command[2].split("/runs/")[1].split("/")[0]))
+            run_id = int(command[2].split("/runs/")[1].split("/")[0])
+            proof = self.proofs.get(run_id)
+            if "/attempts/" in command[2]:
+                proof = self.attempt_proofs.get((run_id, int(command[2].split("/attempts/")[1])), proof)
             if proof is None:
                 returncode, stderr = 1, "HTTP 404: Not Found"
             else:
@@ -284,6 +308,104 @@ class PublishManagedTests(unittest.TestCase):
                         self.assertRaises(SystemExit):
                     publish.dispatch(path, output, "Eldritch-Game-Studio/Dirge")
                 self.assert_no_release_mutation_or_notification(gh)
+
+    def test_failed_notification_retry_reuses_immutable_assets_and_notifies_consumer(self):
+        for backfill in (False, True):
+            for original_conclusion in ("failure", "success"):
+                with self.subTest(backfill=backfill, original_conclusion=original_conclusion):
+                    path, output, record = self.record(qualified=5 if backfill else 77)
+                    original = run_proof(event="workflow_dispatch" if backfill else "push",
+                                         head_sha="b" * 40 if backfill else SHA,
+                                         status="in_progress", conclusion=None)
+                    gh = FakeGh(proofs={77: original, 5: run_proof(5)}, post_failure=True)
+                    with mock.patch.dict(os.environ, {"GITHUB_SHA": original["head_sha"]}), \
+                            mock.patch.object(publish.subprocess, "run", gh):
+                        publish.publish(path, output)
+                        with self.assertRaises(subprocess.CalledProcessError):
+                            publish.dispatch(path, output, "Eldritch-Game-Studio/Dirge")
+                    before = copy.deepcopy(gh.releases)
+                    gh.attempt_proofs[(77, 2)] = {**original, "status": "completed",
+                                                   "conclusion": original_conclusion}
+                    gh.proofs[77] = {**original, "run_attempt": 3}
+                    gh.post_failure = False
+                    gh.calls.clear()
+                    with mock.patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "3", "GITHUB_SHA": original["head_sha"]}), \
+                            mock.patch.object(publish.subprocess, "run", gh):
+                        publish.publish(path, output)
+                        publish.dispatch(path, output, "Eldritch-Game-Studio/Dirge")
+                    self.assertEqual(gh.releases, before)
+                    self.assertEqual(len(gh.commands("gh", "api", "--method", "POST")), 1)
+                    self.assertEqual(gh.commands("gh", "release", "upload"), [])
+                    self.assertEqual(gh.commands("gh", "release", "create"), [])
+
+    def test_same_run_retry_rejects_unqualified_or_wrong_identity_evidence(self):
+        path, output, record = self.record()
+        original = run_proof(conclusion="failure")
+        live = run_proof(run_attempt=3, status="in_progress", conclusion=None)
+        defects = ("unrelated", "source", "repo", "workflow", "event", "ref", "attempt", "missing-original",
+                   "failed-original", "missing-latest", "failed-latest", "job-source", "job-run",
+                   "job-attempt", "duplicate-job", "untrusted-job", "env-ref", "env-workflow")
+        for defect in defects:
+            for operation in ("publish", "dispatch"):
+                with self.subTest(defect=defect, operation=operation):
+                    candidate = copy.deepcopy(live)
+                    jobs = job_proofs(original) + job_proofs(live)
+                    env = {"GITHUB_RUN_ATTEMPT": "3"}
+                    if defect == "missing-original":
+                        jobs.pop(6)
+                    elif defect == "missing-latest":
+                        jobs = [job for job in jobs if job["name"] != "local / smoke"]
+                    elif defect in ("failed-original", "failed-latest"):
+                        jobs[0 if defect == "failed-original" else 7]["conclusion"] = "failure"
+                    elif defect.startswith("job-"):
+                        key, value = {"job-source": ("head_sha", "a" * 40), "job-run": ("run_id", 88),
+                                      "job-attempt": ("run_attempt", 4)}[defect]
+                        jobs[7][key] = value
+                        if defect == "job-attempt":
+                            jobs[0][key] = value
+                    elif defect == "duplicate-job":
+                        jobs.append(jobs[7])
+                    elif defect == "untrusted-job":
+                        jobs[0]["name"] = jobs[7]["name"] = "attacker / admit"
+                    elif defect.startswith("env-"):
+                        env["GITHUB_REF" if defect == "env-ref" else "GITHUB_WORKFLOW_REF"] = "untrusted"
+                    else:
+                        key, value = {
+                            "unrelated": ("id", 88), "source": ("head_sha", "a" * 40),
+                            "repo": ("repository", {"full_name": "attacker/repo"}),
+                            "workflow": ("path", ".github/workflows/other.yml"), "event": ("event", "pull_request"),
+                            "ref": ("head_branch", "other"), "attempt": ("run_attempt", 2)}[defect]
+                        candidate[key] = value
+                    gh = self.released(path, record, proofs={77: candidate},
+                                       attempt_proofs={(77, 2): original}, jobs=jobs)
+                    before = copy.deepcopy(gh.releases)
+                    with mock.patch.dict(os.environ, env), mock.patch.object(publish.subprocess, "run", gh), \
+                            self.assertRaises(SystemExit):
+                        if operation == "publish":
+                            publish.publish(path, output)
+                        else:
+                            publish.dispatch(path, output, "Eldritch-Game-Studio/Dirge")
+                    self.assert_no_release_mutation_or_notification(gh)
+                    self.assertEqual(gh.releases, before)
+
+    def test_failed_job_only_retry_accepts_inherited_successful_prerequisites(self):
+        for backfill in (False, True):
+            with self.subTest(backfill=backfill):
+                path, output, record = self.record(qualified=5 if backfill else 77)
+                original = run_proof(conclusion="failure", event="workflow_dispatch" if backfill else "push",
+                                     head_sha="b" * 40 if backfill else SHA)
+                live = {**original, "run_attempt": 3, "status": "in_progress", "conclusion": None}
+                inherited = job_proofs(original) + job_proofs(live)
+                for job in inherited:
+                    job["started_at"], job["completed_at"] = "2026-11-01T00:00:00Z", "2026-11-01T00:01:00Z"
+                gh = self.released(path, record, proofs={77: live, 5: run_proof(5)},
+                                   attempt_proofs={(77, 2): original}, jobs=inherited)
+                with mock.patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "3", "GITHUB_SHA": original["head_sha"]}), \
+                        mock.patch.object(publish.subprocess, "run", gh):
+                    publish.publish(path, output)
+                    publish.dispatch(path, output, "Eldritch-Game-Studio/Dirge")
+                self.assertEqual(len(gh.commands("gh", "api", "--method", "POST")), 1)
+                self.assertEqual(gh.commands("gh", "release", "upload"), [])
 
     def test_source_requires_main_history_and_backfill_qualification(self):
         with mock.patch.object(publish.subprocess, "run", FakeGh()):
