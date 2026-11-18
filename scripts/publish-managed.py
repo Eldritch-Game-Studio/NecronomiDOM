@@ -125,6 +125,59 @@ def load(provenance_path: Path, package_path: Path) -> dict[str, object]:
     return record
 
 
+def verify_run(record: dict[str, object], run_id: int, *, producer: bool, allow_current: bool) -> None:
+    attempt = f"/attempts/{record['run_attempt']}" if producer else ""
+    proof = gh_json("api", f"repos/{REPOSITORY}/actions/runs/{run_id}{attempt}")
+    ref = str(record["ref"])
+    backfill = record["run_id"] != record["qualified_run_id"]
+    branch = ref.removeprefix("refs/heads/").removeprefix("refs/tags/")
+    expected_event = "workflow_dispatch" if producer and backfill else "push"
+    expected_branch = branch if producer or not backfill else BRANCH
+    if (proof.get("id") != run_id or proof.get("repository", {}).get("full_name") != REPOSITORY
+            or proof.get("head_repository", {}).get("full_name") != REPOSITORY
+            or proof.get("path") != f".github/workflows/{CI_WORKFLOW}"
+            or proof.get("event") != expected_event or proof.get("head_branch") != expected_branch
+            or (not (producer and backfill) and proof.get("head_sha") != record["sha"])
+            or (producer and proof.get("run_attempt") != record["run_attempt"])):
+        raise SystemExit("Canonical release CI run does not match its source provenance")
+    # A just-created release is notified within its own still-running CI job. No historical
+    # proof, other attempt or unrelated live run may use this exception.
+    current = (allow_current and str(run_id) == os.environ.get("GITHUB_RUN_ID")
+               and str(proof.get("run_attempt")) == os.environ.get("GITHUB_RUN_ATTEMPT")
+               and proof.get("head_sha") == os.environ.get("GITHUB_SHA")
+               and os.environ.get("GITHUB_REPOSITORY") == REPOSITORY
+               and os.environ.get("GITHUB_REF") == ref
+               and os.environ.get("GITHUB_WORKFLOW_REF") == record["workflow"])
+    if not ((proof.get("status"), proof.get("conclusion")) == ("completed", "success")
+            or (current and proof.get("status") == "in_progress" and proof.get("conclusion") is None)):
+        raise SystemExit("Canonical release CI run is not successful")
+
+
+def canonical(record: dict[str, object], *, allow_current: bool = False) -> dict[str, object]:
+    """Verify immutable release assets and their actual source/CI proof before reuse or notification."""
+    tag, sha = str(record["release_tag"]), str(record["sha"])
+    commit = gh_json("api", f"repos/{REPOSITORY}/commits/{tag}")
+    if commit.get("sha") != sha:
+        raise SystemExit("Canonical release tag points to a different source commit")
+    with tempfile.TemporaryDirectory() as directory:
+        run("gh", "release", "download", tag, "-R", REPOSITORY,
+            "-p", "provenance.json", "-p", str(record["zip"]), "-D", directory)
+        published = load(Path(directory) / "provenance.json", Path(directory) / str(record["zip"]))
+    if (published["sha"], published["zip_sha256"]) != (sha, record["zip_sha256"]):
+        raise SystemExit(f"{tag} already holds different package bytes; refusing to replace a published release")
+    ref = published.get("ref")
+    if (published.get("branch") != BRANCH or published.get("upstream") != {}
+            or not isinstance(ref, str) or not (ref == f"refs/heads/{BRANCH}" or ref.startswith("refs/tags/v"))
+            or published.get("workflow") != f"{REPOSITORY}/.github/workflows/{CI_WORKFLOW}@{ref}"
+            or any(type(published.get(key)) is not int or published[key] < 1
+                   for key in ("run_id", "run_attempt", "qualified_run_id"))
+            or (published["run_id"] != published["qualified_run_id"] and ref != f"refs/heads/{BRANCH}")):
+        raise SystemExit("Canonical release has invalid source/CI provenance")
+    verify_run(published, published["run_id"], producer=True, allow_current=allow_current)
+    verify_run(published, published["qualified_run_id"], producer=False, allow_current=allow_current)
+    return published
+
+
 def view(tag: str) -> dict[str, object] | None:
     result = subprocess.run(["gh", "release", "view", tag, "-R", REPOSITORY, "--json", "isPrerelease"],
                             text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -155,14 +208,9 @@ def publish(package_path: Path, provenance_path: Path) -> str:
         existing = view(tag)
         if existing is None:
             raise SystemExit(f"Could not create {tag}")
-    # The package is deterministic: a rerun or a tag of an already published main commit must reproduce its bytes.
-    with tempfile.TemporaryDirectory() as directory:
-        run("gh", "release", "download", tag, "-R", REPOSITORY, "-p", "provenance.json", "-D", directory)
-        published = json.loads((Path(directory) / "provenance.json").read_text(encoding="utf-8"))
-    if (published.get("sha"), published.get("zip_sha256")) != (sha, record["zip_sha256"]):
-        raise SystemExit(f"{tag} already holds different package bytes; refusing to replace a published release")
+    # Never replace historical proof with this rerun's record, even for identical package bytes.
+    canonical(record)
     if existing["isPrerelease"] and not prerelease:
-        run("gh", "release", "upload", tag, f"{provenance_path}#provenance.json", "-R", REPOSITORY, "--clobber")
         run("gh", "release", "edit", tag, "-R", REPOSITORY, "--prerelease=false", "--latest=false")
         print(f"Promoted {tag} to the {record['ref']} release")
     else:
@@ -172,6 +220,7 @@ def publish(package_path: Path, provenance_path: Path) -> str:
 
 def dispatch(package_path: Path, provenance_path: Path, consumer: str) -> dict[str, object]:
     record = load(provenance_path, package_path)
+    record = canonical(record, allow_current=True)
     request = {"event_type": EVENT, "client_payload": {
         "package": PACKAGE, "sha": record["sha"], "release_tag": record["release_tag"],
         "zip_sha256": record["zip_sha256"]}}
