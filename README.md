@@ -533,6 +533,12 @@ a tag, never marked latest. Its assets are `necronomidom-managed-<sha>.zip` and 
 an earlier main commit whose own main run passed, run the CI/CD workflow manually with `managed-revision` set to
 that commit. Pull requests that change `core/`, `runtime/`, `vendor/` or `NecronomiDom.targets` also build Dirge's
 `managed/1.0.x` line against the candidate package and run its smoke test.
+Reusing or notifying an existing managed release verifies its tag's exact commit, downloaded ZIP and
+original provenance, and the recorded producer and qualifying CI runs. Missing or mismatched proof
+fails closed even when a rebuilt ZIP is identical. Reruns and tag promotion never replace the original
+package or provenance assets. Live notification and same-run retries require the exact publisher
+context and successful trusted prerequisite jobs; failed notification retries also verify the original
+attempt's prerequisites. An unrelated or unqualified run cannot replace missing historical proof.
 
 ### API compatibility
 
