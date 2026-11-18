@@ -385,7 +385,7 @@ jobs:
             --audio-driver Dummy res://demo/paint/single-fill-smoke.tscn
 
   # Managed hosts (Dirge, and through Dirge Kraken's Keg) compile this source package; it needs no native binaries, so
-  # every qualified main push and v* tag publishes it, and a manual dispatch can backfill an earlier main commit.
+  # every qualified main push, full release-ref dispatch and v* tag publishes it; backfill handles earlier main commits.
   managed-package:
     needs: [changes, docs, test, api, smoke]
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.managed == 'true' && needs.docs.result == 'success' && (needs.changes.outputs.mode == 'backfill' || (needs.test.result == 'success' && needs.api.result == 'success' && needs.smoke.result == 'success')) }}

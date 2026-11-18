@@ -51,7 +51,9 @@ def policy(event_name, ref, paths, partial=False, backfill=False):
             "package": mode in {"full", "partial"},
             "consumer": event_name == "pull_request" and mode != "docs"
             and any(path.startswith(CONSUMER_PATHS) for path in paths),
-            "managed": mode == "backfill" or (event_name == "push" and release_ref and mode != "docs")}
+            "managed": mode == "backfill" or (release_ref and (
+                (event_name == "push" and mode != "docs")
+                or (event_name == "workflow_dispatch" and mode == "full")))}
 
 
 def git(*args, cwd=None, input=None):
