@@ -101,31 +101,52 @@ class TrustTests(unittest.TestCase):
             ({"source": "b" * 40}, False),
             ({"source": "main"}, False),
             ({"repository": "other/repo"}, False),
+            ({"event": "workflow_dispatch", "inputs": {"requalification_run": "123"}}, True),
+            ({"event": "workflow_dispatch", "inputs": {"requalification_run": "123"}, "ref": "refs/heads/x"}, False),
+            ({"event": "workflow_dispatch", "inputs": {"requalification_run": "12a"}}, False),
+            ({"event": "workflow_dispatch", "inputs": {"requalification_run": "123", "partial": True}}, False),
+            ({"event": "workflow_dispatch", "inputs": {"requalification_run": "1", "requalify_revision": "b" * 40}},
+             False),
+            ({"event": "workflow_dispatch", "inputs": {"requalify_revision": "b" * 40}, "ref": "refs/heads/x"}, False),
+            ({"event": "workflow_dispatch", "inputs": {"requalify_revision": "b" * 40}}, False),
+            # Requalification inputs are ignored outside manual dispatches.
+            ({"event": "push", "inputs": {"requalification_run": "123"}, "ref": "refs/heads/x"}, True),
         ]
         with tempfile.TemporaryDirectory() as temporary:
             event_path = Path(temporary) / "event.json"
             for case, allowed in cases:
                 with self.subTest(case=case):
                     head = case.get("head", repository)
-                    event_path.write_text(json.dumps({"pull_request": {
+                    event_path.write_text(json.dumps({"inputs": case.get("inputs", {}), "pull_request": {
                         "head": {"repo": {"full_name": head} if head else None},
                         "base": {"repo": {"full_name": case.get("base", repository)}},
                     }}))
+                    output_path = Path(temporary) / "output"
+                    output_path.write_text("")
                     environment = dict(os.environ, GITHUB_REPOSITORY=case.get("repository", repository),
                                        GITHUB_SHA=sha, SOURCE_SHA=case.get("source", sha),
                                        GITHUB_EVENT_NAME=case.get("event", "pull_request"),
-                                       GITHUB_EVENT_PATH=str(event_path),
+                                       GITHUB_EVENT_PATH=str(event_path), GITHUB_OUTPUT=str(output_path),
+                                       GITHUB_REF=case.get("ref", "refs/heads/main"), GH_TOKEN="",
                                        EXTERNAL_APPROVAL_ENABLED=case.get("approved", ""))
                     result = subprocess.run([sys.executable, "-c", script], env=environment,
                                             capture_output=True, text=True)
                     self.assertEqual(result.returncode == 0, allowed, result.stdout + result.stderr)
+                    if allowed:
+                        recovery = case.get("inputs", {}).get("requalification_run", "")
+                        if case.get("event") != "workflow_dispatch":
+                            recovery = ""
+                        self.assertEqual(output_path.read_text(),
+                                         f"requalify=\nrequalification_run={recovery}\n")
 
     def test_wrapper_uses_trusted_main_and_all_execution_is_local(self):
         caller = (ROOT / ".github/workflows/ci.yml").read_text()
         self.assertIn("uses: Eldritch-Game-Studio/NecronomiDOM/.github/workflows/ci-local.yml@main", caller)
-        self.assertIn("source-sha: ${{ github.sha }}", caller)
+        self.assertIn("source-sha: ${{ github.event_name == 'workflow_dispatch' && inputs.requalify_revision"
+                      " || github.sha }}", caller)
         workflow = (ROOT / ".github/workflows/ci-local.yml").read_text()
         self.assertIn("  changes:\n    needs: admit\n", workflow)
+        self.assertIn("    if: needs.admit.outputs.requalification_run == ''\n", workflow)
         for runner in re.findall(r"^    runs-on: (.+)$", workflow, re.MULTILINE):
             self.assertTrue(runner.startswith("[self-hosted,") or runner == "${{ matrix.runner }}")
         matrices = re.findall(r"^          - runner: \[(.+)\]$", workflow, re.MULTILINE)
@@ -155,7 +176,8 @@ class TrustTests(unittest.TestCase):
         self.assertLess(package.index("publish-managed.py source"), package.index("scripts/package-managed.py"))
         self.assertIn("publish-managed.py provenance", package)
         release = self.job("managed-release")
-        self.assertIn("needs: [changes, managed-package]", release)
+        self.assertIn("needs: [admit, changes, managed-package]", release)
+        self.assertIn("needs.admit.outputs.requalify == ''", release)
         self.assertIn("runs-on: [self-hosted, Linux, X64, necronomidom]", release)
         self.assertIn("GH_TOKEN: ${{ github.token }}", release.split("publish-managed.py publish", 1)[0])
         notify = release.split("Notify Dirge", 1)[1]

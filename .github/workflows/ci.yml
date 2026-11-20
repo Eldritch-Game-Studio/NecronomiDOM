@@ -15,6 +15,14 @@ on:
         description: Earlier main commit whose managed-host package to publish (backfill; skips other jobs)
         type: string
         default: ''
+      requalify_revision:
+        description: Main commit with a published managed-<sha12> release to rerun FULL CI on and reproduce its ZIP (no publication)
+        type: string
+        default: ''
+      requalification_run:
+        description: Append evidence to an existing release from this successful requalify_revision run (no rebuild)
+        type: string
+        default: ''
 
 # The called workflow reduces permissions to read except for its release jobs.
 permissions:
@@ -25,5 +33,6 @@ jobs:
   local:
     uses: Eldritch-Game-Studio/NecronomiDOM/.github/workflows/ci-local.yml@main
     with:
-      source-sha: ${{ github.sha }}
+      # A requalification checks out the earlier revision; ci-local admits it only with a published release on main.
+      source-sha: ${{ github.event_name == 'workflow_dispatch' && inputs.requalify_revision || github.sha }}
       partial: ${{ github.event_name == 'workflow_dispatch' && inputs.partial || false }}
