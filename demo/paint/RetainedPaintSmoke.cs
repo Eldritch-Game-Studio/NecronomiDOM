@@ -114,6 +114,42 @@ public partial class RetainedPaintSmoke : Godot.Node
         else await NextFrames(1);
     }
 
+    private void IsolationTargetLifecycle()
+    {
+        var keeper = IsolationTargetPool.Acquire();
+        var target = IsolationTargetPool.Acquire();
+        ulong viewportId = target.Viewport.GetInstanceId(), contentId = target.Content.GetInstanceId();
+        ulong worldId = target.World.GetInstanceId(), textureId = target.Texture.GetInstanceId();
+        AddChild(target.Viewport);
+        var capture = new Transform2D(0, new Vector2(-17, -23));
+        target.Viewport.CanvasTransform = capture;
+        target.Viewport.Size = new Vector2I(128, 64);
+        var paint = new Node2D();
+        ulong paintId = paint.GetInstanceId();
+        target.Content.AddChild(paint);
+        // Composite predelete can run after its subtree has already exited the tree.
+        RemoveChild(target.Viewport);
+        IsolationTargetPool.Release(target);
+        Check(IsolationTargetPool.IsSpare(viewportId) && !target.Viewport.IsInsideTree()
+            && target.Viewport.Size == IsolationTarget.MinimumSize
+            && target.Viewport.RenderTargetUpdateMode == SubViewport.UpdateMode.Disabled
+            && target.Viewport.CanvasTransform == capture && GodotObject.InstanceFromId(paintId) == null,
+            "released isolation targets retain detached canvas state and free painted children");
+        int constructed = IsolationTargetPool.ConstructedCount;
+        var reused = IsolationTargetPool.Acquire();
+        Check(ReferenceEquals(reused, target) && IsolationTargetPool.ConstructedCount == constructed,
+            "isolation target reuse keeps the viewport, world, content and texture bundle");
+        AddChild(reused.Viewport);
+        reused.Viewport.CanvasTransform = new Transform2D(0, new Vector2(-31, -47));
+        // Also exercise release while attached, then the last-owner drain of detached spares.
+        IsolationTargetPool.Release(reused);
+        IsolationTargetPool.Release(keeper);
+        Check(IsolationTargetPool.SpareCount == 0 && GodotObject.InstanceFromId(viewportId) == null
+            && GodotObject.InstanceFromId(contentId) == null && GodotObject.InstanceFromId(worldId) == null
+            && GodotObject.InstanceFromId(textureId) == null,
+            "last isolation target release frees detached spares, content roots, worlds and textures");
+    }
+
     private async Task Run()
     {
         // Godot's dummy headless window is 64x64; clip fences intersect it. Give headless runs the drawn size.
@@ -122,6 +158,7 @@ public partial class RetainedPaintSmoke : Godot.Node
             GetTree().Root.ContentScaleSize = new Vector2I(1440, 1000);
             GetTree().Root.ContentScaleMode = Godot.Window.ContentScaleModeEnum.Viewport;
         }
+        IsolationTargetLifecycle();
         _warnings = new RenderSyncWarnings();
         OS.AddLogger(_warnings);
         string path = "user://ui/retained-paint-" + Guid.NewGuid().ToString("N");

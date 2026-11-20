@@ -31,7 +31,7 @@ internal sealed class IsolationTarget
     }
 
     /// <summary>Detaches the target from its composite and deletes the painted subtree exactly as freeing the composite
-    /// would, then restores the construction-time render state a fresh composite assumes.</summary>
+    /// would, then disables and shrinks the target for reuse.</summary>
     internal void Reset()
     {
         Viewport.GetParent()?.RemoveChild(Viewport);
@@ -44,7 +44,8 @@ internal sealed class IsolationTarget
         Viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
         if (Viewport.Size != MinimumSize) Viewport.Size = MinimumSize;
         if (Viewport.UseHdr2D) Viewport.UseHdr2D = false;
-        if (Viewport.CanvasTransform != Transform2D.Identity) Viewport.CanvasTransform = Transform2D.Identity;
+        // EXIT_TREE already removed the world's canvas. Stock Godot's CanvasTransform setter still calls
+        // viewport_set_canvas_transform outside the tree, so leave it for the next composite's first FitTarget.
     }
 
     internal void Free()
