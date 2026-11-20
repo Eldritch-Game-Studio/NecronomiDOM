@@ -451,8 +451,23 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(seen.Count == known, $"oscillating contexts reuse retained isolation targets ({seen.Count - known} new viewports)");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(3);
-        // Detached spare targets are not in the tree; withdrawing the document must still free every one of them.
-        Check(seen.All(id => GodotObject.InstanceFromId(id) == null), "withdrawing the document frees retained spare targets");
+        // Detached spare targets are not in the tree; withdrawing the document frees each one or leaves it detached
+        // in the bounded process-wide pool.
+        Check(seen.All(id => GodotObject.InstanceFromId(id) == null || IsolationTargetPool.IsSpare(id))
+            && IsolationTargetPool.SpareCount <= IsolationTargetPool.Capacity, "withdrawing the document frees or pools retained spare targets");
+        // A document that opens after another closed takes the released targets instead of constructing SubViewports,
+        // each of which waits for the render thread.
+        int constructed = IsolationTargetPool.ConstructedCount;
+        layer = new CanvasLayer(); AddChild(layer);
+        host = new DocumentHost { DocumentPath = path + "/contexts.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        await Toggle(true);
+        int reopenedLive = host.FindChildren("*", nameof(SubViewport), true, false).Length;
+        Check(reopenedLive == wideLive && IsolationTargetPool.ConstructedCount == constructed,
+            $"reopening a document reuses released isolation targets ({IsolationTargetPool.ConstructedCount - constructed} new viewports)");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(3);
     }
 
     private async Task LinearCompositeBeforeContent(string path)
