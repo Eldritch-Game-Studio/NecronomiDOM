@@ -35,6 +35,7 @@ public partial class RetainedPaintSmoke : Godot.Node
     private static readonly Color Twin = new(0.2f, 0.4f, 0.6f);
     private static readonly Color Restyled = new(0.6f, 0.4f, 0.2f);
     private DocumentHost _host = null!;
+    private FontFile? _sourceFont;
     private RenderSyncWarnings? _warnings;
     private string _directory = "";
     private int _failures;
@@ -45,7 +46,15 @@ public partial class RetainedPaintSmoke : Godot.Node
         catch (Exception error) { _failures++; GD.PushError(error.ToString()); }
         finally
         {
-            if (_host != null && GodotObject.IsInstanceValid(_host)) { _host.QueueFree(); await NextFrames(3); }
+            foreach (Node child in GetChildren()) child.QueueFree();
+            await NextFrames(3);
+            Check(IsolationTargetPool.SpareCount == 0, "fixture shutdown drains the isolation target pool");
+            if (_sourceFont != null)
+            {
+                ulong fontId = _sourceFont.GetInstanceId();
+                _sourceFont.Dispose(); _sourceFont = null;
+                Check(GodotObject.InstanceFromId(fontId) == null, "fixture shutdown frees its imported source font");
+            }
             if (_warnings != null) OS.RemoveLogger(_warnings);
             if (_directory.Length > 0 && Directory.Exists(_directory)) Directory.Delete(_directory, true);
             GD.Print("RETAINED_PAINT_SMOKE_RESULT " + (_failures == 0 ? "PASS" : "FAIL"));
@@ -167,6 +176,9 @@ public partial class RetainedPaintSmoke : Godot.Node
         File.WriteAllText(Path.Combine(_directory, "retained.html"), Markup(KeycapUrl()));
         var layer = new CanvasLayer(); AddChild(layer);
         _host = new DocumentHost { DocumentPath = path + "/retained.html" };
+        // The fixture owns the cached source wrapper; document shapers borrow it and dispose only their clones.
+        // Keep it out of the finalizer queue until every document has retired, then release it before engine shutdown.
+        _sourceFont = GD.Load<FontFile>(_host.FontPath) ?? throw new InvalidOperationException("Missing fixture font.");
         layer.AddChild(_host);
         await NextFrames(10);
         await Settle(1280);
