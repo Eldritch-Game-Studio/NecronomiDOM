@@ -463,7 +463,7 @@ public partial class RetainedPaintSmoke : Godot.Node
         layer.AddChild(host);
         await NextFrames(10);
         await Toggle(true);
-        int reopenedLive = host.FindChildren("*", nameof(SubViewport), true, false).Length;
+        int reopenedLive = host.FindChildren("*", nameof(SubViewport), true, false).Count;
         Check(reopenedLive == wideLive && IsolationTargetPool.ConstructedCount == constructed,
             $"reopening a document reuses released isolation targets ({IsolationTargetPool.ConstructedCount - constructed} new viewports)");
         host.QueueFree(); layer.QueueFree();
