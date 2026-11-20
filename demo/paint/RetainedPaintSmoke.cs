@@ -46,7 +46,7 @@ public partial class RetainedPaintSmoke : Godot.Node
         catch (Exception error) { _failures++; GD.PushError(error.ToString()); }
         finally
         {
-            foreach (Node child in GetChildren()) child.QueueFree();
+            foreach (Godot.Node child in GetChildren()) child.QueueFree();
             await NextFrames(3);
             Check(IsolationTargetPool.SpareCount == 0, "fixture shutdown drains the isolation target pool");
             if (_sourceFont != null)
