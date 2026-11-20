@@ -35,6 +35,7 @@ public partial class RetainedPaintSmoke : Godot.Node
     private static readonly Color Twin = new(0.2f, 0.4f, 0.6f);
     private static readonly Color Restyled = new(0.6f, 0.4f, 0.2f);
     private DocumentHost _host = null!;
+    private FontFile? _sourceFont;
     private RenderSyncWarnings? _warnings;
     private string _directory = "";
     private int _failures;
@@ -45,7 +46,15 @@ public partial class RetainedPaintSmoke : Godot.Node
         catch (Exception error) { _failures++; GD.PushError(error.ToString()); }
         finally
         {
-            if (_host != null && GodotObject.IsInstanceValid(_host)) { _host.QueueFree(); await NextFrames(3); }
+            foreach (Godot.Node child in GetChildren()) child.QueueFree();
+            await NextFrames(3);
+            Check(IsolationTargetPool.SpareCount == 0, "fixture shutdown drains the isolation target pool");
+            if (_sourceFont != null)
+            {
+                ulong fontId = _sourceFont.GetInstanceId();
+                _sourceFont.Dispose(); _sourceFont = null;
+                Check(GodotObject.InstanceFromId(fontId) == null, "fixture shutdown frees its imported source font");
+            }
             if (_warnings != null) OS.RemoveLogger(_warnings);
             if (_directory.Length > 0 && Directory.Exists(_directory)) Directory.Delete(_directory, true);
             GD.Print("RETAINED_PAINT_SMOKE_RESULT " + (_failures == 0 ? "PASS" : "FAIL"));
@@ -114,6 +123,42 @@ public partial class RetainedPaintSmoke : Godot.Node
         else await NextFrames(1);
     }
 
+    private void IsolationTargetLifecycle()
+    {
+        var keeper = IsolationTargetPool.Acquire();
+        var target = IsolationTargetPool.Acquire();
+        ulong viewportId = target.Viewport.GetInstanceId(), contentId = target.Content.GetInstanceId();
+        ulong worldId = target.World.GetInstanceId(), textureId = target.Texture.GetInstanceId();
+        AddChild(target.Viewport);
+        var capture = new Transform2D(0, new Vector2(-17, -23));
+        target.Viewport.CanvasTransform = capture;
+        target.Viewport.Size = new Vector2I(128, 64);
+        var paint = new Node2D();
+        ulong paintId = paint.GetInstanceId();
+        target.Content.AddChild(paint);
+        // Composite predelete can run after its subtree has already exited the tree.
+        RemoveChild(target.Viewport);
+        IsolationTargetPool.Release(target);
+        Check(IsolationTargetPool.IsSpare(viewportId) && !target.Viewport.IsInsideTree()
+            && target.Viewport.Size == IsolationTarget.MinimumSize
+            && target.Viewport.RenderTargetUpdateMode == SubViewport.UpdateMode.Disabled
+            && target.Viewport.CanvasTransform == capture && GodotObject.InstanceFromId(paintId) == null,
+            "released isolation targets retain detached canvas state and free painted children");
+        int constructed = IsolationTargetPool.ConstructedCount;
+        var reused = IsolationTargetPool.Acquire();
+        Check(ReferenceEquals(reused, target) && IsolationTargetPool.ConstructedCount == constructed,
+            "isolation target reuse keeps the viewport, world, content and texture bundle");
+        AddChild(reused.Viewport);
+        reused.Viewport.CanvasTransform = new Transform2D(0, new Vector2(-31, -47));
+        // Also exercise release while attached, then the last-owner drain of detached spares.
+        IsolationTargetPool.Release(reused);
+        IsolationTargetPool.Release(keeper);
+        Check(IsolationTargetPool.SpareCount == 0 && GodotObject.InstanceFromId(viewportId) == null
+            && GodotObject.InstanceFromId(contentId) == null && GodotObject.InstanceFromId(worldId) == null
+            && GodotObject.InstanceFromId(textureId) == null,
+            "last isolation target release frees detached spares, content roots, worlds and textures");
+    }
+
     private async Task Run()
     {
         // Godot's dummy headless window is 64x64; clip fences intersect it. Give headless runs the drawn size.
@@ -122,6 +167,7 @@ public partial class RetainedPaintSmoke : Godot.Node
             GetTree().Root.ContentScaleSize = new Vector2I(1440, 1000);
             GetTree().Root.ContentScaleMode = Godot.Window.ContentScaleModeEnum.Viewport;
         }
+        IsolationTargetLifecycle();
         _warnings = new RenderSyncWarnings();
         OS.AddLogger(_warnings);
         string path = "user://ui/retained-paint-" + Guid.NewGuid().ToString("N");
@@ -130,6 +176,9 @@ public partial class RetainedPaintSmoke : Godot.Node
         File.WriteAllText(Path.Combine(_directory, "retained.html"), Markup(KeycapUrl()));
         var layer = new CanvasLayer(); AddChild(layer);
         _host = new DocumentHost { DocumentPath = path + "/retained.html" };
+        // The fixture owns the cached source wrapper; document shapers borrow it and dispose only their clones.
+        // Keep it out of the finalizer queue until every document has retired, then release it before engine shutdown.
+        _sourceFont = GD.Load<FontFile>(_host.FontPath) ?? throw new InvalidOperationException("Missing fixture font.");
         layer.AddChild(_host);
         await NextFrames(10);
         await Settle(1280);
@@ -451,8 +500,23 @@ public partial class RetainedPaintSmoke : Godot.Node
         Check(seen.Count == known, $"oscillating contexts reuse retained isolation targets ({seen.Count - known} new viewports)");
         host.QueueFree(); layer.QueueFree();
         await NextFrames(3);
-        // Detached spare targets are not in the tree; withdrawing the document must still free every one of them.
-        Check(seen.All(id => GodotObject.InstanceFromId(id) == null), "withdrawing the document frees retained spare targets");
+        // Detached spare targets are not in the tree; withdrawing the document frees each one or leaves it detached
+        // in the bounded process-wide pool.
+        Check(seen.All(id => GodotObject.InstanceFromId(id) == null || IsolationTargetPool.IsSpare(id))
+            && IsolationTargetPool.SpareCount <= IsolationTargetPool.Capacity, "withdrawing the document frees or pools retained spare targets");
+        // A document that opens after another closed takes the released targets instead of constructing SubViewports,
+        // each of which waits for the render thread.
+        int constructed = IsolationTargetPool.ConstructedCount;
+        layer = new CanvasLayer(); AddChild(layer);
+        host = new DocumentHost { DocumentPath = path + "/contexts.html", Size = new Vector2(1280, 720) };
+        layer.AddChild(host);
+        await NextFrames(10);
+        await Toggle(true);
+        int reopenedLive = host.FindChildren("*", nameof(SubViewport), true, false).Count;
+        Check(reopenedLive == wideLive && IsolationTargetPool.ConstructedCount == constructed,
+            $"reopening a document reuses released isolation targets ({IsolationTargetPool.ConstructedCount - constructed} new viewports)");
+        host.QueueFree(); layer.QueueFree();
+        await NextFrames(3);
     }
 
     private async Task LinearCompositeBeforeContent(string path)

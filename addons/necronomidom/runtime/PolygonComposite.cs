@@ -14,15 +14,13 @@ public interface INativePaintBounds
 /// A retained, transparent 2D isolation target. The proxy paints its child texture exactly once;
 /// content lives in its own World2D, not the parent's shared CanvasGroup backbuffer.
 /// DOM/input ownership remains with DocumentHost, outside these render-only viewports.
+/// The target comes from <see cref="IsolationTargetPool"/> and returns there when the composite is freed.
 /// </summary>
 [GodotClass]
 public partial class PolygonComposite : Node2D
 {
-    private readonly World2D _world = new();
+    private readonly IsolationTarget _isolation;
     private readonly SubViewport _target;
-    // This render-only World2D is a separate interpolation scope; UI poses advance per process frame.
-    private readonly Node2D _content = new() { PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off };
-    private readonly ViewportTexture _texture;
 #if !NECRONOMIDOM_GDEXTENSION
     // Borrow the parent's texture wrapper once, not RenderingServer.viewport_get_texture per dirty frame.
     private Viewport? _parentViewport;
@@ -33,7 +31,7 @@ public partial class PolygonComposite : Node2D
     private readonly Color[] _colors = [new Color(1, 1, 1, 1)];
     private Rect2 _logicalBounds;
     private bool _measured, _hasPaint;
-    private static readonly Vector2I MinimumCapacity = new(2, 2);
+    private static readonly Vector2I MinimumCapacity = IsolationTarget.MinimumSize;
     private Vector2I _capacity = MinimumCapacity;
     private Rect2 _deviceBounds;
     private Transform2D _deviceTransform;
@@ -48,7 +46,7 @@ public partial class PolygonComposite : Node2D
     /// bounds in this item's local space (device paint bounds plus the one-pixel fringe), meaningful only when
     /// <paramref name="painted"/>. A composite that reads the destination uses it to bound that read.</summary>
     protected virtual void DeviceCoverageChanged(Rect2 local, bool painted) { }
-    public CanvasItem Content => _content;
+    public CanvasItem Content => _isolation.Content;
     public Rect2 DevicePaintBounds => _deviceBounds;
     public Vector2I TargetCapacity => _capacity;
     public int TargetResizeCount { get; private set; }
@@ -57,16 +55,9 @@ public partial class PolygonComposite : Node2D
 
     protected PolygonComposite()
     {
-        _target = new SubViewport
-        {
-            Size = _capacity, TransparentBg = true, Disable3D = true,
-            GuiDisableInput = true, World2D = _world,
-            RenderTargetClearMode = SubViewport.ClearMode.Always,
-            RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
-            HandleInputLocally = false
-        };
-        AddChild(_target); _target.AddChild(_content);
-        _texture = _target.GetTexture();
+        _isolation = IsolationTargetPool.Acquire();
+        _target = _isolation.Viewport;
+        AddChild(_target);
         CompositeMaterial = new ShaderMaterial { Shader = WebPaintShaders.PolygonClip };
         Material = CompositeMaterial;
         TextureFilter = TextureFilterEnum.Nearest;
@@ -77,7 +68,7 @@ public partial class PolygonComposite : Node2D
     {
         if (_measured) return;
         _measured = true; _hasPaint = false;
-        if (!EmptyClip) Collect(_content, Transform2D.Identity, ref _logicalBounds, ref _hasPaint);
+        if (!EmptyClip) Collect(_isolation.Content, Transform2D.Identity, ref _logicalBounds, ref _hasPaint);
         if (_hasPaint && ClipBounds is Rect2 clip)
         {
             _logicalBounds = _logicalBounds.Intersection(clip);
@@ -147,7 +138,7 @@ public partial class PolygonComposite : Node2D
         // allocate offscreen textures for overflow pixels it cannot display.
         Vector2 physicalSize;
         if (parentViewport is SubViewport && parentViewport.GetParent() is PolygonComposite owner)
-            physicalSize = owner._texture.GetSize();
+            physicalSize = owner._isolation.Texture.GetSize();
         else
         {
 #if NECRONOMIDOM_GDEXTENSION
@@ -239,11 +230,12 @@ public partial class PolygonComposite : Node2D
 
     public override void _Draw()
     {
-        if (_hasPaint) DrawPolygon(Packed.Vector2s(_quad), Packed.Colors(_colors), Packed.Vector2s(_uv), _texture);
+        if (_hasPaint) DrawPolygon(Packed.Vector2s(_quad), Packed.Colors(_colors), Packed.Vector2s(_uv), _isolation.Texture);
     }
     public override void _Notification(int what)
     {
         if (what != NotificationPredelete) return;
-        Material = null; CompositeMaterial.Dispose(); _texture.Dispose(); _world.Dispose();
+        Material = null; CompositeMaterial.Dispose();
+        IsolationTargetPool.Release(_isolation);
     }
 }

@@ -955,7 +955,6 @@ virtual NecronomiDom.Runtime.PolygonComposite.EmptyClip.get -> bool
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._capacity -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._captureTransform -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._colors -> Godot.StringName
-~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._content -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._contentDirty -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._deviceBounds -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._deviceTransform -> Godot.StringName
@@ -967,9 +966,7 @@ virtual NecronomiDom.Runtime.PolygonComposite.EmptyClip.get -> bool
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._quad -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._target -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._targetHdr -> Godot.StringName
-~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._texture -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._uv -> Godot.StringName
-~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName._world -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.CompositeMaterial -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.Content -> Godot.StringName
 ~static readonly NecronomiDom.Runtime.PolygonComposite.PropertyName.DevicePaintBounds -> Godot.StringName
