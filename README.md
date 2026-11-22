@@ -540,6 +540,18 @@ package or provenance assets. Live notification and same-run retries require the
 context and successful trusted prerequisite jobs; failed notification retries also verify the original
 attempt's prerequisites. An unrelated or unqualified run cannot replace missing historical proof.
 
+GitHub deletes workflow runs when the repository's Actions retention expires, so the recorded producer run of a
+pinned release can disappear. Recovery never rebuilds or replaces release assets:
+1. Run the CI/CD workflow manually on main with `requalify_revision` set to the released commit. This FULL run checks
+   out that commit, never publishes, and fails unless its managed ZIP is byte-identical to the released ZIP. The
+   released commit must be strictly behind main's head when you dispatch it, so a release built from the current
+   head can be requalified only after a later commit lands on main.
+2. Run it again with `requalification_run` set to that run's ID. This appends
+   `provenance-<run ID>-<attempt>.json` (`eldritch.managed-requalification/1`) to the existing release.
+
+The appended receipt counts only while both runs still exist. Keep Actions retention longer than any release
+stays pinned.
+
 ### API compatibility
 
 CI fails on a public API change that its pull request doesn't declare:
